@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>War Room — Day 1 Hybrid Inference Spike</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f17;
+        --panel: #131a26;
+        --border: #243044;
+        --text: #e6edf3;
+        --muted: #8b9bb4;
+        --accent: #e0a84b;
+        --ok: #3fb950;
+        --err: #f85149;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 4px 0 0;
+        font-size: 0.9rem;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.85rem;
+      }
+      .status-item span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      button {
+        background: #1c2638;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--accent);
+        background: #233047;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.8rem;
+        background: #1f293d;
+        border: 1px solid var(--border);
+      }
+      pre {
+        margin: 12px 0 0;
+        padding: 12px;
+        background: #080b11;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.82rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      progress {
+        width: 100%;
+        height: 10px;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>War Room — Day 1 Hybrid Inference Spike</h1>
+        <p class="subtitle">Firebase AI Logic (ON_DEVICE / PREFER_ON_DEVICE / IN_CLOUD) + App Check verification</p>
+      </header>
+
+      <section class="card">
+        <div class="status-grid">
+          <div class="status-item">
+            <span>Firebase &amp; App Check</span>
+            <strong id="firebase-status">Initialising…</strong>
+          </div>
+          <div class="status-item">
+            <span>Auth UID</span>
+            <strong id="auth-status">—</strong>
+          </div>
+          <div class="status-item">
+            <span>LanguageModel.availability()</span>
+            <strong id="nano-status">Checking…</strong>
+          </div>
+          <div class="status-item">
+            <span>Download Progress</span>
+            <strong id="download-status">Idle</strong>
+          </div>
+        </div>
+        <progress id="download-progress" value="0" max="1" hidden></progress>
+        <div class="actions">
+          <button id="btn-check-device" type="button">Check Device Availability</button>
+          <button id="btn-download" type="button">Download model</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <strong>Hybrid Inference Calls</strong>
+        <div class="actions">
+          <button id="btn-only-device" type="button">
+            1. ONLY_ON_DEVICE (crowd)
+          </button>
+          <button id="btn-prefer-device" type="button">
+            2. PREFER_ON_DEVICE (crowd)
+          </button>
+          <button id="btn-only-cloud" type="button">
+            3. ONLY_IN_CLOUD — gemini-4-hydrogen (general_move)
+          </button>
+        </div>
+      </section>
+
+      <section class="card" id="results-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <strong id="result-title">Output</strong>
+          <div>
+            <span class="badge" id="result-source">inferenceSource: —</span>
+            <span class="badge" id="result-latency">latency: — ms</span>
+            <span class="badge" id="result-valid">schema: —</span>
+          </div>
+        </div>
+        <pre id="result-output">Click one of the three buttons above to run an inference call.</pre>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
