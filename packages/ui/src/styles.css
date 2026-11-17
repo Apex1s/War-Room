@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Tailwind v4 only scans the consuming app's folder; the shared screens live here. */
+@source ".";
 
 :root {
   color-scheme: dark;
