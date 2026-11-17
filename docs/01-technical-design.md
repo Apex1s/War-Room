@@ -505,7 +505,7 @@ Status after Day 1 in brackets.
 6. [OPEN] Nano latency for ten crowd calls.
 7. [OPEN] Nano recall on entity extraction (Day 3).
 8. [MITIGATED] `gemini-4-hydrogen` latency and free-tier capacity: 144 s on Day 1, then only 500s and timeouts on Day 2. Generals moved to flash-lite with a fallback chain (§10). Re-probe hydrogen daily.
-9. [OPEN] Free-tier rate limits on `gemini-4-hydrogen` during judging. About 16 cloud calls per game without Nano.
+9. **[MEASURED 17 Nov, high] Free-tier rate limit: `gemini-3.5-flash-lite` allows 15 requests per minute per project**, shared by every visitor of the hosted app (429 `GenerateRequestsPerMinutePerProjectPerModel-FreeTier`, with a `retryDelay` in the error). A cloud-only game is about 16 calls in 3–5 minutes, so roughly three judges playing at once saturate it; on-device crowd and referee cut a game to about 7 cloud calls. Mitigations: on 429, read `retryDelay` and, if it is 20 s or less, show "Cloud is busy, retrying in N s" and retry the same model once before the fallback chain; never retry in a tight loop; keep crowd and referee on-device wherever Nano exists. Each model has its own per-model quota, so the fallback model adds headroom only when it is not saturated.
 10. [OPEN] App Check in the extension (§7).
 
 ---
