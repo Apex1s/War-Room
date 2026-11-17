@@ -13,7 +13,7 @@ Checked 16 Nov 2026 against the Firebase AI Logic docs, the Chrome Prompt API do
 
 | # | Brief says | Current reality | Consequence |
 |---|---|---|---|
-| 1 | "Gemini Pro/Flash", "Flash-Lite" | No current stable "Pro". Lineup: `gemini-4-hydrogen` (fast, high-intelligence, no billing), `gemini-4-argon` and `gemini-4-carbon` (billing required), `gemini-3.8-flash`, `gemini-3.5-flash-lite`. The 2.5 family is being rerouted on 1 Dec. | Defaults: Generals and report on `gemini-4-hydrogen`, cloud fallbacks on `gemini-3.5-flash-lite`. All in Remote Config. |
+| 1 | "Gemini Pro/Flash", "Flash-Lite" | No current stable "Pro". Lineup: `gemini-4-hydrogen` (fast, high-intelligence, no billing), `gemini-4-argon` and `gemini-4-carbon` (billing required), `gemini-3.8-flash`, `gemini-3.5-flash-lite`. The 2.5 family is being rerouted on 1 Dec. | Defaults (after Day 2, §10): Generals on `gemini-3.5-flash-lite`, final report on `gemini-4-hydrogen`, every cloud route falls back to flash-lite. All in Remote Config. |
 | 2 | Three inference modes | Four: `PREFER_ON_DEVICE`, `ONLY_ON_DEVICE`, `PREFER_IN_CLOUD`, `ONLY_IN_CLOUD`. | Router `Mode` type has four values. |
 | 3 | Router computes `source` | SDK reports it: `result.response.inferenceSource` is `InferenceSource.ON_DEVICE` (`'on_device'`) or `InferenceSource.IN_CLOUD` (`'in_cloud'`) (JS SDK ≥ 12.5.0). | Router reads it and maps it to `'on-device'` / `'cloud'`; never infers it from the mode. |
 | 4 | App Check "integrated" | **Enforcement is mandatory for AI Logic since 2 Nov 2026.** Web provider is reCAPTCHA Enterprise only. Replay protection via `useLimitedUseAppCheckTokens: true` (SDK ≥ 12.14.0). Rules say debug tokens are acceptable. Do not allowlist `localhost` in reCAPTCHA. | App Check is Day 1 work, not polish. Nothing in the cloud works without it. |
@@ -249,16 +249,16 @@ One JSON parameter, `routing_table`, parsed with zod. Invalid or missing falls b
   "v": 1,
   "rounds": 3,
   "tasks": {
-    "crowd":         { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "thinkingLevel": "MINIMAL", "timeoutMs": 20000 },
-    "referee_round": { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "thinkingLevel": "MINIMAL", "timeoutMs": 20000 },
-    "general_move":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "thinkingLevel": "LOW",     "timeoutMs": 45000 },
-    "final_report":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "thinkingLevel": "MEDIUM",  "timeoutMs": 90000 }
+    "crowd":         { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.5-flash-lite", "timeoutMs": 20000 },
+    "referee_round": { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.5-flash-lite", "timeoutMs": 20000 },
+    "general_move":  { "mode": "only_in_cloud",    "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.5-flash-lite", "timeoutMs": 25000 },
+    "final_report":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "fallbackModel": "gemini-3.5-flash-lite", "thinkingLevel": "LOW", "timeoutMs": 90000 }
   },
   "crowd": { "personas": 10, "batchOnDevice": 1, "batchInCloud": 10 }
 }
 ```
 
-The `thinkingLevel` and `timeoutMs` values are provisional until the Day 2 latency matrix (§10). `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
+Defaults set from the Day 2 measurements (§10). `thinkingLevel` is optional; when absent no `thinkingConfig` is sent. `fallbackModel` gets one retry on HTTP 500/503, timeout or `AI/parse-failed`. `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
 
 ---
 
@@ -504,7 +504,7 @@ Status after Day 1 in brackets.
 5. [PARTLY] On-device with the network off: by code reading, the on-device path makes no App Check, Auth or network call. Not yet run on real hardware.
 6. [OPEN] Nano latency for ten crowd calls.
 7. [OPEN] Nano recall on entity extraction (Day 3).
-8. **[NEW, high] Cloud latency of `gemini-4-hydrogen` at default thinking: 144 s for one `general_move`** (hosted, 17 Nov). Three in parallel per round makes the game unplayable. Fix with `thinkingLevel`, streaming and a model choice measured on Day 2 (§10).
+8. [MITIGATED] `gemini-4-hydrogen` latency and free-tier capacity: 144 s on Day 1, then only 500s and timeouts on Day 2. Generals moved to flash-lite with a fallback chain (§10). Re-probe hydrogen daily.
 9. [OPEN] Free-tier rate limits on `gemini-4-hydrogen` during judging. About 16 cloud calls per game without Nano.
 10. [OPEN] App Check in the extension (§7).
 
@@ -532,3 +532,23 @@ Day 2 latency matrix (one `general_move`, same input, record model latency and w
 | `gemini-3.8-flash` | MINIMAL, LOW |
 
 Target: a General's move in under 20 s with streaming visible from the first second. Pick the cheapest row that keeps the quality; the final report may use a higher level because it runs once.
+
+### Day 2 results (17 Nov, spike FINDINGS §3 plus a second diagnosis run)
+
+| Model | Setting | Result |
+|---|---|---|
+| `gemini-4-hydrogen` | MINIMAL | HTTP 400: level not supported |
+| `gemini-4-hydrogen` | LOW, MEDIUM | HTTP 500 "high demand" after 6–38 s, or no first chunk before the 60 s timeout. 0 successes in 6 tries |
+| `gemini-3.8-flash` | MINIMAL | HTTP 400: level not supported |
+| `gemini-3.8-flash` | LOW | HTTP 500 "high demand" or timeout. 0 successes in 5 tries |
+| `gemini-3.5-flash-lite` | none, MINIMAL, LOW | 6 of 8 valid, 2–10 s total. 2 failures were `AI/parse-failed` mid-stream (transient; retry worked) |
+
+Reading: the 4-series and 3.8 free-tier capacity is saturated, not slow by design. Hydrogen with thinking streams nothing until it has finished thinking, so streaming does not help perceived latency on it. Flash-lite's move was schema-valid and usable but flatter than hydrogen's, and it **invented a `[COMPANY_2]` token** that was not in the brief.
+
+Decisions:
+
+1. **`general_move` defaults to `gemini-3.5-flash-lite`** with no `thinkingLevel`. Hydrogen stays one Remote Config edit away; re-probe it each morning and flip when it answers under 20 s. Switching the Generals' model live from the console is itself demo material.
+2. **`final_report` defaults to `gemini-4-hydrogen` LOW, 90 s timeout**, falling back to flash-lite. It runs once, behind a progress screen.
+3. **Every cloud route gets `fallbackModel`.** On HTTP 500/503, timeout or `AI/parse-failed`, the router retries once on the fallback model. `AiResult.model` is the model that answered; `fallback` is true.
+4. **`thinkingLevel` is optional.** Omit `thinkingConfig` entirely when unset. `MINIMAL` is only valid on flash-lite.
+5. **Invented tokens:** prompts now tell the model to describe untokenised things in plain words. Code backstop: `rehydrate` only swaps tokens that were present in the prompt sent; any other `[TYPE_N]` renders as a neutral phrase ("a company") and is logged in the ledger.

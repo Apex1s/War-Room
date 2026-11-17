@@ -35,3 +35,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+# Local Claude/IDE launch config
+.claude/

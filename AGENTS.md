@@ -72,7 +72,8 @@ Criteria 3 and 4 are judged largely from the text description and the video.
      (regex for numbers, money, emails, URLs, capitalized entities + user-editable list),
      clearly labeled "Basic redaction (on-device AI unavailable)". NEVER silently
      send the raw brief to the cloud.
-2. THE GENERALS (cloud, ONLY_IN_CLOUD, default model `gemini-4-hydrogen`)
+2. THE GENERALS (cloud, ONLY_IN_CLOUD, default model `gemini-3.5-flash-lite` since Day 2 because
+   `gemini-4-hydrogen` free-tier capacity is saturated; hydrogen is one Remote Config edit away)
    - 3 heavy agents with distinct personas, goals and hidden info
      (lead template: Skeptical VC, Copycat Competitor, The Market).
    - Turn-based rounds (default 3): user move -> each General responds in parallel with a
@@ -87,7 +88,7 @@ Criteria 3 and 4 are judged largely from the text description and the video.
      round, summary, score delta per General, contradiction detection vs earlier commitments.
    - `referee_live` (ONLY_ON_DEVICE): feedback while the user types their move (debounced).
      It sees raw text, so it has no cloud route; hidden when on-device AI is unavailable.
-   - FINAL REPORT (cloud, `gemini-4-hydrogen`): verdict, top 3 risks, top 3 counter-strategies,
+   - FINAL REPORT (cloud, `gemini-4-hydrogen`, falls back to `gemini-3.5-flash-lite`): verdict, top 3 risks, top 3 counter-strategies,
      next steps.
    - Re-hydration: the device swaps placeholders back to real names locally at render time.
      Stored games are always abstracted.
