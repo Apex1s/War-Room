@@ -30,16 +30,24 @@ The whole project rests on this day. All code is throwaway, in `spike/`.
 
 ### Day 2, Tue 17 — Monorepo, router, extension spike
 
+Day 1 result: cloud path, App Check and the privacy refusal all pass on the hosted URL. Two things failed and come first today (design doc §9 items 1 and 8, §10).
+
+- **First, a Nano-capable machine (owner, not Antigravity).** In order, stop at the first that reaches `'available'`:
+  1. On this laptop, `chrome://flags/#optimization-guide-on-device-model` → "Enabled BypassPerfRequirement", relaunch, check `chrome://on-device-internals`, then `await LanguageModel.availability()`. With 8 GB RAM it may still refuse or be too slow; treat a yes as good enough for development only.
+  2. A friend's or university machine with 16 GB RAM + 4 cores or a GPU with more than 4 GB, for testing and the video.
+  3. A rented cloud desktop (Windows, 16 GB RAM, 4+ vCPU) driven over remote desktop.
+  If none works by tonight, the on-device half is shown only through the mock provider and the demo story changes. Decide tonight, not later.
+- **Second, the latency matrix** in the spike (design doc §10): `general_move` on `gemini-4-hydrogen` at MINIMAL/LOW/MEDIUM and `gemini-3.8-flash` at MINIMAL/LOW, plus `generateContentStream` time-to-first-chunk. Write the numbers into `spike/FINDINGS.md` and set the defaults in `routing-table.ts` from them.
 - Scaffold the pnpm workspace: `packages/core`, `packages/ui`, `apps/web`, `apps/extension`. Vitest in core.
 - `router.ts`, `tasks.ts`, `schemas.ts`, `json.ts`, `ledger.ts`, `provider-firebase.ts`, `provider-mock.ts`, `routing-table.ts` with Remote Config and the three URL overrides.
-- Unit tests with the mock provider: privacy clamp, repair retry, invalid JSON twice, abort.
+- Unit tests with the mock provider: privacy clamp, repair retry, invalid JSON twice, abort, and a raw task with `globalThis.LanguageModel` deleted (must throw `device_unavailable` with no provider call).
 - Extension spike, **three-hour limit**: side panel renders, `LanguageModel.availability()` works there, one cloud call succeeds with App Check. Try the bridge first; fall back to the debug token.
 
-**Exit test:** `run('crowd', …)` and `run('general_move', …)` return typed results with the right `source` from a scratch page; `?forceCloud=1` flips the crowd badge; you know which App Check plan the extension uses.
+**Exit test:** you know which machine runs Nano; a General's move streams its first text within a few seconds and finishes under 20 s; `run('crowd', …)` and `run('general_move', …)` return typed results with the right `source` from a scratch page; `?forceCloud=1` flips the crowd badge; you know which App Check plan the extension uses.
 
 ### Day 3, Wed 18 — Firewall core
 
-- `detectors.ts`, `chunk.ts`, `placeholders.ts`, `firewall.ts`, `egress-guard.ts`.
+- `detectors.ts`, `chunk.ts`, `placeholders.ts`, `firewall.ts`, `egress-guard.ts`, `net-guard.ts` (fetch wrapper, design doc §4).
 - The `redact` prompt on Nano. Write five sample briefs (the startup demo brief plus four others) and hand-label the names.
 - Unit tests: round trip `rehydrate(applyMap(text)) === text`; overlapping entities; a name inside another name; egress guard blocks a planted leak.
 - Deterministic fallback path, and the same tests run with the device "unavailable".

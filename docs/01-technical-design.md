@@ -1,9 +1,9 @@
 # War Room — Technical Design
 
-Status: v1, 16 Nov 2026. Source of truth for structure, router, data model and game loop.
+Status: v1.1, 17 Nov 2026. Source of truth for structure, router, data model and game loop.
 Prompts and schemas are in [02-prompts-and-schemas.md](02-prompts-and-schemas.md); the schedule is in [03-plan.md](03-plan.md).
 
-Items marked **VERIFY** come from the docs but I could not confirm the exact identifier from the SDK typings. Check them against `node_modules/firebase/ai` on Day 1 before building on them.
+The v1 **VERIFY** items were checked on Day 1 against `firebase@13.3.0` / `@firebase/ai@3.1.0` and the hosted spike. Results are in §10 and [spike/FINDINGS.md](../spike/FINDINGS.md); the sections below already reflect them.
 
 ---
 
@@ -15,7 +15,7 @@ Checked 16 Nov 2026 against the Firebase AI Logic docs, the Chrome Prompt API do
 |---|---|---|---|
 | 1 | "Gemini Pro/Flash", "Flash-Lite" | No current stable "Pro". Lineup: `gemini-4-hydrogen` (fast, high-intelligence, no billing), `gemini-4-argon` and `gemini-4-carbon` (billing required), `gemini-3.8-flash`, `gemini-3.5-flash-lite`. The 2.5 family is being rerouted on 1 Dec. | Defaults: Generals and report on `gemini-4-hydrogen`, cloud fallbacks on `gemini-3.5-flash-lite`. All in Remote Config. |
 | 2 | Three inference modes | Four: `PREFER_ON_DEVICE`, `ONLY_ON_DEVICE`, `PREFER_IN_CLOUD`, `ONLY_IN_CLOUD`. | Router `Mode` type has four values. |
-| 3 | Router computes `source` | SDK reports it: `result.response.inferenceSource` is `ON_DEVICE` or `IN_CLOUD` (JS SDK ≥ 12.5.0). | Router reads it; never infers it from the mode. |
+| 3 | Router computes `source` | SDK reports it: `result.response.inferenceSource` is `InferenceSource.ON_DEVICE` (`'on_device'`) or `InferenceSource.IN_CLOUD` (`'in_cloud'`) (JS SDK ≥ 12.5.0). | Router reads it and maps it to `'on-device'` / `'cloud'`; never infers it from the mode. |
 | 4 | App Check "integrated" | **Enforcement is mandatory for AI Logic since 2 Nov 2026.** Web provider is reCAPTCHA Enterprise only. Replay protection via `useLimitedUseAppCheckTokens: true` (SDK ≥ 12.14.0). Rules say debug tokens are acceptable. Do not allowlist `localhost` in reCAPTCHA. | App Check is Day 1 work, not polish. Nothing in the cloud works without it. |
 | 5 | On-device is "small context" | Hard limits: single-turn only (no chat sessions), about 9,216 tokens, no tools, no `countTokens` in hybrid, text or text+image in, JSON structured output supported. | Router is stateless. History is compacted into each prompt. Budget by characters. |
 | 6 | "Fallback when unavailable" | `PREFER_ON_DEVICE` falls back to cloud **silently while the model is still downloading**, not only when unsupported. `ONLY_ON_DEVICE` waits for the download. | Any task that sees raw text must be `ONLY_ON_DEVICE`, locked in code. See §3. |
@@ -167,42 +167,48 @@ export interface TaskSpec<K extends Task> {
 ### What `run` does, in order
 
 1. Resolve the route: Remote Config table → URL override → **privacy clamp**. If `spec.privacy === 'raw'`, the mode is forced to `only_on_device` no matter what Remote Config or the URL says.
-2. If the resolved mode is `only_on_device` and `device.status !== 'available'`, throw `device_unavailable` immediately. Callers of raw tasks catch this and use the deterministic path. Never wait on a download inside `run`.
+2. If the resolved mode is `only_on_device` and either `globalThis.LanguageModel` is undefined or `device.status !== 'available'`, throw `device_unavailable` immediately, before any model is built. Callers of raw tasks catch this and use the deterministic path. Never wait on a download inside `run`. **This check is the privacy lock, not an optimisation:** when `LanguageModel` is undefined (Firefox, Safari, mobile Chrome, desktop Chrome without the Prompt API), the SDK builds no Chrome adapter and sends even an `ONLY_ON_DEVICE` request to the cloud on `gemini-3.5-flash-lite` (FINDINGS §2.1). Unit-test it with `LanguageModel` deleted from the global.
 3. If the mode can reach the cloud (anything except `only_on_device`), run `egressGuard.assertClean(system + user, gameId)`. A hit throws `egress_blocked`.
 4. Get or create the model instance, cached by `task|mode|cloudModel|systemHash`. Config is fixed for the lifetime of a `GenerativeModel`, so a new Remote Config value means a new instance.
-5. Call `generateContentStream`, forward chunks to `onText`, time it with `performance.now()`.
+5. Call `generateContentStream`, forward chunks to `onText`, time it with `performance.now()`. Cloud calls use the route's `timeoutMs` via `RequestOptions` (SDK default is 180 s). A timeout throws `cloud_unavailable`.
 6. Read `inferenceSource`. Extract JSON, `safeParse`. On failure send the repair prompt once on the same model instance. Second failure throws `invalid_json`.
 7. `normalize`, append an `AiCallRecord` to the ledger, return.
 
 ### Model construction (`provider-firebase.ts`)
 
 ```ts
-import { getGenerativeModel, InferenceMode } from 'firebase/ai';
+import { getGenerativeModel, InferenceMode, type SchemaRequest } from 'firebase/ai';
 
-const model = getGenerativeModel(ai, {
-  mode: InferenceMode.PREFER_ON_DEVICE,
-  inCloudParams: {
-    model: route.cloudModel,
-    systemInstruction: system,
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: cloudSchema(task),          // VERIFY: plain-object schema accepted; else build with Schema.*
-      temperature: route.temperature,
-      maxOutputTokens: route.maxOutputTokens,
+const model = getGenerativeModel(
+  ai,
+  {
+    mode: InferenceMode.PREFER_ON_DEVICE,
+    inCloudParams: {
+      model: route.cloudModel,
+      systemInstruction: system,                    // the cloud side takes the system prompt here
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: cloudSchema(task) as SchemaRequest,   // plain object accepted (verified)
+        thinkingConfig: { thinkingLevel: route.thinkingLevel }, // not temperature: ignored on Gemini 3.x+
+        maxOutputTokens: route.maxOutputTokens,
+      },
+    },
+    onDeviceParams: {
+      createOptions: {
+        initialPrompts: [{ role: 'system', content: [{ type: 'text', value: system }] }],  // and the device side here
+        expectedInputs: [{ type: 'text', languages: ['en'] }],
+        expectedOutputs: [{ type: 'text', languages: ['en'] }],
+      },
+      promptOptions: { responseConstraint: deviceSchema(task) },   // name verified
     },
   },
-  onDeviceParams: {
-    createOptions: {
-      initialPrompts: [{ role: 'system', content: [{ type: 'text', value: system }] }],
-      expectedInputs: [{ type: 'text', languages: ['en'] }],
-      expectedOutputs: [{ type: 'text', languages: ['en'] }],
-    },
-    promptOptions: { responseConstraint: deviceSchema(task) },   // VERIFY: exact option name
-  },
-});
+  { timeout: route.timeoutMs },
+);
 ```
 
-Model download: `model.initializeDeviceModel(onProgress)` must be called from a user gesture (**VERIFY** name). `device.ts` wraps it and exposes `status: 'unknown' | 'unavailable' | 'downloadable' | 'downloading' | 'available'` plus `progress`.
+Model download: `model.initializeDeviceModel(onProgress)` (verified; `progress` is 0..1) must be called from a user gesture. With `LanguageModel` present but `'unavailable'` it throws `AI/api-not-enabled`. `device.ts` wraps it and exposes `status: 'unknown' | 'unavailable' | 'downloadable' | 'downloading' | 'available'` plus `progress`.
+
+Do not pass `temperature`, `topP` or `topK`: the typings mark them ignored on Gemini 3.x and later. `presencePenalty` and `frequencyPenalty` return HTTP 400.
 
 ### Dev overrides
 
@@ -243,16 +249,16 @@ One JSON parameter, `routing_table`, parsed with zod. Invalid or missing falls b
   "v": 1,
   "rounds": 3,
   "tasks": {
-    "crowd":         { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "temperature": 0.9 },
-    "referee_round": { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "temperature": 0.2 },
-    "general_move":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "temperature": 0.8 },
-    "final_report":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "temperature": 0.3 }
+    "crowd":         { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "thinkingLevel": "MINIMAL", "timeoutMs": 20000 },
+    "referee_round": { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "thinkingLevel": "MINIMAL", "timeoutMs": 20000 },
+    "general_move":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "thinkingLevel": "LOW",     "timeoutMs": 45000 },
+    "final_report":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "thinkingLevel": "MEDIUM",  "timeoutMs": 90000 }
   },
   "crowd": { "personas": 10, "batchOnDevice": 1, "batchInCloud": 10 }
 }
 ```
 
-`redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
+The `thinkingLevel` and `timeoutMs` values are provisional until the Day 2 latency matrix (§10). `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
 
 ---
 
@@ -294,6 +300,7 @@ Rules:
 - **User moves go through the firewall too.** The brief is not the only raw input: every move the user types can name real things. On submit, `seal(move, game.map)` runs. Known entities are replaced deterministically; new ones appear as chips above the composer ("2 new items masked") with undo. No full review screen for moves.
 - **Review screen** shows original on the left (red on removed spans), abstracted on the right (green on tokens), and the placeholder table below. The user can toggle an entry, add a term by selecting text, or rename a type. "Approve and send" is the only way forward.
 - **Egress guard** (`egress-guard.ts`): before any call that can reach the cloud, and before any Firestore write, scan the outgoing text for every enabled `original` and alias (normalised, length ≥ 3). A hit blocks the call. This is the backstop for firewall bugs and for the user typing a vaulted name into a later move.
+- **Network guard** (`net-guard.ts`), the second backstop: on start-up, wrap `window.fetch` once. Any request to `firebasevertexai.googleapis.com` or `firestore.googleapis.com` whose body contains a vaulted original, or a raw text currently being sealed (registered by `seal()` for the duration of the call), is rejected before it leaves the page and logged as `egress_blocked`. It exists because the SDK can route an `ONLY_ON_DEVICE` call to the cloud (§2 step 2). About 30 lines; it is also a strong ten seconds of the demo video (plant a leak, watch it get stopped).
 - **Egress inspector**: a drawer listing the exact text of every cloud call for this game, read from the ledger. It lets a judge check the privacy claim without opening DevTools.
 - **Re-hydration** is a pure view function, `rehydrate(text, map)`, applied at render time. The stored game is always abstracted. It tolerates tokens the cloud model returned without brackets.
 - **Stretch, cut first:** magnitude hints. Money and numbers lose meaning as bare tokens. A legend line per entry ("MONEY_1: between $1M and $5M") lets the Generals reason about scale. Deterministic bucketing, user toggle per entry.
@@ -476,7 +483,8 @@ const app = initializeApp(config);
 if (import.meta.env.DEV) self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
 initializeAppCheck(app, { provider: platform.appCheckProvider(), isTokenAutoRefreshEnabled: true });
 const auth = getAuth(app);                    // 'firebase/auth/web-extension' in the extension build
-await signInAnonymously(auth);                // only if no current user
+await authStateReady(auth);
+if (!auth.currentUser) await signInAnonymously(auth).catch(() => {});  // offline start must not block on-device AI
 const ai = getAI(app, { backend: new GoogleAIBackend(), useLimitedUseAppCheckTokens: true });
 const rc = getRemoteConfig(app);              // defaults = compiled routing table; fetchAndActivate; onConfigUpdate
 ```
@@ -487,12 +495,40 @@ const rc = getRemoteConfig(app);              // defaults = compiled routing tab
 
 ## 9. Open risks, in the order they get tested
 
-1. **Your own machine may not run Nano.** 22 GB free disk and >4 GB VRAM or 16 GB RAM. If `LanguageModel.availability()` returns `unavailable` on Day 1, the demo cannot be recorded on this machine and the plan changes that day.
-2. Whether a web page on stable Chrome gets the Prompt API without a flag (table row 8).
-3. `responseConstraint` passing through the Firebase SDK, and whether integer `minimum`/`maximum` are honoured on-device. Fallback: drop the bounds from the device schema and clamp in `normalize`.
-4. Plain-object `responseSchema` in the cloud. Fallback: hand-build the six schemas with `Schema.object(...)`.
-5. On-device calls with the network off. The definition of done requires what-if to work offline, and it is not documented whether the SDK needs a network round trip (App Check, config) before an on-device call.
-6. Nano latency: ten sequential crowd calls must finish in a watchable time. Fallback: `batchOnDevice: 5`.
-7. Nano recall on entity extraction. Measure on five sample briefs on Day 3. The review screen and the egress guard are the safety net either way.
-8. Free-tier rate limits on `gemini-4-hydrogen` during judging. A full game for a judge without Nano is about 16 cloud calls.
-9. App Check in the extension (§7).
+Status after Day 1 in brackets.
+
+1. **[OPEN, blocking] The dev machine does not run Nano.** 8 GB RAM, Intel UHD 620 with 1 GB: `LanguageModel` exists in Chrome 157 but `availability()` is `'unavailable'`. Without a Nano-capable machine nothing on-device can be tested, and the demo video cannot show the core of the idea. Resolve by end of Day 2 (see 03-plan, Day 2).
+2. [OPEN] Whether a web page on stable Chrome gets the Prompt API without a flag. `LanguageModel` was defined on the hosted page with no flag in Chrome 156/157; whether it reaches `'available'` needs capable hardware.
+3. [DONE] `responseConstraint` name verified. Integer bounds accepted by the typings; still unmeasured on a real Nano. `normalize` clamps regardless.
+4. [DONE] Plain-object `responseSchema` works in the cloud (button 3 returned schema-valid JSON on the hosted URL).
+5. [PARTLY] On-device with the network off: by code reading, the on-device path makes no App Check, Auth or network call. Not yet run on real hardware.
+6. [OPEN] Nano latency for ten crowd calls.
+7. [OPEN] Nano recall on entity extraction (Day 3).
+8. **[NEW, high] Cloud latency of `gemini-4-hydrogen` at default thinking: 144 s for one `general_move`** (hosted, 17 Nov). Three in parallel per round makes the game unplayable. Fix with `thinkingLevel`, streaming and a model choice measured on Day 2 (§10).
+9. [OPEN] Free-tier rate limits on `gemini-4-hydrogen` during judging. About 16 cloud calls per game without Nano.
+10. [OPEN] App Check in the extension (§7).
+
+---
+
+## 10. Day 1 spike results (hosted URL, 17 Nov 2026)
+
+`firebase@13.3.0`, `@firebase/ai@3.1.0`, production build on Firebase Hosting, reCAPTCHA Enterprise (no debug token), on a machine where Nano is `'unavailable'`.
+
+| Check | Result |
+|---|---|
+| App Check, production | reCAPTCHA Enterprise exchange 200. With `useLimitedUseAppCheckTokens` a fresh token is exchanged per AI call (~170–210 ms added per call). |
+| Anonymous Auth | Works; UID issued. |
+| Button 1, `ONLY_ON_DEVICE`, device unavailable | Throws `AI/api-not-enabled`. **Zero network requests.** |
+| Button 2, `PREFER_ON_DEVICE`, device unavailable | Fell back to `gemini-3.5-flash-lite`, `inferenceSource: 'in_cloud'`, 2.4 s end to end (1.9 s model), schema-valid. |
+| Button 3, `ONLY_IN_CLOUD`, `gemini-4-hydrogen` | `in_cloud`, schema-valid, high quality (in character, kept every placeholder, ended on a pointed question). **144 s**, reproduced twice (one run still pending at 100 s). No `thinkingConfig` set. |
+| Debug token in production bundle | Absent (checked against the built `dist`). |
+| On-device paths, offline | Not run: no capable hardware. |
+
+Day 2 latency matrix (one `general_move`, same input, record model latency and whether the output still reads well):
+
+| Model | thinkingLevel |
+|---|---|
+| `gemini-4-hydrogen` | MINIMAL, LOW, MEDIUM |
+| `gemini-3.8-flash` | MINIMAL, LOW |
+
+Target: a General's move in under 20 s with streaming visible from the first second. Pick the cheapest row that keeps the quality; the final report may use a higher level because it runs once.
