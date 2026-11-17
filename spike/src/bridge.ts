@@ -9,11 +9,11 @@ import {
 const ALLOWED_EXTENSION_ORIGIN = 'chrome-extension://mgiolmlgmbopkehpakjhcmiggeipclgf';
 
 function isAllowedOrigin(origin: string): boolean {
+  if (origin === ALLOWED_EXTENSION_ORIGIN || origin === window.location.origin) return true;
+  // Local origins only in dev builds: in production any local page could mint App Check tokens.
   return (
-    origin === ALLOWED_EXTENSION_ORIGIN ||
-    origin === window.location.origin ||
-    origin.startsWith('http://localhost:') ||
-    origin.startsWith('http://127.0.0.1:')
+    import.meta.env.DEV &&
+    (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'))
   );
 }
 
