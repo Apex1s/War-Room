@@ -16,3 +16,6 @@ export * from './firewall/detectors';
 export * from './firewall/firewall';
 export * from './firewall/placeholders';
 export * from './firewall/sample-briefs';
+export * from './game/templates';
+export * from './game/types';
+export * from './storage/local-db';
