@@ -16,8 +16,12 @@ const activeSealingTexts = new Set<string>();
 const blockedLogs: NetGuardBlockRecord[] = [];
 let originalFetch: typeof globalThis.fetch | null = null;
 
+function normalizeWhitespace(str: string): string {
+  return str.trim().replace(/\r\n/g, '\n');
+}
+
 export function registerSealingText(rawText: string): () => void {
-  const normalized = rawText.trim();
+  const normalized = normalizeWhitespace(rawText);
   if (normalized.length >= 3) {
     activeSealingTexts.add(normalized);
   }
@@ -56,16 +60,117 @@ function extractRequestUrl(input: RequestInfo | URL): string {
   return input.url;
 }
 
-function extractBodyString(init?: RequestInit): string | null {
-  if (!init?.body) return null;
-  if (typeof init.body === 'string') return init.body;
+function collectDecodedStrings(node: unknown, out: string[] = []): string[] {
+  if (typeof node === 'string') {
+    out.push(node);
+  } else if (Array.isArray(node)) {
+    for (const item of node) {
+      collectDecodedStrings(item, out);
+    }
+  } else if (node !== null && typeof node === 'object') {
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      out.push(key);
+      collectDecodedStrings(value, out);
+    }
+  }
+  return out;
+}
+
+function blockRequest(url: string, task: 'redact' | 'general_move', reason: string): never {
+  blockedLogs.push({ url, reason, ts: Date.now() });
+  throw new AiError('egress_blocked', task, reason);
+}
+
+async function resolveGuardedBodyString(
+  url: string,
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<string | null> {
+  if (init?.body !== undefined && init.body !== null) {
+    if (typeof init.body !== 'string') {
+      blockRequest(
+        url,
+        'general_move',
+        'Non-string request body to guarded host is blocked (fail closed)',
+      );
+    }
+    return init.body;
+  }
+
+  if (typeof Request !== 'undefined' && input instanceof Request) {
+    if (input.body !== null) {
+      const contentType = (input.headers.get('content-type') ?? '').toLowerCase();
+      if (
+        contentType &&
+        !contentType.includes('application/json') &&
+        !contentType.includes('text/plain')
+      ) {
+        blockRequest(
+          url,
+          'general_move',
+          `Non-JSON Request content-type "${contentType}" to guarded host is blocked`,
+        );
+      }
+      try {
+        return await input.clone().text();
+      } catch {
+        blockRequest(
+          url,
+          'general_move',
+          'Unreadable Request body to guarded host is blocked (fail closed)',
+        );
+      }
+    }
+  }
+
   return null;
+}
+
+function inspectDecodedBody(url: string, rawBody: string): void {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawBody);
+  } catch {
+    blockRequest(
+      url,
+      'general_move',
+      'Non-JSON request body to guarded host is blocked (fail closed)',
+    );
+  }
+
+  const decodedStrings = collectDecodedStrings(parsed);
+  const combinedDecoded = decodedStrings
+    .map((s) => normalizeWhitespace(s))
+    .join('\n');
+  const combinedLower = combinedDecoded.toLowerCase();
+
+  for (const sealing of activeSealingTexts) {
+    if (combinedLower.includes(sealing.toLowerCase())) {
+      blockRequest(
+        url,
+        'redact',
+        'Outbound request contains raw text currently being sealed',
+      );
+    }
+  }
+
+  for (const decoded of decodedStrings) {
+    const leaked = findVaultLeak(decoded);
+    if (leaked !== null) {
+      blockRequest(
+        url,
+        'general_move',
+        `Outbound request contains vaulted term "${leaked}"`,
+      );
+    }
+  }
 }
 
 /**
  * Wraps `globalThis.fetch` once so any request to `firebasevertexai.googleapis.com`
- * or `firestore.googleapis.com` whose body contains a vaulted original or an active
- * raw text being sealed is rejected before leaving the page.
+ * or `firestore.googleapis.com` whose decoded JSON string values contain a vaulted
+ * original or an active raw text being sealed is rejected before leaving the page.
+ * Fails closed on non-string or non-JSON bodies.
  */
 export function installNetGuard(): void {
   if (originalFetch !== null || typeof globalThis.fetch !== 'function') {
@@ -82,22 +187,9 @@ export function installNetGuard(): void {
     const url = extractRequestUrl(input);
 
     if (isGuardedUrl(url)) {
-      const body = extractBodyString(init);
-      if (body) {
-        for (const sealing of activeSealingTexts) {
-          if (body.toLowerCase().includes(sealing.toLowerCase())) {
-            const reason = 'Outbound request contains raw text currently being sealed';
-            blockedLogs.push({ url, reason, ts: Date.now() });
-            throw new AiError('egress_blocked', 'redact', reason);
-          }
-        }
-
-        const leaked = findVaultLeak(body);
-        if (leaked !== null) {
-          const reason = `Outbound request contains vaulted term "${leaked}"`;
-          blockedLogs.push({ url, reason, ts: Date.now() });
-          throw new AiError('egress_blocked', 'general_move', reason);
-        }
+      const bodyStr = await resolveGuardedBodyString(url, input, init);
+      if (bodyStr !== null) {
+        inspectDecodedBody(url, bodyStr);
       }
     }
 

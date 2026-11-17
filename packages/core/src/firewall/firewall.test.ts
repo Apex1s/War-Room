@@ -221,14 +221,17 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
     ).rejects.toBeInstanceOf(AiError);
     expect(networkHitCount).toBe(1);
 
-    // 3. Raw text currently being sealed is blocked if SDK attempts a cloud call
+    // 3. Multi-line raw text currently being sealed is blocked even when JSON.stringify escapes newlines
+    const multiLineRawBrief = 'Objective: Undercut Globex in Lyon.\nBrief: Secret project Nightingale launches in Rabat with $2.4M ARR.';
     await expect(
-      withSealingText('Secret project Nightingale in Rabat', async () => {
+      withSealingText(multiLineRawBrief, async () => {
         await globalThis.fetch(
-          'https://firestore.googleapis.com/v1/projects/p/databases/(default)/documents/games/1',
+          'https://firebasevertexai.googleapis.com/v1beta/projects/p/models/m:generateContent',
           {
             method: 'POST',
-            body: JSON.stringify({ brief: 'Secret project Nightingale in Rabat' }),
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: multiLineRawBrief }] }],
+            }),
           },
         );
       }),
@@ -236,7 +239,37 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
       code: 'egress_blocked',
     });
     expect(networkHitCount).toBe(1);
-    expect(getNetGuardBlocks()).toHaveLength(2);
+
+    // 4. Non-string Blob body to a guarded host is blocked (fail closed)
+    await expect(
+      globalThis.fetch(
+        'https://firebasevertexai.googleapis.com/v1beta/projects/p/models/m:generateContent',
+        {
+          method: 'POST',
+          body: new Blob([JSON.stringify({ prompt: '[COMPANY_1] safe text' })], {
+            type: 'application/json',
+          }),
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: 'egress_blocked',
+    });
+    expect(networkHitCount).toBe(1);
+
+    // 5. Request object input with a leaked vaulted term is blocked
+    const leakedRequest = new Request(
+      'https://firebasevertexai.googleapis.com/v1beta/projects/p/models/m:generateContent',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Kestrel Labs confidential move' }),
+      },
+    );
+    await expect(globalThis.fetch(leakedRequest)).rejects.toMatchObject({
+      code: 'egress_blocked',
+    });
+    expect(networkHitCount).toBe(1);
+    expect(getNetGuardBlocks()).toHaveLength(4);
   });
 
   it('seals all 5 sample briefs with the on-device AI path (mock provider) with zero missed names or values', async () => {
