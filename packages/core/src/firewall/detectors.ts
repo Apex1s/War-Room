@@ -49,28 +49,11 @@ export function detectRegexEntities(text: string): DetectedEntity[] {
     }
   };
 
-  // 1. CONTACT: URLs, emails, phone numbers
+  // 1. CONTACT: URLs and emails first
   addMatches(/https?:\/\/[^\s),;"'>]+/gi, 'CONTACT');
   addMatches(/\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g, 'CONTACT');
-  addMatches(
-    /(?:\+\d{1,3}[\s.-]?)?(?:\(\d{2,4}\)[\s.-]?|\b\d{2,4}[\s.-])\d{2,4}[\s.-]\d{2,4}(?:[\s.-]\d{2,4})?\b/g,
-    'CONTACT',
-  );
 
-  // 2. MONEY: symbols ($ € £ ¥) or currency codes (USD, EUR, GBP, MAD, CAD, AUD, CHF)
-  addMatches(
-    /(?:[$€£¥]|(?:\b(?:USD|EUR|GBP|MAD|CAD|AUD|CHF)\s*))(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:\s*(?:[KMBTkmbt]\b|million\b|billion\b|thousand\b|bn\b|mn\b))?(?:\s*(?:ARR|MRR))?/g,
-    'MONEY',
-  );
-  addMatches(
-    /\b(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:[KMBTkmbt]|million|billion|thousand|bn|mn)?\s*(?:USD|EUR|GBP|MAD|CAD|AUD|CHF|dollars|euros|pounds|dirhams)\b/gi,
-    'MONEY',
-  );
-
-  // 3. PERCENT
-  addMatches(/\b\d+(?:\.\d+)?\s*%/g, 'PERCENT');
-
-  // 4. DATE: ISO dates, slash dates, month-name dates, quarters
+  // 2. DATE: ISO dates, slash dates, month-name dates, quarters (before phone regex so 2026-12-01 is DATE)
   addMatches(/\b\d{4}-\d{2}-\d{2}\b/g, 'DATE');
   addMatches(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g, 'DATE');
   addMatches(
@@ -82,6 +65,25 @@ export function detectRegexEntities(text: string): DetectedEntity[] {
     'DATE',
   );
   addMatches(/\bQ[1-4]\s+\d{4}\b/g, 'DATE');
+
+  // 3. CONTACT: phone numbers (at least 3 groups totaling >= 7 digits)
+  addMatches(
+    /(?:\+\d{1,3}[\s.-]?)?(?:\(\d{2,4}\)[\s.-]?|\b\d{2,4}[\s.-])\d{3,4}[\s.-]\d{3,4}\b/g,
+    'CONTACT',
+  );
+
+  // 4. MONEY: symbols ($ € £ ¥) or currency codes (USD, EUR, GBP, MAD, CAD, AUD, CHF)
+  addMatches(
+    /(?:[$€£¥]|(?:\b(?:USD|EUR|GBP|MAD|CAD|AUD|CHF)\s*))(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:\s*(?:[KMBTkmbt]\b|million\b|billion\b|thousand\b|bn\b|mn\b))?(?:\s*(?:ARR|MRR))?/g,
+    'MONEY',
+  );
+  addMatches(
+    /\b(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:[KMBTkmbt]|million|billion|thousand|bn|mn)?\s*(?:USD|EUR|GBP|MAD|CAD|AUD|CHF|dollars|euros|pounds|dirhams)\b/gi,
+    'MONEY',
+  );
+
+  // 5. PERCENT
+  addMatches(/\b\d+(?:\.\d+)?\s*%/g, 'PERCENT');
 
   // 5. NUMBER: comma-separated numbers, decimals, or numbers with ≥ 2 digits
   addMatches(/\b(?:\d{1,3}(?:,\d{3})+|\d{2,})(?:\.\d+)?\b/g, 'NUMBER');
@@ -199,9 +201,9 @@ export function detectCapitalisedRuns(text: string): DetectedEntity[] {
   const results: DetectedEntity[] = [];
   const seen = new Set<string>();
 
-  // Match 1 to 4 capitalised words (including optional corporate suffix like Inc. or Ltd.)
+  // Match 1 to 4 capitalised words without crossing sentence-ending periods
   const runRegex =
-    /\b([A-Z][a-zA-Z0-9&'-]*(?:\.)?(?:\s+(?:[A-Z][a-zA-Z0-9&'-]*(?:\.)?)){0,3})\b/g;
+    /\b([A-Z][a-zA-Z0-9&'-]*(?:\s+[A-Z][a-zA-Z0-9&'-]*){0,3}(?:\.)?)\b/g;
 
   let match: RegExpExecArray | null;
   while ((match = runRegex.exec(text)) !== null) {
@@ -221,7 +223,9 @@ export function detectCapitalisedRuns(text: string): DetectedEntity[] {
     if (startWord > endWord) continue;
 
     const trimmedWords = words.slice(startWord, endWord + 1);
-    const phrase = trimmedWords.join(' ');
+    const phrase = trimmedWords
+      .join(' ')
+      .replace(/(?<!\b(?:Inc|Ltd|Corp|LLC))\.$/i, '');
     if (phrase.length < 2) continue;
 
     const phraseOffset = rawPhrase.indexOf(phrase);
