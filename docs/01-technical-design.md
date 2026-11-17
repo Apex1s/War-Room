@@ -249,16 +249,16 @@ One JSON parameter, `routing_table`, parsed with zod. Invalid or missing falls b
   "v": 1,
   "rounds": 3,
   "tasks": {
-    "crowd":         { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.5-flash-lite", "timeoutMs": 20000 },
-    "referee_round": { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.5-flash-lite", "timeoutMs": 20000 },
-    "general_move":  { "mode": "only_in_cloud",    "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.5-flash-lite", "timeoutMs": 25000 },
-    "final_report":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "fallbackModel": "gemini-3.5-flash-lite", "thinkingLevel": "LOW", "timeoutMs": 90000 }
+    "crowd":         { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.8-flash",      "deviceLastResort": false, "timeoutMs": 20000 },
+    "referee_round": { "mode": "prefer_on_device", "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.8-flash",      "deviceLastResort": false, "timeoutMs": 20000 },
+    "general_move":  { "mode": "only_in_cloud",    "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.8-flash",      "deviceLastResort": true,  "timeoutMs": 25000 },
+    "final_report":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "fallbackModel": "gemini-3.5-flash-lite", "deviceLastResort": false, "thinkingLevel": "LOW", "timeoutMs": 90000 }
   },
   "crowd": { "personas": 10, "batchOnDevice": 1, "batchInCloud": 10 }
 }
 ```
 
-Defaults set from the Day 2 measurements (§10). `thinkingLevel` is optional; when absent no `thinkingConfig` is sent. `fallbackModel` gets one retry on HTTP 500/503, timeout or `AI/parse-failed`. `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
+Defaults set from the Day 2 measurements (§10). `thinkingLevel` is optional; when absent no `thinkingConfig` is sent. `fallbackModel` gets one retry on HTTP 429/500/503, timeout or `AI/parse-failed`, in `prefer_in_cloud` mode when `deviceLastResort` is true (§10, decision 3). `thinkingLevel` applies to the primary model only. `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
 
 ---
 
@@ -549,6 +549,10 @@ Decisions:
 
 1. **`general_move` defaults to `gemini-3.5-flash-lite`** with no `thinkingLevel`. Hydrogen stays one Remote Config edit away; re-probe it each morning and flip when it answers under 20 s. Switching the Generals' model live from the console is itself demo material.
 2. **`final_report` defaults to `gemini-4-hydrogen` LOW, 90 s timeout**, falling back to flash-lite. It runs once, behind a progress screen.
-3. **Every cloud route gets `fallbackModel`.** On HTTP 500/503, timeout or `AI/parse-failed`, the router retries once on the fallback model. `AiResult.model` is the model that answered; `fallback` is true.
+3. **Backup chain, all inside Firebase AI Logic and all $0.** Each cloud route has `fallbackModel` and `deviceLastResort`. On HTTP 429/500/503, timeout or `AI/parse-failed`, the router retries **once** on `fallbackModel` (a different model has its own free quota and capacity pool). That retry runs in `prefer_in_cloud` mode when `deviceLastResort` is true, so if the second model also fails with a fetch error the SDK itself answers with Gemini Nano (`errorsCausingFallback` = `FETCH_ERROR`, `ERROR`, `API_NOT_ENABLED`, checked in `@firebase/ai@3.1.0`). Order: cloud model A → cloud model B → on-device Nano. `AiResult.model` and `source` say who answered; `fallback` is true. This puts all four inference modes to a real use, and a General answering with a 🔒 badge while the cloud is down is a strong demo moment.
+   - `general_move`: `gemini-3.5-flash-lite` → `gemini-3.8-flash` → Nano (`deviceLastResort: true`; the prompt is ~1k tokens, well inside Nano's budget).
+   - `final_report`: `gemini-4-hydrogen` → `gemini-3.5-flash-lite`, `deviceLastResort: false` (the full transcript can exceed Nano's ~9k tokens).
+   - `crowd`, `referee_round`: on-device first already; cloud `gemini-3.5-flash-lite` → `gemini-3.8-flash`.
+   - **Not allowed:** DeepSeek, OpenRouter or any other model API. The rules and AGENTS.md require all AI through `firebase/ai`, DeepSeek's API is pay-per-token, and sending even abstracted text to a third party weakens the privacy story.
 4. **`thinkingLevel` is optional.** Omit `thinkingConfig` entirely when unset. `MINIMAL` is only valid on flash-lite.
 5. **Invented tokens:** prompts now tell the model to describe untokenised things in plain words. Code backstop: `rehydrate` only swaps tokens that were present in the prompt sent; any other `[TYPE_N]` renders as a neutral phrase ("a company") and is logged in the ledger.
