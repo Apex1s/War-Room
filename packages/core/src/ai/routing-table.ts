@@ -16,7 +16,9 @@ export const ThinkingLevelSchema = z.enum(['MINIMAL', 'LOW', 'MEDIUM', 'HIGH']);
 export const TaskRouteSchema = z.object({
   mode: ModeSchema,
   cloudModel: z.string().min(1),
-  thinkingLevel: ThinkingLevelSchema,
+  fallbackModel: z.string().min(1),
+  deviceLastResort: z.boolean(),
+  thinkingLevel: ThinkingLevelSchema.optional(),
   timeoutMs: z.number().int().min(1000).max(180000),
   maxOutputTokens: z.number().int().min(64).max(8192).optional(),
 });
@@ -57,25 +59,30 @@ export const DEFAULT_ROUTING_TABLE: RoutingTable = {
     crowd: {
       mode: 'prefer_on_device',
       cloudModel: 'gemini-3.5-flash-lite',
-      thinkingLevel: 'MINIMAL',
+      fallbackModel: 'gemini-3.8-flash',
+      deviceLastResort: false,
       timeoutMs: 20000,
     },
     referee_round: {
       mode: 'prefer_on_device',
       cloudModel: 'gemini-3.5-flash-lite',
-      thinkingLevel: 'MINIMAL',
+      fallbackModel: 'gemini-3.8-flash',
+      deviceLastResort: false,
       timeoutMs: 20000,
     },
     general_move: {
       mode: 'only_in_cloud',
-      cloudModel: 'gemini-4-hydrogen',
-      thinkingLevel: 'LOW',
-      timeoutMs: 45000,
+      cloudModel: 'gemini-3.5-flash-lite',
+      fallbackModel: 'gemini-3.8-flash',
+      deviceLastResort: true,
+      timeoutMs: 25000,
     },
     final_report: {
       mode: 'only_in_cloud',
       cloudModel: 'gemini-4-hydrogen',
-      thinkingLevel: 'MEDIUM',
+      fallbackModel: 'gemini-3.5-flash-lite',
+      deviceLastResort: false,
+      thinkingLevel: 'LOW',
       timeoutMs: 90000,
     },
   },
@@ -89,7 +96,8 @@ export const DEFAULT_ROUTING_TABLE: RoutingTable = {
 const RAW_TASK_ROUTE: TaskRoute = {
   mode: 'only_on_device',
   cloudModel: 'none',
-  thinkingLevel: 'MINIMAL',
+  fallbackModel: 'none',
+  deviceLastResort: false,
   timeoutMs: 20000,
 };
 

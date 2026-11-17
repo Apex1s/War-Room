@@ -230,6 +230,8 @@ describe('AI Router & Routing Table', () => {
         general_move: {
           mode: 'only_in_cloud',
           cloudModel: 'gemini-3.8-flash',
+          fallbackModel: 'gemini-3.5-flash-lite',
+          deviceLastResort: true,
           thinkingLevel: 'LOW',
           timeoutMs: 30000,
         },
@@ -237,6 +239,9 @@ describe('AI Router & Routing Table', () => {
     };
     const parsed = parseRoutingTable(JSON.stringify(custom));
     expect(parsed.tasks.general_move.cloudModel).toBe('gemini-3.8-flash');
+    expect(parsed.tasks.general_move.fallbackModel).toBe('gemini-3.5-flash-lite');
+    expect(parsed.tasks.general_move.deviceLastResort).toBe(true);
     expect(parsed.tasks.general_move.timeoutMs).toBe(30000);
+    expect(DEFAULT_ROUTING_TABLE.tasks.general_move.thinkingLevel).toBeUndefined();
   });
 });

@@ -7,7 +7,7 @@ export interface ProviderModelParams {
   task: Task;
   mode: Mode;
   cloudModel: string;
-  thinkingLevel: ThinkingLevelValue;
+  thinkingLevel?: ThinkingLevelValue;
   timeoutMs: number;
   maxOutputTokens?: number;
   system: string;
