@@ -1,0 +1,316 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { setDeviceStatusForTest } from '../ai/device';
+import {
+  assertClean,
+  clearVaultEntries,
+  enableDefaultEgressGuard,
+  setVaultEntries,
+} from '../ai/egress-guard';
+import {
+  clearNetGuardBlocks,
+  getNetGuardBlocks,
+  installNetGuard,
+  uninstallNetGuard,
+  withSealingText,
+} from '../ai/net-guard';
+import { createMockProvider, type MockProviderController } from '../ai/provider-mock';
+import { AiError, clearModelCache, run, setProvider } from '../ai/router';
+import { DEFAULT_ROUTING_TABLE, setRoutingTable, setUrlOverridesForTest } from '../ai/routing-table';
+import { chunkText } from './chunk';
+import { seal } from './firewall';
+import {
+  applyMap,
+  buildMap,
+  clearInventedTokenLogs,
+  getInventedTokenLogs,
+  rehydrate,
+} from './placeholders';
+import { SAMPLE_BRIEFS } from './sample-briefs';
+
+describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
+  let mock: MockProviderController;
+  const originalLanguageModel = (globalThis as Record<string, unknown>).LanguageModel;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mock = createMockProvider();
+    setProvider(mock);
+    setRoutingTable(DEFAULT_ROUTING_TABLE);
+    setUrlOverridesForTest(null);
+    enableDefaultEgressGuard();
+    clearVaultEntries();
+    clearInventedTokenLogs();
+    clearNetGuardBlocks();
+    clearModelCache();
+
+    (globalThis as Record<string, unknown>).LanguageModel = {
+      availability: async () => 'available',
+    };
+    setDeviceStatusForTest('available', 1);
+  });
+
+  afterEach(() => {
+    uninstallNetGuard();
+    globalThis.fetch = originalFetch;
+    if (originalLanguageModel === undefined) {
+      delete (globalThis as Record<string, unknown>).LanguageModel;
+    } else {
+      (globalThis as Record<string, unknown>).LanguageModel = originalLanguageModel;
+    }
+    setUrlOverridesForTest(null);
+  });
+
+  it('round-trips rehydrate(applyMap(text, map), map) === text when originals have exact casing', () => {
+    const text =
+      'Acme Cloud will undercut Globex in Casablanca with $240,000 ARR and 14% growth.';
+    const map = buildMap(
+      [],
+      [
+        { text: 'Acme Cloud', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Globex', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Casablanca', type: 'PLACE', detectedBy: 'ai' },
+        { text: '$240,000 ARR', type: 'MONEY', detectedBy: 'regex' },
+        { text: '14%', type: 'PERCENT', detectedBy: 'regex' },
+      ],
+    );
+
+    const abstracted = applyMap(text, map);
+    expect(abstracted).not.toContain('Acme Cloud');
+    expect(abstracted).not.toContain('Globex');
+    expect(abstracted).not.toContain('Casablanca');
+    expect(abstracted).not.toContain('$240,000');
+    expect(abstracted).toContain('[COMPANY_1]');
+    expect(abstracted).toContain('[COMPANY_2]');
+    expect(abstracted).toContain('[PLACE_1]');
+    expect(abstracted).toContain('[MONEY_1]');
+    expect(abstracted).toContain('[PERCENT_1]');
+
+    expect(rehydrate(abstracted, map)).toBe(text);
+  });
+
+  it('handles overlapping entities and a name inside another name without corrupting tokens', () => {
+    const text = 'Acme and Acme Cloud both compete with Acme Cloud Enterprise in Lyon.';
+    const map = buildMap(
+      [],
+      [
+        { text: 'Acme', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Acme Cloud', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Acme Cloud Enterprise', type: 'PRODUCT', detectedBy: 'ai' },
+        { text: 'Lyon', type: 'PLACE', detectedBy: 'ai' },
+      ],
+    );
+
+    const abstracted = applyMap(text, map);
+    expect(abstracted).not.toContain('Acme');
+    expect(abstracted).not.toContain('Cloud');
+    expect(abstracted).not.toContain('Enterprise');
+    // Longest match wins at each position, so [PRODUCT_1] is never broken into "[COMPANY_1] Enterprise"
+    expect(rehydrate(abstracted, map)).toBe(text);
+  });
+
+  it('only swaps tokens present in sentTokens and replaces invented [TYPE_N] with neutral phrases', () => {
+    const map = buildMap(
+      [],
+      [
+        { text: 'Kestrel Labs', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Atlas Cloud', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Amine Tazi', type: 'PERSON', detectedBy: 'ai' },
+        { text: '$49', type: 'MONEY', detectedBy: 'regex' },
+      ],
+    );
+    // Suppose Kestrel Labs is [COMPANY_1] or [COMPANY_2]: find which token belongs to Kestrel Labs
+    const kestrelEntry = map.find((m) => m.original === 'Kestrel Labs')!;
+    const atlasEntry = map.find((m) => m.original === 'Atlas Cloud')!;
+    const moneyEntry = map.find((m) => m.original === '$49')!;
+
+    // Prompt sent only included Kestrel Labs and $49 (NOT Atlas Cloud, and NOT [COMPANY_9] or [PERSON_4])
+    const sentPrompt = `Objective: Launch ${kestrelEntry.token} self-serve tier at ${moneyEntry.token}/seat.`;
+    const modelReply = `I pass on ${kestrelEntry.token} at ${moneyEntry.token} and instead fund ${atlasEntry.token}, [COMPANY_9], [PERSON_4] and [MONEY_7].`;
+
+    const rendered = rehydrate(modelReply, map, sentPrompt);
+
+    expect(rendered).toContain('Kestrel Labs');
+    expect(rendered).toContain('$49');
+    // Atlas Cloud was in map, but was NOT in sentPrompt -> must NOT be swapped to "Atlas Cloud"
+    expect(rendered).not.toContain('Atlas Cloud');
+    expect(rendered).toBe(
+      'I pass on Kestrel Labs at $49 and instead fund a company, a company, a person and an amount.',
+    );
+
+    const logs = getInventedTokenLogs();
+    expect(logs.map((l) => l.token)).toEqual([
+      atlasEntry.token,
+      '[COMPANY_9]',
+      '[PERSON_4]',
+      '[MONEY_7]',
+    ]);
+  });
+
+  it('blocks a planted leak in egress-guard both directly and through router.run', async () => {
+    const map = buildMap(
+      [],
+      [
+        { text: 'Kestrel Labs', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'PulseAudit', type: 'PRODUCT', detectedBy: 'ai' },
+      ],
+    );
+    setVaultEntries(map, 'game-1');
+
+    expect(() =>
+      assertClean('Player move: [COMPANY_1] launches [PRODUCT_1].', 'game-1'),
+    ).not.toThrow();
+
+    expect(() =>
+      assertClean('Player move: kestrel labs launches [PRODUCT_1].', 'game-1'),
+    ).toThrow(/Egress blocked/);
+
+    await expect(
+      run(
+        'crowd',
+        {
+          situation: 'Testing startup plan.',
+          userHeadline: 'We launch PulseAudit next week.',
+          generalHeadlines: [],
+          personas: [{ id: 'p1', label: 'Lead', outlook: 'Busy' }],
+        },
+        { gameId: 'game-1' },
+      ),
+    ).rejects.toMatchObject({
+      name: 'AiError',
+      code: 'egress_blocked',
+      task: 'crowd',
+    });
+  });
+
+  it('blocks leaked fetch payloads to firebasevertexai and firestore in net-guard', async () => {
+    let networkHitCount = 0;
+    globalThis.fetch = (async () => {
+      networkHitCount++;
+      return new Response('{}', { status: 200 });
+    }) as typeof fetch;
+
+    installNetGuard();
+
+    const map = buildMap(
+      [],
+      [{ text: 'Kestrel Labs', type: 'COMPANY', detectedBy: 'ai' }],
+    );
+    setVaultEntries(map);
+
+    // 1. Clean cloud AI payload passes through
+    await expect(
+      globalThis.fetch(
+        'https://firebasevertexai.googleapis.com/v1beta/projects/p/models/m:generateContent',
+        {
+          method: 'POST',
+          body: JSON.stringify({ prompt: '[COMPANY_1] launches self-serve' }),
+        },
+      ),
+    ).resolves.toBeDefined();
+    expect(networkHitCount).toBe(1);
+
+    // 2. Leaked vaulted original to firebasevertexai is blocked before hitting network
+    await expect(
+      globalThis.fetch(
+        'https://firebasevertexai.googleapis.com/v1beta/projects/p/models/m:generateContent',
+        {
+          method: 'POST',
+          body: JSON.stringify({ prompt: 'Kestrel Labs launches self-serve' }),
+        },
+      ),
+    ).rejects.toBeInstanceOf(AiError);
+    expect(networkHitCount).toBe(1);
+
+    // 3. Raw text currently being sealed is blocked if SDK attempts a cloud call
+    await expect(
+      withSealingText('Secret project Nightingale in Rabat', async () => {
+        await globalThis.fetch(
+          'https://firestore.googleapis.com/v1/projects/p/databases/(default)/documents/games/1',
+          {
+            method: 'POST',
+            body: JSON.stringify({ brief: 'Secret project Nightingale in Rabat' }),
+          },
+        );
+      }),
+    ).rejects.toMatchObject({
+      code: 'egress_blocked',
+    });
+    expect(networkHitCount).toBe(1);
+    expect(getNetGuardBlocks()).toHaveLength(2);
+  });
+
+  it('seals all 5 sample briefs with the on-device AI path (mock provider) with zero missed names or values', async () => {
+    for (const brief of SAMPLE_BRIEFS) {
+      mock.reset();
+      mock.setHandler(async () => ({
+        text: JSON.stringify({
+          entities: brief.expectedNames.map((name) => ({
+            text: name,
+            type: 'COMPANY',
+          })),
+        }),
+        inferenceSource: 'on_device',
+      }));
+
+      const result = await seal(brief.text);
+      expect(result.method).toBe('on-device-ai');
+
+      for (const name of brief.expectedNames) {
+        expect(
+          result.abstracted.toLowerCase(),
+          `Expected name "${name}" to be redacted in brief "${brief.id}"`,
+        ).not.toContain(name.toLowerCase());
+      }
+
+      for (const value of brief.expectedValues) {
+        expect(
+          result.abstracted,
+          `Expected value "${value}" to be redacted in brief "${brief.id}"`,
+        ).not.toContain(value);
+      }
+
+      expect(rehydrate(result.abstracted, result.map)).toBe(brief.text);
+    }
+  });
+
+  it('seals all 5 sample briefs with the deterministic basic fallback when on-device AI is unavailable', async () => {
+    setDeviceStatusForTest('unavailable', 0);
+    delete (globalThis as Record<string, unknown>).LanguageModel;
+
+    for (const brief of SAMPLE_BRIEFS) {
+      const result = await seal(brief.text);
+      expect(result.method).toBe('basic');
+
+      for (const name of brief.expectedNames) {
+        expect(
+          result.abstracted.toLowerCase(),
+          `Expected name "${name}" to be redacted by basic fallback in brief "${brief.id}"`,
+        ).not.toContain(name.toLowerCase());
+      }
+
+      for (const value of brief.expectedValues) {
+        expect(
+          result.abstracted,
+          `Expected value "${value}" to be redacted by basic fallback in brief "${brief.id}"`,
+        ).not.toContain(value);
+      }
+
+      expect(rehydrate(result.abstracted, result.map)).toBe(brief.text);
+    }
+
+    expect(mock.calls).toHaveLength(0);
+  });
+
+  it('chunks long briefs without exceeding LIMITS.redactChunk or dropping characters', () => {
+    const paragraph =
+      'Kestrel Labs is expanding PulseAudit across Casablanca and Lyon with $240,000 ARR.\n\n';
+    const longText = paragraph.repeat(40);
+    const chunks = chunkText(longText, 1800);
+
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const c of chunks) {
+      expect(c.length).toBeLessThanOrEqual(1800);
+    }
+    expect(chunks.join('')).toBe(longText);
+  });
+});
