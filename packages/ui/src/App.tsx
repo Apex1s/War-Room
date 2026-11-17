@@ -16,7 +16,7 @@ import { DeviceStatus } from './components/DeviceStatus';
 import { BriefScreen } from './screens/Brief';
 import { FirewallReviewScreen } from './screens/FirewallReview';
 import { HomeScreen } from './screens/Home';
-import { TOKENS } from './tokens';
+import { WarRoomDebugScreen } from './screens/WarRoomDebug';
 
 export interface PlatformInfo {
   kind: 'web' | 'extension';
@@ -249,55 +249,28 @@ export function App({ platform }: AppProps) {
             onApprove={() => void handleApproveRedaction()}
             onBackToEdit={() => void handleBackToEditBrief()}
           />
-        ) : activeGame && activeVault && activeGame.phase.kind === 'user_turn' ? (
-          <div
-            className={TOKENS.classes.card + ' flex flex-col gap-4'}
-            data-testid="screen-war-room-ready"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-emerald-400">
-                  ✓ Redaction Approved · Round {activeGame.phase.round} of {activeGame.totalRounds}
-                </span>
-                <h2 className="text-xl font-semibold text-[#E6EDF3] mt-1 mb-0">
-                  Situation Room — Round {activeGame.phase.round}
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const backToReview: GameRecord = {
-                      ...activeGame,
-                      phase: { kind: 'review' },
-                      updatedAt: Date.now(),
-                    };
-                    setActiveGame(backToReview);
-                    void gamesStore.put(backToReview);
-                  }}
-                  className={TOKENS.classes.btnSecondary}
-                  data-testid="btn-return-review"
-                >
-                  ← Review Firewall Map
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded bg-[#0A0E17] border border-[#223049]">
-              <div className="text-xs font-mono text-[#8B9BB4] mb-1">
-                Approved Abstracted Objective
-              </div>
-              <div className="text-sm font-mono text-emerald-300" data-testid="approved-objective">
-                {activeGame.objective}
-              </div>
-              <div className="text-xs font-mono text-[#8B9BB4] mt-3 mb-1">
-                Approved Abstracted Brief ({activeVault.map.filter((e) => e.enabled).length} items masked locally)
-              </div>
-              <div className="text-sm font-mono text-[#E6EDF3] whitespace-pre-wrap" data-testid="approved-brief">
-                {activeGame.brief}
-              </div>
-            </div>
-          </div>
+        ) : activeGame &&
+          activeVault &&
+          activeGame.phase.kind !== 'draft' &&
+          activeGame.phase.kind !== 'sealing_brief' &&
+          activeGame.phase.kind !== 'review' ? (
+          <WarRoomDebugScreen
+            game={activeGame}
+            vaultRecord={activeVault}
+            onGameUpdated={(nextGame, nextVault) => {
+              setActiveGame(nextGame);
+              setActiveVault(nextVault);
+            }}
+            onBackToReview={() => {
+              const backToReview: GameRecord = {
+                ...activeGame,
+                phase: { kind: 'review' },
+                updatedAt: Date.now(),
+              };
+              setActiveGame(backToReview);
+              void gamesStore.put(backToReview);
+            }}
+          />
         ) : selectedTemplateId ? (
           <BriefScreen
             template={TEMPLATES[selectedTemplateId]}

@@ -48,14 +48,7 @@ export function findVaultLeak(
 ): string | null {
   if (!outgoingText) return null;
 
-  const entries = getVaultEntries(gameId);
-  const allEntries =
-    gameId && vaultByGame.has(gameId)
-      ? entries
-      : [
-          ...globalVaultEntries,
-          ...[...vaultByGame.values()].flat(),
-        ];
+  const allEntries = getVaultEntries(gameId);
 
   const normalizedHaystack = normalizeText(outgoingText);
 

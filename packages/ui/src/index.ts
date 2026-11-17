@@ -7,4 +7,5 @@ export * from './hooks/useDeviceStatus';
 export * from './screens/Brief';
 export * from './screens/FirewallReview';
 export * from './screens/Home';
+export * from './screens/WarRoomDebug';
 export * from './tokens';

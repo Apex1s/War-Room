@@ -120,12 +120,19 @@ const STOP_WORDS = new Set([
   'with', 'within', 'without', 'work', 'working', 'would', 'year', 'years', 'you', 'your',
   'arr', 'mrr', 'cac', 'ltv', 'roi', 'kpi', 'kpis', 'saas', 'b2b', 'b2c', 'api', 'apis',
   'sdk', 'ai', 'ml', 'llm', 'ui', 'ux', 'vc', 'vcs', 'ceo', 'cto', 'cfo', 'coo', 'vp',
+  'cfos', 'ctos', 'ceos', 'erp', 'crm', 'soc2', 'hipaa', 'gdpr', 'byoc', 'vpc', 'oem',
+  'ebitda', 'baa', 'baas', 'ip', 'phi', 'fx', 'vat', 'capex', 'opex', 'm&a', 'dach', 'mw',
   'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
   'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
   'september', 'october', 'november', 'december', 'jan', 'feb', 'mar', 'apr', 'jun',
   'jul', 'aug', 'sep', 'sept', 'oct', 'nov', 'dec', 'q1', 'q2', 'q3', 'q4',
   'enterprise', 'mid-market', 'smb', 'freelancer', 'freelancers', 'incumbent', 'incumbents',
   'objective', 'brief', 'summary', 'note', 'notes', 'step', 'steps', 'phase', 'version',
+  'convert', 'drop', 'narrow', 'publish', 'partner', 'protect', 'match', 'embed',
+  'increase', 'focus', 'sign', 'introduce', 'close', 'accept', 'require', 'keep',
+  'double', 'decline', 'offer', 'guarantee', 'integrate', 'structure', 'cross-sell',
+  'open', 'capture', 'replace', 'hire', 'position', 'run', 'switch', 'scale', 'provide',
+  'dominate', 'lock', 'shift', 'build', 'ship', 'cut', 'use', 'make', 'take', 'give',
 ]);
 
 const COMPANY_HINTS =

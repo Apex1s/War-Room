@@ -91,8 +91,17 @@ export function buildGeneralMoveInput(
     .filter((g) => g.id !== general.id)
     .map((g) => ({ id: g.id, name: g.name }));
 
+  const sanitizedGeneral: GeneralSpec = {
+    ...general,
+    role: sanitizePromptText(general.role, vaultMap),
+    persona: sanitizePromptText(general.persona, vaultMap),
+    goal: sanitizePromptText(general.goal, vaultMap),
+    hiddenInfo: sanitizePromptText(general.hiddenInfo, vaultMap),
+    style: sanitizePromptText(general.style, vaultMap),
+  };
+
   return {
-    general,
+    general: sanitizedGeneral,
     otherGenerals,
     objective: sanitizePromptText(game.objective, vaultMap),
     brief: sanitizePromptText(game.brief, vaultMap),
