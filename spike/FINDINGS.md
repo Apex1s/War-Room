@@ -121,3 +121,54 @@ Checked against `spike/node_modules/@firebase/ai` (`@firebase/ai@3.1.0`, `fireba
 - **Chrome version installed:** `157.0.8103.51`.
 - **Dev machine hardware:** Windows 10/11, 8 logical cores, 308 GB free disk on `C:`, 8 GB RAM (`TotalPhysicalMemory = 8,391,450,624`), Intel UHD Graphics 620 (`AdapterRAM = 1 GB`).
 - **Consequence:** Because Chrome's on-device model requires >4 GB dedicated VRAM or ≥16 GB RAM with 4+ cores, this 8 GB RAM / integrated GPU machine may report `LanguageModel.availability() === 'unavailable'` unless Chrome's hardware check is bypassed via flags or run on a ≥16 GB RAM / >4 GB VRAM machine. The deterministic redaction fallback and `?forceCloud=1` path in the design handle environments where Nano is unavailable.
+
+---
+
+## 3. Day 2 Latency Matrix — `general_move` (`generateContentStream`, `timeout: 60000`)
+
+Measured on 17 Nov 2026 using `generateContentStream` with `RequestOptions { timeout: 60000 }`, `responseMimeType: 'application/json'`, `responseSchema: cloudSchema('general_move')`, and the Button 3 `general_move` input (`Skeptical VC`, Round 1).
+
+| Model | `thinkingLevel` | Time to First Chunk (ms) | Total Time (ms) | Schema-Valid |
+|---|---|---:|---:|:---:|
+| `gemini-4-hydrogen` | `MINIMAL` | n/a | 996 | no |
+| `gemini-4-hydrogen` | `LOW` | n/a | 60006 (run 1) / 60003 (run 2) / 60015 (run 3) | no |
+| `gemini-4-hydrogen` | `MEDIUM` | n/a | 6096 (run 1, HTTP 500) / 60015 (run 2) | no |
+| `gemini-3.8-flash` | `MINIMAL` | n/a | 1032 | no |
+| `gemini-3.8-flash` | `LOW` | n/a | 60009 (run 1) / 9764 (run 2, HTTP 500) / 60005 (run 3) | no |
+
+### Outputs
+
+#### `gemini-4-hydrogen` — `MINIMAL`
+```text
+FirebaseError: AI: Error fetching from https://firebasevertexai.googleapis.com/v1beta/projects/war-room-hybrid/models/gemini-4-hydrogen:streamGenerateContent?alt=sse: [400 ] Thinking level MINIMAL is not supported for this model. Please retry with other thinking level. (AI/fetch-error)
+```
+
+#### `gemini-4-hydrogen` — `LOW`
+```text
+AbortError: Timeout has expired.
+```
+
+#### `gemini-4-hydrogen` — `MEDIUM`
+Run 1 (6,096 ms):
+```text
+FirebaseError: AI: Error fetching from https://firebasevertexai.googleapis.com/v1beta/projects/war-room-hybrid/models/gemini-4-hydrogen:streamGenerateContent?alt=sse: [500 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later. (AI/fetch-error)
+```
+Run 2 (60,015 ms):
+```text
+AbortError: Timeout has expired.
+```
+
+#### `gemini-3.8-flash` — `MINIMAL`
+```text
+FirebaseError: AI: Error fetching from https://firebasevertexai.googleapis.com/v1beta/projects/war-room-hybrid/models/gemini-3.8-flash:streamGenerateContent?alt=sse: [400 ] Thinking level MINIMAL is not supported for this model. Please retry with other thinking level. (AI/fetch-error)
+```
+
+#### `gemini-3.8-flash` — `LOW`
+Run 1 (60,009 ms) & Run 3 (60,005 ms):
+```text
+AbortError: Timeout has expired.
+```
+Run 2 (9,764 ms):
+```text
+FirebaseError: AI: Error fetching from https://firebasevertexai.googleapis.com/v1beta/projects/war-room-hybrid/models/gemini-3.8-flash:streamGenerateContent?alt=sse: [500 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later. (AI/fetch-error)
+```
