@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setDeviceStatusForTest } from './device';
 import { clearLedger, getHybridStats, getLedger } from './ledger';
+import { buildFirebaseModelParams } from './provider-firebase';
 import { createMockProvider, type MockProviderController } from './provider-mock';
 import {
   AiError,
@@ -243,5 +244,29 @@ describe('AI Router & Routing Table', () => {
     expect(parsed.tasks.general_move.deviceLastResort).toBe(true);
     expect(parsed.tasks.general_move.timeoutMs).toBe(30000);
     expect(DEFAULT_ROUTING_TABLE.tasks.general_move.thinkingLevel).toBeUndefined();
+  });
+
+  it('omits thinkingConfig when thinkingLevel is unset and includes it when set', () => {
+    const withoutThinking = buildFirebaseModelParams({
+      task: 'general_move',
+      mode: 'only_in_cloud',
+      cloudModel: 'gemini-3.5-flash-lite',
+      timeoutMs: 25000,
+      system: 'sys',
+    });
+    expect(withoutThinking.inCloudParams?.generationConfig?.thinkingConfig).toBeUndefined();
+    expect('thinkingConfig' in (withoutThinking.inCloudParams?.generationConfig ?? {})).toBe(false);
+
+    const withThinking = buildFirebaseModelParams({
+      task: 'final_report',
+      mode: 'only_in_cloud',
+      cloudModel: 'gemini-4-hydrogen',
+      thinkingLevel: 'LOW',
+      timeoutMs: 90000,
+      system: 'sys',
+    });
+    expect(withThinking.inCloudParams?.generationConfig?.thinkingConfig).toEqual({
+      thinkingLevel: 'LOW',
+    });
   });
 });

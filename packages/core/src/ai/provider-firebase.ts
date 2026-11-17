@@ -3,6 +3,7 @@ import {
   InferenceMode,
   InferenceSource,
   type AI,
+  type HybridParams,
   type SchemaRequest,
   type ThinkingLevel,
 } from 'firebase/ai';
@@ -24,44 +25,52 @@ const MODE_MAP: Record<Mode, InferenceMode> = {
   only_in_cloud: InferenceMode.ONLY_IN_CLOUD,
 };
 
+export function buildFirebaseModelParams(params: ProviderModelParams): HybridParams {
+  return {
+    mode: MODE_MAP[params.mode],
+    inCloudParams: {
+      model: params.cloudModel,
+      systemInstruction: params.system,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: cloudSchema(params.task) as SchemaRequest,
+        ...(params.thinkingLevel !== undefined
+          ? {
+              thinkingConfig: {
+                thinkingLevel: params.thinkingLevel as ThinkingLevel,
+              },
+            }
+          : {}),
+        ...(params.maxOutputTokens !== undefined
+          ? { maxOutputTokens: params.maxOutputTokens }
+          : {}),
+      },
+    },
+    onDeviceParams: {
+      createOptions: {
+        initialPrompts: [
+          {
+            role: 'system',
+            content: [{ type: 'text', value: params.system }],
+          },
+        ],
+        expectedInputs: [{ type: 'text', languages: ['en'] }],
+        expectedOutputs: [{ type: 'text', languages: ['en'] }],
+      },
+      promptOptions: {
+        responseConstraint: deviceSchema(params.task),
+      },
+    },
+  };
+}
+
 export function createFirebaseProvider(ai: AI): ModelProvider {
   return {
     kind: 'firebase',
     createModel(params: ProviderModelParams): ProviderModelInstance {
       const model = getGenerativeModel(
         ai,
-        {
-          mode: MODE_MAP[params.mode],
-          inCloudParams: {
-            model: params.cloudModel,
-            systemInstruction: params.system,
-            generationConfig: {
-              responseMimeType: 'application/json',
-              responseSchema: cloudSchema(params.task) as SchemaRequest,
-              thinkingConfig: {
-                thinkingLevel: params.thinkingLevel as ThinkingLevel,
-              },
-              ...(params.maxOutputTokens !== undefined
-                ? { maxOutputTokens: params.maxOutputTokens }
-                : {}),
-            },
-          },
-          onDeviceParams: {
-            createOptions: {
-              initialPrompts: [
-                {
-                  role: 'system',
-                  content: [{ type: 'text', value: params.system }],
-                },
-              ],
-              expectedInputs: [{ type: 'text', languages: ['en'] }],
-              expectedOutputs: [{ type: 'text', languages: ['en'] }],
-            },
-            promptOptions: {
-              responseConstraint: deviceSchema(params.task),
-            },
-          },
-        },
+        buildFirebaseModelParams(params),
         { timeout: params.timeoutMs },
       );
 
