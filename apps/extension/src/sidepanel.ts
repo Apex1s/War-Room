@@ -1,8 +1,8 @@
 import {
   createFirebaseProvider,
+  enableDefaultEgressGuard,
   refreshDeviceAvailability,
   run,
-  setEgressGuard,
   setProvider,
 } from '@warroom/core';
 import { describePlatform } from '@warroom/ui';
@@ -174,9 +174,7 @@ async function initSidePanel(): Promise<void> {
   });
 
   setProvider(createFirebaseProvider(ai));
-  setEgressGuard(() => {
-    // No vaulted raw entities in extension spike test
-  });
+  enableDefaultEgressGuard();
 }
 
 btnBridgeTest?.addEventListener('click', async () => {

@@ -77,8 +77,6 @@ export async function seal(
           opts?.onProgress?.((i + 1) / chunks.length);
         }
 
-        // Also supplement with deterministic capitalised runs so obvious proper nouns
-        // in other chunks or edge cases are never missed
         names = aiEntities;
         method = 'on-device-ai';
       } catch {
