@@ -24,7 +24,6 @@ The whole project rests on this day. All code is throwaway, in `spike/`.
 - Download progress via the SDK from a button click.
 - Deploy the spike to Hosting and load it in a **clean Chrome profile** without the debug token, so reCAPTCHA Enterprise is really exercised and you learn whether the Prompt API needs a flag on stable.
 - Turn the network off and press button 1 again.
-- Optional: submit the Quota Form before Wed 18 Nov 10:00 PT if you want `gemini-4-carbon` for the report.
 
 **Exit test:** all three buttons return valid JSON on the hosted URL, and you have written down the answers to the VERIFY items in the design doc (option names, integer bounds on-device, plain-object cloud schema, offline behaviour, flag needed or not).
 
@@ -35,7 +34,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 - **First, a Nano-capable machine (owner, not Antigravity).** In order, stop at the first that reaches `'available'`:
   1. On this laptop, `chrome://flags/#optimization-guide-on-device-model` → "Enabled BypassPerfRequirement", relaunch, check `chrome://on-device-internals`, then `await LanguageModel.availability()`. With 8 GB RAM it may still refuse or be too slow; treat a yes as good enough for development only.
   2. A friend's or university machine with 16 GB RAM + 4 cores or a GPU with more than 4 GB, for testing and the video.
-  3. A rented cloud desktop (Windows, 16 GB RAM, 4+ vCPU) driven over remote desktop.
+  No paid or card-gated options (cloud desktops, trials): the project is $0 with no credit card.
   If none works by tonight, the on-device half is shown only through the mock provider and the demo story changes. Decide tonight, not later.
 - **Second, the latency matrix** in the spike (design doc §10): `general_move` on `gemini-4-hydrogen` at MINIMAL/LOW/MEDIUM and `gemini-3.8-flash` at MINIMAL/LOW, plus `generateContentStream` time-to-first-chunk. Write the numbers into `spike/FINDINGS.md` and set the defaults in `routing-table.ts` from them.
 - Scaffold the pnpm workspace: `packages/core`, `packages/ui`, `apps/web`, `apps/extension`. Vitest in core.
@@ -105,7 +104,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 - Anonymous sign-in at start; "Sign in with Google" via `linkWithPopup`.
 - Opt-in "Save to cloud", Firestore rules, load on another browser.
 - Remote Config template checked into the repo; `onConfigUpdate` clears the router cache.
-- Deploy with App Check enforced and replay protection on. Set a budget alert.
+- Deploy with App Check enforced and replay protection on. Confirm the project is still on the Spark plan with no billing account linked.
 
 **Exit test:** on the hosted URL in a clean profile, play a full game with `?forceCloud=1`, save it, and flip `crowd` to cloud from the Remote Config console while watching the badges change.
 
@@ -114,7 +113,6 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 - Side panel mounting `<App platform={extensionPlatform} />`, anonymous auth, the App Check plan chosen on Day 2.
 - Context menu "Stress-test selection in War Room" that prefills the brief.
 - Layout pass at side-panel width (about 400 px), which also covers the mobile layout.
-- Quota Form sprint 3 closes today 10:00 PT, if still wanted.
 
 **Exit test:** load unpacked from a fresh build, select text on a page, and finish a full game in the side panel.
 

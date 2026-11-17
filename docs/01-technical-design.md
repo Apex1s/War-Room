@@ -26,7 +26,7 @@ Checked 16 Nov 2026 against the Firebase AI Logic docs, the Chrome Prompt API do
 | 11 | Judging criteria in priority order | Official: four **equally weighted** criteria scored 1–5: Technological Implementation, Design, Potential Impact, Quality of the Idea. Multi-platform is "preferred", not a criterion. There is a separate $3k Best Web/Chrome prize. | Two of four criteria are judged from the text and the video. Reserve two full days for them. |
 | 12 | Deliverables | Video ≤ 3 min, public on YouTube, English. License must be detectable in the repo's About section. Repo must show `firebase/ai` imported **and called**. A "what I built during the submission period" summary is required. No secrets in repo. | Create the public repo with `LICENSE` on Day 1. |
 
-Also from the rules: billing-required models can be requested through a Quota Form. Next request deadlines are **Wed 18 Nov 10:00 PT** and Wed 25 Nov 10:00 PT. Only relevant if you want `gemini-4-carbon` for the final report; the design does not depend on it.
+The project is $0 with no credit card (AGENTS.md). Billing-only models (`gemini-4-argon`, `gemini-4-carbon`) and the rules' Quota Form for them are out of scope; the design does not depend on them.
 
 Deadline confirmed: 30 Nov 2026, 2:00 PM PT = 22:00 GMT.
 
@@ -489,7 +489,7 @@ const ai = getAI(app, { backend: new GoogleAIBackend(), useLimitedUseAppCheckTok
 const rc = getRemoteConfig(app);              // defaults = compiled routing table; fetchAndActivate; onConfigUpdate
 ```
 
-`GoogleAIBackend` (Gemini Developer API) keeps the project on the free tier. Set a budget alert anyway before the URL goes public.
+`GoogleAIBackend` (Gemini Developer API) keeps the project on the free tier. The project stays on the Spark plan with no billing account, so nothing can be charged; free-tier rate limits are the ceiling instead (§9 item 9).
 
 ---
 

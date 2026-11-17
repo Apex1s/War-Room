@@ -31,6 +31,11 @@ codebase) is "preferred" by the rules, not a criterion; there is a separate Best
 Criteria 3 and 4 are judged largely from the text description and the video.
 
 ## Hard requirements (non-negotiable)
+- $0 total cost, no credit card, no billing account. Firebase stays on the Spark plan. Use only
+  free-tier services and models that need no billing (gemini-4-hydrogen, gemini-3.8-flash,
+  gemini-3.5-flash-lite). Never add Blaze, Cloud Functions, paid APIs, cloud VMs, trials that
+  ask for a card, or billing-only models (gemini-4-argon, gemini-4-carbon). If a feature has no
+  free path, cut it.
 - All AI runs through Firebase AI Logic (firebase/ai), using hybrid inference. Four modes exist:
   InferenceMode.PREFER_ON_DEVICE / ONLY_ON_DEVICE / PREFER_IN_CLOUD / ONLY_IN_CLOUD.
   No other model API is called directly. The repo must show firebase/ai imported AND called.
