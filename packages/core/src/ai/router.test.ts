@@ -28,6 +28,30 @@ const SAMPLE_CROWD_INPUT = {
   ],
 };
 
+const SAMPLE_GENERAL_MOVE_INPUT = {
+  general: {
+    id: 'vc',
+    name: 'Skeptical VC',
+    role: 'a partner at an early-stage fund',
+    persona: 'Skeptical early-stage partner.',
+    goal: 'Expose weak assumptions.',
+    hiddenInfo: 'Portfolio conflict.',
+    style: 'Calm, numerate.',
+    color: '#E0A84B',
+  },
+  otherGenerals: [
+    { id: 'copycat', name: 'Copycat Competitor' },
+    { id: 'market', name: 'The Market' },
+  ],
+  objective: 'Reach 1,000 paying teams for [COMPANY_1].',
+  brief: '[COMPANY_1] is building [PRODUCT_1] at [MONEY_1] ARR.',
+  legend: [],
+  history: [],
+  round: 1,
+  totalRounds: 3,
+  move: 'Launch self-serve tier.',
+};
+
 describe('AI Router & Routing Table', () => {
   let mock: MockProviderController;
   const originalLanguageModel = (globalThis as Record<string, unknown>).LanguageModel;
@@ -267,6 +291,76 @@ describe('AI Router & Routing Table', () => {
     });
     expect(withThinking.inCloudParams?.generationConfig?.thinkingConfig).toEqual({
       thinkingLevel: 'LOW',
+    });
+  });
+
+  it('retries once on fallbackModel with prefer_in_cloud when general_move fails with HTTP 500', async () => {
+    mock.enqueueResponses([
+      new Error('AI: Error fetching from ...: [500 ] This model is currently experiencing high demand. (AI/fetch-error)'),
+      {
+        text: JSON.stringify({
+          headline: 'Fallback model answered',
+          move: 'I pass on [COMPANY_1] and back a rival.',
+          rationale: 'CAC is too high.',
+          threatLevel: 4,
+          targets: 'Low self-serve CAC assumption',
+        }),
+        inferenceSource: 'in_cloud',
+      },
+    ]);
+
+    const res = await run('general_move', SAMPLE_GENERAL_MOVE_INPUT);
+
+    expect(res.fallback).toBe(true);
+    expect(res.source).toBe('cloud');
+    expect(res.model).toBe('gemini-3.8-flash');
+    expect(res.output.headline).toBe('Fallback model answered');
+
+    expect(mock.createdModels).toHaveLength(2);
+    expect(mock.createdModels[0]).toMatchObject({
+      task: 'general_move',
+      mode: 'only_in_cloud',
+      cloudModel: 'gemini-3.5-flash-lite',
+    });
+    expect(mock.createdModels[1]).toMatchObject({
+      task: 'general_move',
+      mode: 'prefer_in_cloud',
+      cloudModel: 'gemini-3.8-flash',
+      thinkingLevel: undefined,
+    });
+  });
+
+  it('retries once on fallbackModel when primary model throws AI/parse-failed', async () => {
+    const parseErr = new Error('AI: Failed to parse stream (AI/parse-failed)');
+    (parseErr as { code?: string }).code = 'parse-failed';
+
+    mock.enqueueResponses([
+      parseErr,
+      {
+        text: JSON.stringify({
+          reactions: [
+            {
+              personaId: 'p1',
+              quote: 'Recovered from mid-stream parse error.',
+              sentiment: 1,
+            },
+          ],
+        }),
+        inferenceSource: 'in_cloud',
+      },
+    ]);
+
+    const res = await run('crowd', SAMPLE_CROWD_INPUT);
+
+    expect(res.fallback).toBe(true);
+    expect(res.source).toBe('cloud');
+    expect(res.model).toBe('gemini-3.8-flash');
+    expect(mock.createdModels).toHaveLength(2);
+    expect(mock.createdModels[1]).toMatchObject({
+      task: 'crowd',
+      mode: 'only_in_cloud',
+      cloudModel: 'gemini-3.8-flash',
+      thinkingLevel: undefined,
     });
   });
 });

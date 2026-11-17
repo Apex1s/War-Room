@@ -1,7 +1,11 @@
 import { getDeviceState, getGlobalLanguageModel } from './device';
 import { parseAndValidate, repairPrompt } from './json';
 import { recordCall, type Source } from './ledger';
-import type { ModelProvider, ProviderModelInstance } from './provider';
+import type {
+  ModelProvider,
+  ProviderModelInstance,
+  ProviderModelParams,
+} from './provider';
 import { defaultMockProvider } from './provider-mock';
 import {
   getRoutingTable,
@@ -94,6 +98,46 @@ function mapInferenceSource(raw: 'on_device' | 'in_cloud'): Source {
   return raw === 'on_device' ? 'on-device' : 'cloud';
 }
 
+function isRetryableCloudError(err: unknown, signal?: AbortSignal): boolean {
+  if (signal?.aborted) return false;
+
+  const message = err instanceof Error ? err.message : String(err);
+  const name = err instanceof Error ? err.name : '';
+  const code = (err as { code?: string })?.code ?? '';
+
+  // Timeout
+  if (
+    name === 'AbortError' ||
+    message.includes('Timeout has expired') ||
+    message.toLowerCase().includes('timeout')
+  ) {
+    return true;
+  }
+
+  // AI/parse-failed mid-stream
+  if (
+    code === 'parse-failed' ||
+    message.includes('AI/parse-failed') ||
+    message.includes('parse-failed') ||
+    message.includes('Failed to parse stream')
+  ) {
+    return true;
+  }
+
+  // HTTP 429 / 500 / 503
+  if (
+    /\b(429|500|503)\b/.test(message) ||
+    message.toLowerCase().includes('rate limit') ||
+    message.toLowerCase().includes('resource_exhausted') ||
+    message.toLowerCase().includes('high demand') ||
+    message.toLowerCase().includes('service unavailable')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function mapProviderError(
   err: unknown,
   task: Task,
@@ -126,6 +170,28 @@ function mapProviderError(
     task,
     message,
   );
+}
+
+function getOrCreateModel(
+  provider: ModelProvider,
+  params: ProviderModelParams,
+): ProviderModelInstance {
+  const cacheKey = [
+    provider.kind,
+    params.task,
+    params.mode,
+    params.cloudModel,
+    params.thinkingLevel ?? '',
+    params.timeoutMs,
+    hashString(params.system),
+  ].join('|');
+
+  let instance = modelCache.get(cacheKey);
+  if (!instance) {
+    instance = provider.createModel(params);
+    modelCache.set(cacheKey, instance);
+  }
+  return instance;
 }
 
 export async function run<K extends Task>(
@@ -179,42 +245,60 @@ export async function run<K extends Task>(
     }
   }
 
-  // Step 4: Get or create cached model instance
+  // Step 4: Get or create cached primary model instance
   const provider = getProvider();
-  const cacheKey = [
-    provider.kind,
+  let activeModelInstance = getOrCreateModel(provider, {
     task,
     mode,
-    route.cloudModel,
-    route.thinkingLevel,
-    route.timeoutMs,
-    hashString(system),
-  ].join('|');
+    cloudModel: route.cloudModel,
+    thinkingLevel: route.thinkingLevel,
+    timeoutMs: route.timeoutMs,
+    maxOutputTokens: route.maxOutputTokens,
+    system,
+  });
 
-  let modelInstance = modelCache.get(cacheKey);
-  if (!modelInstance) {
-    modelInstance = provider.createModel({
-      task,
-      mode,
-      cloudModel: route.cloudModel,
-      thinkingLevel: route.thinkingLevel,
-      timeoutMs: route.timeoutMs,
-      maxOutputTokens: route.maxOutputTokens,
-      system,
-    });
-    modelCache.set(cacheKey, modelInstance);
-  }
-
-  // Step 5: Execute streaming call and time it
+  // Step 5: Execute streaming call and time it; retry once on fallbackModel on 429/500/503/timeout/parse-failed
   const t0 = performance.now();
   let streamRes;
+  let usedFallbackModel = false;
+  let activeCloudModel = route.cloudModel;
+  let activeMode: Mode = mode;
+
   try {
-    streamRes = await modelInstance.generateStream(user, {
+    streamRes = await activeModelInstance.generateStream(user, {
       signal: opts?.signal,
       onText: opts?.onText,
     });
   } catch (err) {
-    throw mapProviderError(err, task, mode, opts?.signal);
+    if (
+      mode !== 'only_on_device' &&
+      route.fallbackModel &&
+      route.fallbackModel !== 'none' &&
+      isRetryableCloudError(err, opts?.signal)
+    ) {
+      usedFallbackModel = true;
+      activeCloudModel = route.fallbackModel;
+      activeMode = route.deviceLastResort ? 'prefer_in_cloud' : 'only_in_cloud';
+      activeModelInstance = getOrCreateModel(provider, {
+        task,
+        mode: activeMode,
+        cloudModel: activeCloudModel,
+        thinkingLevel: undefined,
+        timeoutMs: route.timeoutMs,
+        maxOutputTokens: route.maxOutputTokens,
+        system,
+      });
+      try {
+        streamRes = await activeModelInstance.generateStream(user, {
+          signal: opts?.signal,
+          onText: opts?.onText,
+        });
+      } catch (retryErr) {
+        throw mapProviderError(retryErr, task, activeMode, opts?.signal);
+      }
+    } else {
+      throw mapProviderError(err, task, mode, opts?.signal);
+    }
   }
 
   // Step 6: Read inferenceSource, parse & validate JSON, retry once with repairPrompt on failure
@@ -228,12 +312,12 @@ export async function run<K extends Task>(
     const repairUserPrompt = repairPrompt(finalRawText, validation.issues);
     let repairRes;
     try {
-      repairRes = await modelInstance.generateStream(repairUserPrompt, {
+      repairRes = await activeModelInstance.generateStream(repairUserPrompt, {
         signal: opts?.signal,
         onText: opts?.onText,
       });
     } catch (err) {
-      throw mapProviderError(err, task, mode, opts?.signal);
+      throw mapProviderError(err, task, activeMode, opts?.signal);
     }
 
     source = mapInferenceSource(repairRes.inferenceSource);
@@ -253,10 +337,11 @@ export async function run<K extends Task>(
     : validation.data;
 
   const fallback =
+    usedFallbackModel ||
     (mode === 'prefer_on_device' && source === 'cloud') ||
     (mode === 'prefer_in_cloud' && source === 'on-device');
 
-  const modelName = source === 'on-device' ? 'gemini-nano' : route.cloudModel;
+  const modelName = source === 'on-device' ? 'gemini-nano' : activeCloudModel;
   const inChars = system.length + user.length;
   const outChars = finalRawText.length;
 
