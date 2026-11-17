@@ -1,4 +1,5 @@
 import {
+  applyMap,
   gamesStore,
   seal,
   settingsStore,
@@ -108,23 +109,23 @@ export function App({ platform }: AppProps) {
     try {
       const alwaysRedact = await settingsStore.getAlwaysRedactList();
       const combinedText = `${rawObjective}\n\n${rawBrief}`;
-      const sealedCombined = await seal(combinedText, existingMap, {
+      const sealed = await seal(combinedText, existingMap, {
         customAlwaysRedact: alwaysRedact,
         gameId,
         onProgress: (p) => setSealingProgress(p),
       });
 
-      const sealedObj = await seal(rawObjective, sealedCombined.map, { gameId });
-      const sealedBrief = await seal(rawBrief, sealedObj.map, { gameId });
+      const abstractedObjective = applyMap(rawObjective, sealed.map);
+      const abstractedBrief = applyMap(rawBrief, sealed.map);
 
       const now = Date.now();
       const newGame: GameRecord = {
         id: gameId,
         schemaVersion: 1,
         templateId: selectedTemplateId,
-        objective: sealedObj.abstracted,
-        brief: sealedBrief.abstracted,
-        redactionMethod: sealedCombined.method,
+        objective: abstractedObjective,
+        brief: abstractedBrief,
+        redactionMethod: sealed.method,
         generals: template.generals,
         crowd: template.crowd,
         totalRounds: 3,
@@ -143,7 +144,7 @@ export function App({ platform }: AppProps) {
         rawObjective,
         rawBrief,
         rawMoves: activeVault?.rawMoves ?? {},
-        map: sealedBrief.map,
+        map: sealed.map,
       };
 
       await Promise.all([

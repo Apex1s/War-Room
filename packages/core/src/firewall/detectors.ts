@@ -13,7 +13,7 @@ export type EntityType =
 export interface DetectedEntity {
   text: string;
   type: EntityType;
-  detectedBy: 'ai' | 'regex' | 'user';
+  detectedBy: 'ai' | 'regex' | 'heuristic' | 'user';
 }
 
 interface RawSpan {
@@ -129,17 +129,14 @@ const STOP_WORDS = new Set([
 ]);
 
 const COMPANY_HINTS =
-  /\b(?:Inc\.?|Ltd\.?|LLC|Corp\.?|SAS|GmbH|Labs|Ventures|Capital|Partners|Systems|Logistics|Cloud|Pay|Tech|Airlines|Bank|Group|Studio|Studios|Health|Bio|Energy|Motors|Foods|Media|Networks|Security|Analytics|Robotics|Dynamics)\b/i;
+  /\b(?:Inc\.?|Ltd\.?|LLC|Corp\.?|SAS|GmbH|Labs|Ventures|Capital|Partners|Systems|Logistics|Cloud|Pay|Tech|Airlines|Bank|Group|Studio|Studios|Health|Bio|Energy|Motors|Foods|Media|Networks|Security|Analytics|Robotics|Dynamics|Athletic|AC)\b/i;
 
-const PRODUCT_HINTS = /\b(?:Project|Platform|Suite|Engine|OS|App|Pro|Cloud|Pulse|Core|Flow|Pilot|Forge|Sync|Vault|Shield|Radar)\b/;
-
-const KNOWN_PLACES = new Set([
-  'casablanca', 'rabat', 'marrakech', 'tangier', 'morocco', 'lyon', 'paris', 'france',
-  'london', 'berlin', 'munich', 'germany', 'madrid', 'barcelona', 'spain', 'amsterdam',
-  'dublin', 'zurich', 'geneva', 'milan', 'rome', 'lisbon', 'stockholm', 'oslo', 'warsaw',
-  'new york', 'san francisco', 'austin', 'boston', 'chicago', 'seattle', 'los angeles',
-  'toronto', 'vancouver', 'montreal', 'tokyo', 'osaka', 'singapore', 'seoul', 'sydney',
-  'melbourne', 'dubai', 'riyadh', 'cairo', 'lagos', 'nairobi', 'johannesburg', 'sao paulo',
+const NON_PERSON_SECOND_WORDS = new Set([
+  'labs', 'ventures', 'capital', 'partners', 'systems', 'logistics', 'cloud',
+  'pay', 'tech', 'airlines', 'bank', 'group', 'studio', 'studios', 'health',
+  'bio', 'energy', 'motors', 'foods', 'media', 'networks', 'security',
+  'analytics', 'robotics', 'dynamics', 'corp', 'inc', 'ltd', 'llc', 'sas',
+  'project', 'engine', 'platform', 'suite', 'core', 'sync', 'audit', 'athletic',
 ]);
 
 function classifyHeuristicName(
@@ -147,20 +144,7 @@ function classifyHeuristicName(
   fullText: string,
   matchIndex: number,
 ): EntityType {
-  const lower = phrase.toLowerCase();
-  if (KNOWN_PLACES.has(lower)) {
-    return 'PLACE';
-  }
-
-  const before = fullText.slice(Math.max(0, matchIndex - 16), matchIndex);
-  if (/\b(?:in|from|at|to|across|near)\s+$/i.test(before) && !COMPANY_HINTS.test(phrase)) {
-    const words = phrase.split(/\s+/);
-    if (words.length <= 2 && !phrase.startsWith('Project ')) {
-      return 'PLACE';
-    }
-  }
-
-  if (phrase.startsWith('Project ') || PRODUCT_HINTS.test(phrase)) {
+  if (phrase.startsWith('Project ')) {
     return 'PRODUCT';
   }
 
@@ -168,23 +152,31 @@ function classifyHeuristicName(
     return 'COMPANY';
   }
 
-  const after = fullText.slice(matchIndex + phrase.length, matchIndex + phrase.length + 28);
-  if (/^\s*(?:leads|founded|joined|is\s+our|is\s+the\s+(?:ceo|cto|cfo|vp|head|founder|director))/i.test(after)) {
-    return 'PERSON';
-  }
-  if (/\b(?:CEO|CTO|CFO|founder|co-founder|lead|director|partner)\s+$/i.test(before)) {
+  const before = fullText.slice(Math.max(0, matchIndex - 24), matchIndex);
+  const after = fullText.slice(
+    matchIndex + phrase.length,
+    matchIndex + phrase.length + 28,
+  );
+
+  if (
+    /\b(?:Founder|Co-founder|CEO|CTO|CFO|COO|VP|Coach|Manager|Partner|Director|Lead|Mr\.?|Ms\.?|Mrs\.?|Dr\.?)\s+$/i.test(
+      before,
+    ) ||
+    /^\s*(?:leads|founded|joined|is\s+our\s+(?:ceo|cto|cfo|vp|founder))\b/i.test(after)
+  ) {
     return 'PERSON';
   }
 
   const words = phrase.split(/\s+/);
   if (
     words.length === 2 &&
-    words.every((w) => /^[A-Z][a-z]{1,15}$/.test(w))
+    words.every((w) => /^[A-Z][a-z]{1,15}(?:-[A-Z][a-z]{1,15})?$/.test(w)) &&
+    !NON_PERSON_SECOND_WORDS.has(words[1].toLowerCase())
   ) {
     return 'PERSON';
   }
 
-  return 'COMPANY';
+  return 'OTHER';
 }
 
 function isSentenceStart(text: string, index: number): boolean {
@@ -252,7 +244,7 @@ export function detectCapitalisedRuns(text: string): DetectedEntity[] {
     results.push({
       text: phrase,
       type,
-      detectedBy: 'regex',
+      detectedBy: 'heuristic',
     });
   }
 

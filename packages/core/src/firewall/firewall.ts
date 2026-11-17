@@ -103,11 +103,12 @@ export async function seal(
       }
     }
 
-    // 4 & 5. Merge existingMap with values, verifiedNames and customAlwaysRedact
+    // 4 & 5. Merge existingMap with values, verifiedNames and customAlwaysRedact in order of appearance
     const map = buildMap(
       existingMap,
       [...verifiedNames, ...values],
       opts?.customAlwaysRedact ?? [],
+      text,
     );
 
     // Register map in the egress guard for this game / session

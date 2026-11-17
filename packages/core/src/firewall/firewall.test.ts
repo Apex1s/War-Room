@@ -17,6 +17,7 @@ import { createMockProvider, type MockProviderController } from '../ai/provider-
 import { AiError, clearModelCache, run, setProvider } from '../ai/router';
 import { DEFAULT_ROUTING_TABLE, setRoutingTable, setUrlOverridesForTest } from '../ai/routing-table';
 import { chunkText } from './chunk';
+import { detectCapitalisedRuns } from './detectors';
 import { seal } from './firewall';
 import {
   applyMap,
@@ -345,5 +346,48 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
       expect(c.length).toBeLessThanOrEqual(1800);
     }
     expect(chunks.join('')).toBe(longText);
+  });
+
+  it('numbers tokens per type in order of first appearance in the text so the lead company is [COMPANY_1]', () => {
+    const text =
+      'Kestrel Labs is building a tool to compete with Zenith Logistics International and Atlas Cloud.';
+    const map = buildMap(
+      [],
+      [
+        { text: 'Zenith Logistics International', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Atlas Cloud', type: 'COMPANY', detectedBy: 'ai' },
+        { text: 'Kestrel Labs', type: 'COMPANY', detectedBy: 'ai' },
+      ],
+      [],
+      text,
+    );
+
+    const kestrel = map.find((m) => m.original === 'Kestrel Labs')!;
+    const zenith = map.find((m) => m.original === 'Zenith Logistics International')!;
+    const atlas = map.find((m) => m.original === 'Atlas Cloud')!;
+
+    expect(kestrel.token).toBe('[COMPANY_1]');
+    expect(zenith.token).toBe('[COMPANY_2]');
+    expect(atlas.token).toBe('[COMPANY_3]');
+  });
+
+  it('sets detectedBy to heuristic in detectCapitalisedRuns, defaults unknown proper nouns to OTHER and detects PERSON cues', () => {
+    const text =
+      'Kestrel Labs is building PulseAudit in Casablanca. Founder Amine Tazi and Ms. Sara Idrissi met with Sequoia regarding Project Falcon.';
+    const entities = detectCapitalisedRuns(text);
+
+    expect(entities.length).toBeGreaterThan(0);
+    for (const ent of entities) {
+      expect(ent.detectedBy).toBe('heuristic');
+    }
+
+    const byName = new Map(entities.map((e) => [e.text, e.type]));
+    expect(byName.get('Kestrel Labs')).toBe('COMPANY');
+    expect(byName.get('Amine Tazi')).toBe('PERSON');
+    expect(byName.get('Sara Idrissi')).toBe('PERSON');
+    expect(byName.get('Project Falcon')).toBe('PRODUCT');
+    expect(byName.get('Casablanca')).toBe('OTHER');
+    expect(byName.get('PulseAudit')).toBe('OTHER');
+    expect(byName.get('Sequoia')).toBe('OTHER');
   });
 });

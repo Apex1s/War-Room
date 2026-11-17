@@ -5,7 +5,7 @@ export interface PlaceholderEntry {
   type: EntityType;
   original: string;
   aliases: string[];
-  detectedBy: 'ai' | 'regex' | 'user';
+  detectedBy: 'ai' | 'regex' | 'heuristic' | 'user';
   enabled: boolean;
   hint?: string;
 }
@@ -93,12 +93,14 @@ function deriveAliases(original: string, type: EntityType): string[] {
 
 /**
  * Merge an existing placeholder map with newly detected entities and optional user custom terms.
- * Preserves existing token numbering per EntityType and assigns stable next numbers.
+ * Numbers tokens per EntityType in order of first appearance in `sourceText` (when provided)
+ * or in the order `detected` was supplied.
  */
 export function buildMap(
   existingMap: PlaceholderEntry[],
   detected: DetectedEntity[],
   customAlwaysRedact: string[] = [],
+  sourceText?: string,
 ): PlaceholderEntry[] {
   const map: PlaceholderEntry[] = existingMap.map((entry) => ({
     ...entry,
@@ -123,22 +125,25 @@ export function buildMap(
   }
 
   const allCandidates: DetectedEntity[] = [
+    ...detected,
     ...customAlwaysRedact
       .map((t) => t.trim())
       .filter((t) => t.length >= 2)
       .map((text): DetectedEntity => ({ text, type: 'OTHER', detectedBy: 'user' })),
-    ...detected,
   ];
 
-  // Sort candidates longest-first so "Acme Inc." is registered before "Acme",
-  // and when lengths are equal, prefer name types over regex types.
-  allCandidates.sort((a, b) => {
-    const lenDiff = b.text.trim().length - a.text.trim().length;
-    if (lenDiff !== 0) return lenDiff;
-    const aIsName = isNameEntityType(a.type) ? 1 : 0;
-    const bIsName = isNameEntityType(b.type) ? 1 : 0;
-    return bIsName - aIsName;
-  });
+  if (sourceText) {
+    const sourceLower = sourceText.toLowerCase();
+    const firstPos = (term: string): number => {
+      const idx = sourceLower.indexOf(term.trim().toLowerCase());
+      return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+    };
+    allCandidates.sort((a, b) => {
+      const posDiff = firstPos(a.text) - firstPos(b.text);
+      if (posDiff !== 0) return posDiff;
+      return b.text.trim().length - a.text.trim().length;
+    });
+  }
 
   for (const item of allCandidates) {
     const clean = item.text.trim();
