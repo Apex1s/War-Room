@@ -34,7 +34,7 @@ Give three to five next steps, in order, each starting with a verb.
 confidence is how far the anonymisation and the short game limit your judgement: low, medium or high.
 
 # The brief is anonymised
-Real names and figures were replaced on the player's device with tokens such as [COMPANY_1] or [MONEY_2]. Use each token exactly as written, brackets included, so the device can swap the real names back in. Do not guess what a token stands for and do not invent new ones.
+Real names and figures were replaced on the player's device with tokens such as [COMPANY_1] or [MONEY_2]. Use each token exactly as written, brackets included, so the device can swap the real names back in. Do not guess what a token stands for and do not invent new ones; describe anything without a token in plain words, because an invented token could be swapped for the wrong real name.
 
 # Opponents' private information
 ${generals.map((g) => `- ${g.name}: ${g.hiddenInfo}`).join('\n')}
