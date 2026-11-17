@@ -4,14 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
     "@warroom/core": "workspace:*",
-    "@warroom/ui": "workspace:*"
+    "@warroom/ui": "workspace:*",
+    "firebase": "^13.3.0"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
   }
 }

@@ -172,3 +172,25 @@ Run 2 (9,764 ms):
 ```text
 FirebaseError: AI: Error fetching from https://firebasevertexai.googleapis.com/v1beta/projects/war-room-hybrid/models/gemini-3.8-flash:streamGenerateContent?alt=sse: [500 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later. (AI/fetch-error)
 ```
+
+---
+
+## 4. Day 2 Extension Spike — MV3 Side Panel & App Check Plan A vs Plan B
+
+Tested on 17 Nov 2026 in `apps/extension` (`manifest_version: 3`, fixed extension ID `mgiolmlgmbopkehpakjhcmiggeipclgf`, `firebase/auth/web-extension`, `@warroom/core` router).
+
+### Result: **Plan A (Hosted Bridge Iframe + `CustomProvider`) Works**
+
+1. **Why `ReCaptchaEnterpriseProvider` cannot run directly in an MV3 extension page:**
+   - In `@firebase/app-check@0.13.1`, `_activate()` always calls `provider.initialize(app)` even when debug mode is enabled. `ReCaptchaEnterpriseProvider.initialize()` injects `<script src="https://www.google.com/recaptcha/enterprise.js?render=explicit">`, which violates Chrome MV3's strict `script-src 'self'` CSP.
+   - `CustomProvider.initialize(app)` injects no external script and is MV3-safe.
+2. **Plan A (`https://war-room-hybrid.web.app/appcheck-bridge.html`):**
+   - Deployed `appcheck-bridge.html` to Firebase Hosting (`war-room-hybrid.web.app`, which is on the reCAPTCHA Enterprise domain allowlist).
+   - The bridge page runs `initializeAppCheck` with `ReCaptchaEnterpriseProvider`, listens for `postMessage` `{ type: 'WARROOM_APPCHECK_REQUEST', requestId }` from `chrome-extension://mgiolmlgmbopkehpakjhcmiggeipclgf` (and `localhost` for local testing), calls `getLimitedUseToken(appCheck)`, and replies with `{ type: 'WARROOM_APPCHECK_RESPONSE', requestId, ok: true, token, expireTimeMillis }`.
+   - The MV3 side panel mounts a hidden `<iframe>` to `https://war-room-hybrid.web.app/appcheck-bridge.html` and passes `new CustomProvider({ getToken: requestBridgeToken })` to `initializeAppCheck`.
+3. **Live verification results:**
+   - `firebase/auth/web-extension` `signInAnonymously(auth)` succeeded (`UID: pnrQ6PLeuRcBeeON8AUF9KD2IEi2`).
+   - `LanguageModel.availability()` reported `'downloadable'`.
+   - `requestBridgeToken()` exchanged a valid reCAPTCHA Enterprise App Check JWT (`eyJraWQiOiJBNzFLSHciLCJ0…`) in `2,121 ms` with **no debug token set**.
+   - `run('crowd', …)` via `@warroom/core` succeeded end-to-end (`source: 'cloud'`, `model: 'gemini-3.5-flash-lite'`, `latencyMs: 2239`, `fallback: true`, `repaired: false`).
+   - **Decision:** Use **Plan A (Hosted Bridge Iframe + `CustomProvider`)** as the primary extension App Check mechanism (so unpacked extension builds work out of the box for judges without registering a debug token), with `?planB=1` (`VITE_APPCHECK_DEBUG_TOKEN`) kept as an optional local dev override.
