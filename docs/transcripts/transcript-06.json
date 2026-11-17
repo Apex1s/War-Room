@@ -1,0 +1,171 @@
+{
+  "transcriptId": "transcript-06",
+  "scenarioTitle": "06 · Cloud Posture Monitoring Pure Self-Serve Displacement",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 22,
+  "tokensInMap": [
+    "[OTHER_1] (OTHER)",
+    "[NUMBER_1] (NUMBER)",
+    "[NUMBER_2] (NUMBER)",
+    "[OTHER_2] (OTHER)",
+    "[OTHER_3] (OTHER)",
+    "[COMPANY_1] (COMPANY)",
+    "[PERSON_1] (PERSON)",
+    "[OTHER_4] (OTHER)",
+    "[OTHER_5] (OTHER)",
+    "[MONEY_1] (MONEY)",
+    "[COMPANY_2] (COMPANY)",
+    "[MONEY_2] (MONEY)",
+    "[OTHER_6] (OTHER)",
+    "[DATE_1] (DATE)",
+    "[OTHER_7] (OTHER)",
+    "[COMPANY_3] (COMPANY)",
+    "[OTHER_8] (OTHER)",
+    "[OTHER_9] (OTHER)",
+    "[MONEY_3] (MONEY)",
+    "[OTHER_10] (OTHER)",
+    "[PERCENT_1] (PERCENT)",
+    "[NUMBER_3] (NUMBER)"
+  ],
+  "objective": "[OTHER_1] self-serve customers from [NUMBER_1] to [NUMBER_2] teams in [OTHER_2] and [OTHER_3].",
+  "brief": "[COMPANY_1] sells cloud posture monitoring to [NUMBER_1] teams in [OTHER_2]. CTO [PERSON_1] built [OTHER_4] to replace [OTHER_5] modules at [MONEY_1] per month. [COMPANY_2] offered a [MONEY_2] annual contract if we deliver on-prem deployment in [OTHER_6] by [DATE_1].",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "[OTHER_7] custom on-prem work for [COMPANY_2] and launch a one-click [OTHER_5] bill-cutter calculator for [OTHER_4] at [MONEY_1] per month.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "[COMPANY_1] bundles free cloud posture bill-cutter for enterprise accounts.",
+          "move": "We are directing a dedicated engineering task force to release a native, zero-cost bill-cutting calculator module directly into our existing platform suite for our base. Since our enterprise contracts are already locked in and our sales team can push this update immediately, we will neutralize your pricing advantage before your self-serve funnel can scale.",
+          "rationale": "This exploits your dependence on capturing high-margin self-serve revenue by commoditizing your core pricing feature into a free bundle for established enterprise buyers.",
+          "threatLevel": 4,
+          "targets": "The assumption that a standalone self-serve tool at [MONEY_1] can outpace a zero-cost incumbent bundle.",
+          "source": "cloud",
+          "latencyMs": 7258,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I pass on the round and offer term sheet feedback only",
+          "move": "I decline to lead your [MONEY_3] round, citing valuation mismatches and a conflict with our existing portfolio company that operates adjacent to cloud posture monitoring. I will, however, share our internal market memo on [OTHER_2] pricing pressure with you off the record. Seed valuations for infrastructure plays have dropped significantly this year, and your current terms do not reflect that correction.",
+          "rationale": "By walking away while mentioning a portfolio overlap and market-wide valuation drops, I signal that capital is tight and expensive for this exact feature set.",
+          "threatLevel": 4,
+          "targets": "Seed round valuation multiples and portfolio non-competition assumptions",
+          "source": "cloud",
+          "latencyMs": 8913,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers lock in existing multi-year vendor contracts and lengthen procurement cycles.",
+          "move": "We continue using our current vendor's tool because we renewed our license last quarter and cannot justify breaking the contract for [COMPANY_1]. Furthermore, our finance team has extended all SaaS procurement reviews to ninety days, halting new self-serve card purchases under [MONEY_1] per month unless signed off by a VP.",
+          "rationale": "This exploits the player's assumption that buyers will easily switch from [OTHER_5] or adopt self-serve tools on demand, ignoring existing renewal lock-ins and tightening corporate budgets.",
+          "threatLevel": 4,
+          "targets": "Buyers have unallocated budget, immediate need, and freedom to purchase without friction.",
+          "source": "cloud",
+          "latencyMs": 8920,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "[COMPANY_3] our standard single-tenant cloud [OTHER_8] in [OTHER_9] at [MONEY_3]/yr with zero custom engineering.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Enterprise procurement stalls single-tenant deployment past budget cycles.",
+          "move": "We route [COMPANY_3] through our standard ninety-day security review and require architectural sign-off from two VPs before any funds are committed at [MONEY_3]/yr. Because we already renewed our previous vendor contract last quarter, our department budget is locked and cannot absorb this new line item without cutting an existing tool.",
+          "rationale": "This targets the assumption that shifting to a standard single-tenant offering removes enterprise friction; buyers still face rigid procurement freezes and locked vendor budgets.",
+          "threatLevel": 4,
+          "targets": "Assumes standard single-tenant deployment bypasses lengthy enterprise procurement and budget locks.",
+          "source": "cloud",
+          "latencyMs": 7836,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We include single-tenant cloud deployments in our enterprise tier at no extra charge.",
+          "move": "We are instructing our account teams to reach out to our broader user base offering our own single-tenant cloud setup bundled into existing enterprise agreements at no additional cost. Since our enterprise roadmap is already locked in for the year and we have spare engineering bandwidth assigned to this initiative, we can absorb this deployment model without breaking stride. This completely undercuts the pricing strategy for [COMPANY_3] while leveraging our existing distribution channels.",
+          "rationale": "By packaging single-tenant cloud deployments for free into our existing enterprise tier, we eliminate the willingness of buyers to pay [MONEY_3]/yr for a standalone offering from a smaller player.",
+          "threatLevel": 5,
+          "targets": "Customers will pay standalone pricing for single-tenant cloud [OTHER_8] when a bundled alternative exists.",
+          "source": "cloud",
+          "latencyMs": 8885,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I decline to issue a term sheet while pricing remains disconnected.",
+          "move": "I review your pivot to a standard single-tenant deployment in [OTHER_9] at [MONEY_3]/yr, but I remain out. I quietly inform our partners that this deployment model still treads too close to our portfolio company's core territory. I also advise you that seed valuations in this category have dropped by roughly a third, making your current ask untenable for our committee.",
+          "rationale": "This targets the financial structure of the round and our internal conflict of interest, ensuring the founder knows we will not back a deal that steps on our existing assets at an inflated price.",
+          "threatLevel": 4,
+          "targets": "Seed round valuation multiples and portfolio non-compete boundaries",
+          "source": "cloud",
+          "latencyMs": 9181,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "[OTHER_10] a [PERCENT_1] cloud monitoring cost reduction in writing or refund the first [NUMBER_3] days of [OTHER_4].",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "[COMPANY_1] matches guarantees with a risk-free enterprise trial extension.",
+          "move": "We are instructing our account managers to offer our enterprise clients a written, contractual guarantee matching your cost reduction terms, backed by a risk-free trial extension that effectively neutralizes your refund window. Because our engineering resources are already allocated to absorb these features into our bundled platform suite, we can easily match financial indemnities without hurting our core margins. We will let our established distribution channels carry this risk-free offer straight to your target buyers before they sign up for [OTHER_4].",
+          "rationale": "By matching your financial guarantees and refund terms for free within our existing platform, we remove the risk-bearing advantage your self-serve model relies on to win hesitant buyers. This directly exploits the cash-flow vulnerability of a smaller operation attempting to indemnify enterprise-scale cloud monitoring costs.",
+          "threatLevel": 5,
+          "targets": "That [COMPANY_1] cannot match financial guarantees or absorb the cost of refund-backed risk.",
+          "source": "cloud",
+          "latencyMs": 6768,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers demand executive sign-off for guarantees while holding existing vendor contracts.",
+          "move": "We accept the performance guarantee offer to put [COMPANY_1] through a formal legal review of the refund terms. Because our procurement cycle requires ninety days for new vendors and our budget was locked last quarter by our current provider, we cannot execute the contract before the end of the fiscal year without a VP override.",
+          "rationale": "Guarantees reduce financial risk, but they cannot bypass locked budgets or extended enterprise procurement cycles.",
+          "threatLevel": 3,
+          "targets": "Performance guarantees immediately overcome the budget lock and long procurement reviews.",
+          "source": "cloud",
+          "latencyMs": 8205,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC passes permanently and flags valuation drop.",
+          "move": "I decline to participate in this round entirely and advise three other seed funds that your customer acquisition math relies on unsustainable guarantees. I note that seed valuations in this infrastructure category have dropped by about a third this year, making your current ask non-starter material. Furthermore, I explicitly caution the syndicate against backing a player treading so closely to a portfolio company of ours.",
+          "rationale": "Guarantees of cost reduction in writing create massive liability and cash burn if enterprise buyers trigger refunds, while failing to address the fundamental valuation and overlap issues.",
+          "threatLevel": 4,
+          "targets": "Guaranteed cost reduction refunds will not destroy cash margins or fail enterprise risk checks.",
+          "source": "cloud",
+          "latencyMs": 8064,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:04:50.860Z"
+}

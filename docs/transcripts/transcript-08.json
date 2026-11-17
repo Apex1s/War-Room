@@ -1,0 +1,160 @@
+{
+  "transcriptId": "transcript-08",
+  "scenarioTitle": "08 · Warehouse Robotics OEM Licensing Alternative",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 11,
+  "tokensInMap": [
+    "[OTHER_1] (OTHER)",
+    "[COMPANY_1] (COMPANY)",
+    "[MONEY_1] (MONEY)",
+    "[COMPANY_2] (COMPANY)",
+    "[OTHER_2] (OTHER)",
+    "[PERSON_1] (PERSON)",
+    "[PERSON_2] (PERSON)",
+    "[COMPANY_3] (COMPANY)",
+    "[PERCENT_1] (PERCENT)",
+    "[NUMBER_1] (NUMBER)",
+    "[MONEY_2] (MONEY)"
+  ],
+  "objective": "Capture [OTHER_1] telemetry value without balance-sheet M&A risk.",
+  "brief": "[COMPANY_1] will submit a [MONEY_1] cash offer to acquire [COMPANY_2] in [OTHER_2]. CFO [PERSON_1] and partner [PERSON_2] at [COMPANY_3] modelled [PERCENT_1] EBITDA margins once [OTHER_1] is integrated into our [NUMBER_1] warehouse accounts.",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "Replace the [MONEY_1] buyout with a [MONEY_2] exclusive 3-year OEM license for [OTHER_1] across our [NUMBER_1] warehouse accounts.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers lock into multi-year contracts with incumbent tools.",
+          "move": "We decline to adopt the licensed telemetry across our [NUMBER_1] warehouse accounts. Procurement teams have just renewed existing long-term agreements for alternative tooling and refuse to absorb dual-vendor friction or migration costs right now.",
+          "rationale": "The licensing pivot assumes buyers are ready to switch or integrate new tools immediately, but long renewal cycles and existing software commitments lock us out of the budget.",
+          "threatLevel": 4,
+          "targets": "Buyers have unallocated budget and immediate appetite for a licensed replacement.",
+          "source": "cloud",
+          "latencyMs": 1576,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We add [OTHER_1] integration to our next enterprise feature bundle for free.",
+          "move": "We are instructing our engineering teams to build a native integration for [OTHER_1] into our existing platform suite starting next month. Because we can bundle this at no additional cost to our massive enterprise user base, we will make [COMPANY_1]'s new licensing arrangement economically redundant for buyers.",
+          "rationale": "By giving away the capability for free within our existing distribution channels, we neutralize the value of their OEM license and compress their margins.",
+          "threatLevel": 4,
+          "targets": "The assumption that an exclusive OEM license will protect their margins without a native platform bundling defense.",
+          "source": "cloud",
+          "latencyMs": 1674,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I pass on the OEM deal and slash our seed valuation benchmark.",
+          "move": "I am passing on this round because a three-year OEM license does not create the permanent defensibility we require for a fund return. Furthermore, given current market contractions in this category, I am advising our syndicate peers that [COMPANY_1] is worth roughly a third less than your target valuation. You have avoided balance-sheet risk, but you have also stripped away the asset ownership that made the growth story compelling.",
+          "rationale": "This exposes the reality that an OEM license lacks the proprietary asset value needed to justify venture-scale returns in a cooling market.",
+          "threatLevel": 4,
+          "targets": "A licensing deal provides the same venture-scale return profile as an outright acquisition.",
+          "source": "cloud",
+          "latencyMs": 1959,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "Hire 4 field deployment engineers in [OTHER_2] directly and co-develop the next [OTHER_1] release with full IP step-in rights.",
+      "generalMoves": [
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I decline to participate and warn other funds about execution drag.",
+          "move": "I decline to lead or participate in this round, citing excessive execution risk in managing co-development across borders. I am quietly letting the other seed funds in our network know that without direct asset ownership or an exclusive buyout, [COMPANY_1] is merely acting as an outsourced engineering shop for [COMPANY_2].",
+          "rationale": "Co-development with IP step-in rights introduces massive legal and operational drag without securing proprietary tech, destroying the venture-scale upside.",
+          "threatLevel": 4,
+          "targets": "Co-development agreements provide the same defensibility as direct asset ownership.",
+          "source": "cloud",
+          "latencyMs": 1812,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Procurement teams freeze deployment budgets and extend review cycles.",
+          "move": "We decline to allocate technical resources or internal engineering time to support the newly hired field deployment engineers. Our procurement committees have officially extended vendor evaluation cycles by six months and reallocated all available deployment budgets to our incumbent supplier agreements.",
+          "rationale": "This exploits the false assumption that customers will expend internal engineering bandwidth and risk operational stability for a secondary vendor's co-developed release.",
+          "threatLevel": 4,
+          "targets": "Buyers will readily provide internal engineering bandwidth for co-developed products.",
+          "source": "cloud",
+          "latencyMs": 1880,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We match field engineering support and release our integration a quarter early.",
+          "move": "We appreciate [COMPANY_1] trying to secure the IP directly, but our engineering team has already pulled our own native integration forward into our upcoming release. We are assigning dedicated support resources in [OTHER_2] to match their deployments, ensuring our enterprise customers get the same capability bundled into their existing contracts at zero additional cost. It is simply very difficult for a standalone partnership to compete with a pre-installed vendor offering the exact same utility for free.",
+          "rationale": "By neutralizing the IP step-in rights through a faster, free native rollout and matching local support, we eliminate the proprietary value [COMPANY_1] is trying to capture.",
+          "threatLevel": 4,
+          "targets": "Exclusive IP step-in rights and local deployment advantage in [OTHER_2].",
+          "source": "cloud",
+          "latencyMs": 3045,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "Price the telemetry add-on per active robot hour so seasonal warehouse customers adopt without capex approval.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Seasonal warehouse customers reject variable metered pricing due to unpredictable operating expenses.",
+          "move": "We decline to approve the variable per-hour pricing model. Our finance committees require fixed annual software commitments and predictable capital allocation, meaning fluctuating usage-based fees trigger mandatory legal and budget reviews that stall adoption indefinitely.",
+          "rationale": "This exploits the assumption that shifting to variable consumption pricing removes administrative barriers, when in reality large enterprise operations forbid unbudgeted variable cost exposure.",
+          "threatLevel": 4,
+          "targets": "Variable pricing eliminates procurement friction for seasonal warehouse operations.",
+          "source": "cloud",
+          "latencyMs": 1324,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We match hourly pricing and bundle the telemetry add-on for free.",
+          "move": "We are updating our enterprise pricing structure this week to include usage-based robot hour telemetry tracking at no additional charge for all existing platform subscribers. By eliminating the need for any separate line-item approval, we remove the exact friction [COMPANY_1] is relying on for adoption. We will deploy this feature directly through our standard update channel next month.",
+          "rationale": "Matching their consumption-based pricing model while absorbing the cost entirely destroys their monetization strategy before it gains traction. This directly exploits their reliance on transactional revenue from the telemetry add-on.",
+          "threatLevel": 5,
+          "targets": "The assumption that seasonal customers will adopt a standalone hourly add-on instead of taking a free bundled feature.",
+          "source": "cloud",
+          "latencyMs": 2634,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I pass completely and advise my partners to back a portfolio competitor.",
+          "move": "I officially pass on the round and inform the board that our fund will not be participating. Behind closed doors, I am redirecting our attention and potential capital toward a portfolio company of ours that sits one step away from this exact market. Pricing per robot hour improves adoption, but it leaves you vulnerable to well-funded copycats who are already giving away the integration for free.",
+          "rationale": "This move exploits the fatal flaw of low-margin usage pricing in a crowded market where competitors are bundling the feature for free.",
+          "threatLevel": 5,
+          "targets": "Usage-based pricing will drive net-new adoption despite free competitor bundles.",
+          "source": "cloud",
+          "latencyMs": 2280,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:19:12.329Z"
+}

@@ -1,0 +1,163 @@
+{
+  "transcriptId": "transcript-07",
+  "scenarioTitle": "07 · Warehouse Robotics Software Integration & M&A",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 14,
+  "tokensInMap": [
+    "[OTHER_1] (OTHER)",
+    "[NUMBER_1] (NUMBER)",
+    "[PERCENT_1] (PERCENT)",
+    "[COMPANY_1] (COMPANY)",
+    "[MONEY_1] (MONEY)",
+    "[COMPANY_2] (COMPANY)",
+    "[OTHER_2] (OTHER)",
+    "[PERSON_1] (PERSON)",
+    "[PERSON_2] (PERSON)",
+    "[COMPANY_3] (COMPANY)",
+    "[MONEY_2] (MONEY)",
+    "[MONEY_3] (MONEY)",
+    "[NUMBER_2] (NUMBER)",
+    "[NUMBER_3] (NUMBER)"
+  ],
+  "objective": "Integrate [OTHER_1] across [NUMBER_1] warehouses and reach [PERCENT_1] EBITDA margin.",
+  "brief": "[COMPANY_1] will submit a [MONEY_1] cash offer to acquire [COMPANY_2] in [OTHER_2]. CFO [PERSON_1] and partner [PERSON_2] at [COMPANY_3] modelled [PERCENT_1] EBITDA margins once [OTHER_1] is integrated into our [NUMBER_1] warehouse accounts.",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "Structure the [MONEY_1] offer for [COMPANY_2] with [MONEY_2] cash at close and [MONEY_3] earnout tied to [OTHER_1] retention in [OTHER_2].",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers freeze spending as enterprise procurement cycles extend by six months.",
+          "move": "We decline to approve new vendor onboarding or integration spending for [OTHER_1] across our [NUMBER_1] warehouses this quarter. Existing supplier contracts were recently renewed through next year, meaning no budget or operational bandwidth exists to adopt [COMPANY_2] technology now.",
+          "rationale": "This exploits the false assumption that buyers can immediately adopt [OTHER_1] and trigger earnouts without facing frozen budgets and locked-in incumbent contracts.",
+          "threatLevel": 4,
+          "targets": "The assumption that customers will immediately adopt [OTHER_1] and enable earnouts without friction.",
+          "source": "cloud",
+          "latencyMs": 1800,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I demand senior guarantees on the earnout metrics before issuing a term sheet.",
+          "move": "I pull my partners into the room and we review the structure of your [MONEY_1] offer. Given current market conditions for this category, we will not support a deal where [MONEY_3] of the purchase price depends on future [OTHER_1] retention without a hard floor on churn. I am cutting our proposed allocation by a third and insisting you tie [PERSON_1] to a three-year vesting schedule.",
+          "rationale": "By forcing a down-round valuation adjustment and locking down the earnout, I am exploiting the fragile dependency between your integration timeline and their actual cash generation.",
+          "threatLevel": 4,
+          "targets": "Integration of [OTHER_1] will seamlessly protect retention without churn or cash dilution.",
+          "source": "cloud",
+          "latencyMs": 3154,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "[COMPANY_1] Launches Direct Integration of [OTHER_1] Capabilities For Existing Enterprise Customers",
+          "move": "We are tasking a dedicated team to roll out a native version of [OTHER_1] directly into our platform suite over the coming weeks, bundling it at no extra cost for our enterprise tier. Since our roadmap is fixed for the major enterprise accounts, we are prioritising this modular addition specifically to intercept [COMPANY_1] before they lock down [COMPANY_2].",
+          "rationale": "By offering a bundled, zero-cost alternative to [COMPANY_1], we strip away the standalone value of [COMPANY_2] and undermine the earnout structure tied to customer retention.",
+          "threatLevel": 4,
+          "targets": "[COMPANY_1] can successfully acquire [COMPANY_2] and retain customers without encountering aggressive feature bundling from incumbents.",
+          "source": "cloud",
+          "latencyMs": 2069,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "Cross-sell [OTHER_1] as a mandatory firmware upgrade to our top [NUMBER_2] warehouse accounts with a [NUMBER_3]-day payback guarantee.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "[COMPANY_1] Offers Free [OTHER_1] Integration to Existing Enterprise Accounts",
+          "move": "We are deploying a pre-built integration of [OTHER_1] directly to our extensive base of [NUMBER_1] warehouse accounts at zero additional cost. By leveraging our existing enterprise agreements and available engineering resources, we ensure our customers receive these capabilities immediately without waiting for firmware upgrades. This completely neutralises the need for [COMPANY_1] to acquire [COMPANY_2] for market access.",
+          "rationale": "By bundling the exact capability into our existing platform for free, we destroy the economic justification for the [COMPANY_1] acquisition and make the payback guarantee redundant.",
+          "threatLevel": 5,
+          "targets": "Enterprise willingness to adopt mandatory firmware upgrades when free alternatives exist.",
+          "source": "cloud",
+          "latencyMs": 2812,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Enterprise accounts push back on forced firmware updates and demand legal review.",
+          "move": "We treat the mandatory firmware upgrade as an unauthorized vendor imposition and route the request through our legal and security compliance teams. This immediately triggers a mandatory six-week procurement review, halting any deployment across our top [NUMBER_2] warehouse accounts and rendering the [NUMBER_3]-day payback guarantee void of active baseline data.",
+          "rationale": "Forcing software changes without prior budget allocation or open procurement cycles triggers corporate resistance and delays integration indefinitely.",
+          "threatLevel": 4,
+          "targets": "Assuming enterprise buyers accept mandatory infrastructure changes without standard procurement and security reviews.",
+          "source": "cloud",
+          "latencyMs": 3158,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I flag severe antitrust exposure and halt our term sheet review.",
+          "move": "I pull our firm's legal counsel into the room to review your mandatory firmware upgrade plan across top warehouse accounts. Forcing [OTHER_1] integration under a payback guarantee looks dangerously close to tying and anticompetitive bundling. Until your counsel clears this with enterprise compliance, I am putting our investment memo on hold.",
+          "rationale": "Mandatory bundling exposes the core product to regulatory pushback and enterprise churn, breaking the unit economics needed to justify [MONEY_1].",
+          "threatLevel": 5,
+          "targets": "Top accounts will accept mandatory firmware upgrades without triggering churn or regulatory action.",
+          "source": "cloud",
+          "latencyMs": 4378,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "Open [OTHER_1] APIs to third-party conveyor hardware so competitors cannot lock our [NUMBER_1] warehouse accounts into proprietary fleets.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "[COMPANY_1] Adopts Open API Standard for All Existing Enterprise Warehouse Accounts",
+          "move": "We are pivoting our free bundle to fully support the new open API standard, making it instantly available across our entire footprint of [NUMBER_1] warehouses. Because our existing customers are already on our platform, they can adopt these open integrations without changing their underlying hardware or waiting on [COMPANY_2]. We are happy to let an open ecosystem commoditise the layer while we capture the workflow.",
+          "rationale": "By immediately mirroring the open API strategy and offering it for free to our massive installed base, we strip away the differentiation [COMPANY_2] was supposed to provide.",
+          "threatLevel": 5,
+          "targets": "Proprietary API openness creates defensible switching costs for warehouse hardware integration.",
+          "source": "cloud",
+          "latencyMs": 1864,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I withdraw our term sheet permanently over margin dilution risks.",
+          "move": "I officially close our investment file and decline to issue a term sheet for your round. Opening your APIs to third-party hardware destroys the software margins that [PERSON_1] and [PERSON_2] modelled to reach your [PERCENT_1] EBITDA target. Furthermore, our partners have reviewed your pivot and concluded it directly overlaps with a portfolio company of ours one step away in this market.",
+          "rationale": "By opening the APIs to commoditize the hardware, you sacrifice the proprietary software margin that justified your valuation, making the unit economics uninvestable for our fund.",
+          "threatLevel": 5,
+          "targets": "Opening APIs destroys the high-margin software lock-in required for [PERCENT_1] EBITDA.",
+          "source": "cloud",
+          "latencyMs": 1944,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Warehouse operators demand custom API middleware before committing budget.",
+          "move": "We acknowledge the open APIs for [OTHER_1], but our engineering teams report that integrating third-party conveyor hardware requires custom middleware development that we did not budget for this fiscal year. Because our procurement cycles have extended by six months and existing supplier contracts were recently renewed, we are shelving any discretionary technical integration projects until the next annual budget cycle. Without immediate cost savings or a pre-built connector, our operations teams refuse to allocate internal resources to connect your system.",
+          "rationale": "This exploits the reality that technical openness does not automatically translate into active adoption or immediate budget allocation when engineering bandwidth is locked into existing, recently renewed vendor commitments.",
+          "threatLevel": 3,
+          "targets": "Open APIs instantly trigger technical adoption without requiring custom middleware or unallocated engineering resources.",
+          "source": "cloud",
+          "latencyMs": 2449,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:18:55.305Z"
+}

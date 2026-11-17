@@ -1,0 +1,169 @@
+{
+  "transcriptId": "transcript-02",
+  "scenarioTitle": "02 · Workflow Auditing Vertical Pivot (Logistics Focus)",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 20,
+  "tokensInMap": [
+    "[OTHER_1] (OTHER)",
+    "[COMPANY_1] (COMPANY)",
+    "[OTHER_2] (OTHER)",
+    "[OTHER_3] (OTHER)",
+    "[OTHER_4] (OTHER)",
+    "[PERSON_1] (PERSON)",
+    "[COMPANY_2] (COMPANY)",
+    "[MONEY_1] (MONEY)",
+    "[NUMBER_1] (NUMBER)",
+    "[COMPANY_3] (COMPANY)",
+    "[PERCENT_1] (PERCENT)",
+    "[MONEY_2] (MONEY)",
+    "[DATE_1] (DATE)",
+    "[NUMBER_2] (NUMBER)",
+    "[OTHER_5] (OTHER)",
+    "[MONEY_3] (MONEY)",
+    "[OTHER_6] (OTHER)",
+    "[OTHER_7] (OTHER)",
+    "[OTHER_8] (OTHER)",
+    "[PERCENT_2] (PERCENT)"
+  ],
+  "objective": "[OTHER_1] mid-market freight & logistics auditing before horizontal incumbents react.",
+  "brief": "[COMPANY_1] is building [OTHER_2], an automated workflow auditing engine for mid-size operations teams in [OTHER_3] and [OTHER_4]. Founder [PERSON_1] left [COMPANY_2] to launch the product. Current ARR is [MONEY_1] across [NUMBER_1] design partners including [COMPANY_3], with [PERCENT_1] monthly growth. We plan to launch a self-serve tier at [MONEY_2] per seat on [DATE_1] to reach [NUMBER_2] teams.",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "[OTHER_5] the launch exclusively to freight and customs operations teams like [COMPANY_3] at [MONEY_3] per team.",
+      "generalMoves": [
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I pass on the round and quietly warn other funds.",
+          "move": "I tell [PERSON_1] that our investment committee cannot see a clear path to venture scale in [OTHER_3] and [OTHER_4] freight auditing. I quietly let two neighboring funds know we stepped away due to valuation mismatch and market ceiling concerns. If [COMPANY_1] needs capital, they will now have to accept a down-round valuation on the new self-serve tier.",
+          "rationale": "Seed valuations have dropped significantly, and narrowing the launch to a niche vertical limits the total addressable market below our fund's return threshold.",
+          "threatLevel": 4,
+          "targets": "Mid-market freight operations provide a large enough total addressable market to return a venture fund.",
+          "source": "cloud",
+          "latencyMs": 6004,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Mid-market freight buyers lock in existing vendor renewals for twelve months.",
+          "move": "We decline to adopt [OTHER_2] at [MONEY_3] per team because our logistics operations already renewed an annual contract with an incumbent tool last quarter. When [PERSON_1] attempts outreach to our customs teams, procurement mandates a formal security and integration review that pushes any purchasing decision past [DATE_1].",
+          "rationale": "The plan assumes buyers have immediate budget flexibility and zero switching costs, ignoring existing annual commitments and lengthened procurement cycles.",
+          "threatLevel": 4,
+          "targets": "Mid-market logistics teams have immediate budget and can adopt without lengthy procurement or switching costs.",
+          "source": "cloud",
+          "latencyMs": 6757,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Bundling custom freight auditing features into our existing enterprise tier for free",
+          "move": "We appreciate the focus [COMPANY_1] is bringing to this niche. I have assigned a dedicated engineering pod to pull our freight and customs auditing modules forward and bundle them at no extra charge for our entire mid-market customer base starting next month. Our sales team will begin reaching out to existing accounts to ensure they do not need to look elsewhere for these specific workflows.",
+          "rationale": "By offering a zero-cost bundled alternative to our massive existing user base, we starve their self-serve funnel of the volume needed to sustain their growth rate.",
+          "threatLevel": 4,
+          "targets": "mid-market operations teams will pay for a standalone tool when horizontal incumbents bundle it for free",
+          "source": "cloud",
+          "latencyMs": 8704,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "[OTHER_6] a live customs-audit benchmark with [COMPANY_3] and lock in 3-year data retention contracts with switching penalties.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Releasing free automated compliance benchmarking across our entire installed base next month",
+          "move": "We are deploying our newly accelerated auditing modules directly to our existing mid-market base with zero implementation fees, neutralizing the switching advantage of the live benchmark. Since our sales team is already in daily contact with these accounts, we are offering matching three-year renewals with heavily discounted enterprise bundles if they commit to our ecosystem this quarter. This gives them the exact data retention and auditing depth they need without having to adopt a secondary vendor.",
+          "rationale": "By offering the same benchmarking and auditing capabilities for free within an existing trusted platform, we destroy the economic incentive for mid-market teams to adopt a single-point solution.",
+          "threatLevel": 5,
+          "targets": "Mid-market buyers will pay for specialized auditing when a free alternative exists in their current stack.",
+          "source": "cloud",
+          "latencyMs": 6712,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Mid-market freight buyers refuse three-year lock-ins amid tighter software budgets.",
+          "move": "We decline the three-year data retention contracts and switching penalties offered by [COMPANY_1]. Our operations teams are shortening their financial commitments, not lengthening them, and will not take on new multi-year liability for a point solution. When pushed on the live benchmark with [COMPANY_3], our procurement department freezes the evaluation to run an internal cost-benefit analysis against our current incumbent tool.",
+          "rationale": "This exploits the plan's reliance on buyers willingly locking themselves into long-term contracts and high switching costs while mid-market budgets are under severe cash-flow pressure.",
+          "threatLevel": 4,
+          "targets": "Mid-market buyers will accept multi-year lock-ins and switching penalties for an unproven workflow auditing engine.",
+          "source": "cloud",
+          "latencyMs": 8252,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I decline to lead your next priced round and flag portfolio overlap.",
+          "move": "I call [PERSON_1] to explain that our investment committee has formally vetoed further participation because your three-year data lock-ins directly overlap with a portfolio company of ours in an adjacent workflow layer. I suggest you look for debt financing or strategic logistics buyers rather than venture capital for this asset class. We will not be issuing a term sheet.",
+          "rationale": "By cutting off venture funding from our fund and signaling portfolio conflict, I force the company to rely entirely on cash flow while competitors outspend them.",
+          "threatLevel": 4,
+          "targets": "Venture scale returns and accessible tier-one venture capital for freight auditing.",
+          "source": "cloud",
+          "latencyMs": 9015,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "[OTHER_7] with regional freight [OTHER_8] integrators in [OTHER_3] and [OTHER_4] on a [PERCENT_2] revenue-share so we add zero sales headcount.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Regional freight systems integrators demand heavy upfront customization before listing [OTHER_2].",
+          "move": "We are regional freight systems integrators in [OTHER_3] and [OTHER_4]. When [COMPANY_1] approaches us to distribute [OTHER_2] on a revenue-share model, we inform them that our clients will not adopt the software unless it connects directly to our proprietary legacy database schemas. We decline to invest our technical resources in building these custom connectors for a [PERCENT_2] revenue-share unless [COMPANY_1] covers our engineering costs upfront.",
+          "rationale": "Channel partners refuse to shoulder implementation friction without guaranteed margin or free labor, exposing the flaw in assuming indirect channels require zero sales overhead.",
+          "threatLevel": 4,
+          "targets": "Assuming regional integrators will distribute the product without demanding upfront custom engineering or financial incentives.",
+          "source": "cloud",
+          "latencyMs": 6890,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I decline any further meetings and block inbound partner memos.",
+          "move": "I tell [PERSON_1] that our partners refuse to look at any deck relying on [OTHER_8] channel distribution in this category. We will not take any further meetings, and I advise our syndicate network to stay away from the revenue-share economics. Your path to venture-scale returns is completely blocked by our existing portfolio interests.",
+          "rationale": "This exploits the hidden conflict with our existing portfolio company and shuts down the last remaining narrative for efficient customer acquisition.",
+          "threatLevel": 4,
+          "targets": "Channel partners will drive zero-cost growth without eating into unit economics.",
+          "source": "cloud",
+          "latencyMs": 7320,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Integrating our freight auditing suite directly into major regional [OTHER_8] partner networks.",
+          "move": "We are formalizing channel partnerships with the primary regional [OTHER_8] integrators across [OTHER_3] and [OTHER_4] to offer our bundled auditing modules pre-integrated out of the box. Because our enterprise sales team can easily absorb these channel agreements into existing partner frameworks, we are offering these integrators higher commission terms than a smaller startup can sustain. We simply want to ensure mutual customers have a seamless experience without introducing unvetted third-party software into their core stack.",
+          "rationale": "By locking up the regional [OTHER_8] integrators with better revenue-share terms and pre-existing channel relationships, we cut off [COMPANY_1] from their primary low-cost distribution channel.",
+          "threatLevel": 5,
+          "targets": "Channel partner exclusivity and zero-headcount distribution through regional integrators.",
+          "source": "cloud",
+          "latencyMs": 8210,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:00:13.171Z"
+}

@@ -1,0 +1,170 @@
+{
+  "transcriptId": "transcript-05",
+  "scenarioTitle": "05 · Cloud Posture Monitoring Up-Market Enterprise Deal",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 21,
+  "tokensInMap": [
+    "[COMPANY_1] (COMPANY)",
+    "[COMPANY_2] (COMPANY)",
+    "[MONEY_1] (MONEY)",
+    "[MONEY_2] (MONEY)",
+    "[NUMBER_1] (NUMBER)",
+    "[COMPANY_3] (COMPANY)",
+    "[OTHER_1] (OTHER)",
+    "[PERSON_1] (PERSON)",
+    "[OTHER_2] (OTHER)",
+    "[OTHER_3] (OTHER)",
+    "[MONEY_3] (MONEY)",
+    "[OTHER_4] (OTHER)",
+    "[DATE_1] (DATE)",
+    "[OTHER_5] (OTHER)",
+    "[OTHER_6] (OTHER)",
+    "[COMPANY_4] (COMPANY)",
+    "[PERCENT_1] (PERCENT)",
+    "[OTHER_7] (OTHER)",
+    "[OTHER_8] (OTHER)",
+    "[PERCENT_2] (PERCENT)",
+    "[NUMBER_2] (NUMBER)"
+  ],
+  "objective": "[COMPANY_1] at [MONEY_1] without starving the [NUMBER_1] mid-market teams.",
+  "brief": "[COMPANY_3] sells cloud posture monitoring to [NUMBER_1] teams in [OTHER_1]. CTO [PERSON_1] built [OTHER_2] to replace [OTHER_3] modules at [MONEY_3] per month. [COMPANY_2] offered a [MONEY_2] annual contract if we deliver on-prem deployment in [OTHER_4] by [DATE_1].",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "[OTHER_5] the [COMPANY_2] [MONEY_2] contract by shipping a containerized [OTHER_6] version of [OTHER_2] rather than a bespoke on-prem fork.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Enterprise procurement extends evaluation cycles by six months for unproven vendors.",
+          "move": "We accept the containerized package for [COMPANY_2] as a technical proof of concept, but our security and compliance teams flag it for a mandatory twelve-month audit before any production deployment. Concurrently, our budget holders freeze new software line-items to absorb the recent price hikes on our existing incumbent contracts.",
+          "rationale": "Containerization lowers deployment friction, but it does not shorten our legal review or free up locked enterprise budgets. This exploits the player's assumption that technical readiness equals immediate commercial adoption.",
+          "threatLevel": 4,
+          "targets": "Assuming technical deployment speed translates directly into enterprise budget release and purchase completion.",
+          "source": "cloud",
+          "latencyMs": 8507,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC passes on seed round and flags portfolio overlap concern.",
+          "move": "I pass on leading the round at [MONEY_1] and let you know that our partners are uncomfortable with how closely this containerized deployment touches a portfolio company of ours in the same space. I also mention to two other seed funds that valuations in this category have dropped by a third, making your ask look heavy.",
+          "rationale": "This removes our capital from the table and introduces valuation resistance alongside a subtle conflict of interest that kills the syndicate before it forms.",
+          "threatLevel": 4,
+          "targets": "The assumption that any tier-one fund will write a check at this valuation without board-level portfolio conflicts.",
+          "source": "cloud",
+          "latencyMs": 13691,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Bundling native containerized deployment modules into our enterprise tier for free",
+          "move": "We appreciate [COMPANY_3] testing the waters with containerized distribution for [COMPANY_2]. Seeing as our engineering resources are fully allocated for the upcoming quarter, we are simply packaging a standardized container deployment option into our existing enterprise offering at no additional cost. Our sales team is reaching out to [COMPANY_2] today to offer this capability immediately under our existing master services agreement.",
+          "rationale": "By absorbing the containerized deployment into our free enterprise bundle, we strip away the margin and differentiation [COMPANY_3] relies on to win [COMPANY_2].",
+          "threatLevel": 4,
+          "targets": "Enterprise buyers will pay standalone software fees for containerized versions of niche modules.",
+          "source": "cloud",
+          "latencyMs": 5749,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "[COMPANY_4] to pay [PERCENT_1] upfront upon architecture sign-off in [OTHER_4] and reuse the same [OTHER_6] installer for all regulated [OTHER_7] banks.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We are releasing a fully supported, certified enterprise container deployment pack next month.",
+          "move": "Seeing as our enterprise clients require strict compliance and zero-friction deployment, our engineering team has prioritized a fully certified, native containerized security bundle for our platform. We are making this available immediately to all existing enterprise accounts at no additional charge, complete with standard vendor indemnification. Our account managers are contacting [COMPANY_4] and other regulated institutions today to offer them this production-ready alternative under our existing master services agreements.",
+          "rationale": "By offering a fully supported, zero-cost bundled container package with enterprise indemnification, we neutralize the cash-flow advantage of [PERCENT_1] upfront payments and bypass the need for custom architecture sign-offs.",
+          "threatLevel": 5,
+          "targets": "Customers will choose a zero-cost, fully supported enterprise bundle over a startup requiring architecture sign-offs.",
+          "source": "cloud",
+          "latencyMs": 3607,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I decline to match your pricing expectations given current market corrections.",
+          "move": "I call a contact at [COMPANY_4] to quietly verify if that upfront payment is contingent on compliance certifications you haven't built yet. I also let you know that our committee will only revisit the term sheet if you slash your valuation expectation by a third to match current seed rounds. Without our lead, you will burn precious runway trying to bridge the gap with custom enterprise deals.",
+          "rationale": "This exploits your reliance on [COMPANY_4]'s cash flow to fund R&D while ignoring compressed seed market valuations and the heavy dilution you face without a institutional lead.",
+          "threatLevel": 4,
+          "targets": "Upfront payments from [COMPANY_4] will fund development without a down round.",
+          "source": "cloud",
+          "latencyMs": 10540,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Regulated banks demand dedicated compliance review, delaying upfront architecture sign-off.",
+          "move": "We accept the architecture review meetings with [COMPANY_4], but our internal compliance committee insists on an independent third-party penetration test and source code escrow before releasing any upfront cash. Meanwhile, our procurement division requires that any software deployment across our [OTHER_7] branch network must route through our existing master vendor agreement, adding at least four months of paperwork. We keep the [PERCENT_1] milestone tied to full production deployment rather than initial design approval.",
+          "rationale": "This exploits the assumption that design approval easily unlocks cash and that a single containerized installer satisfies bank-wide regulatory frameworks without localized compliance overhead.",
+          "threatLevel": 4,
+          "targets": "Upfront payment release upon architecture sign-off and universal installer acceptance across regulated banks.",
+          "source": "cloud",
+          "latencyMs": 11554,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "[OTHER_8] mid-market onboarding [PERCENT_2] self-serve at [MONEY_3] per month with automated [OTHER_3] alert migration in under [NUMBER_2] minutes.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We match self-serve onboarding pricing and bundle automated alert migration for free.",
+          "move": "We are deploying a zero-touch self-serve onboarding tier with automated alert migration tools that match [COMPANY_3] pricing at [MONEY_3] per month. Since our existing infrastructure allows us to absorb these features into our standard enterprise bundle, we are offering this entire self-serve module at zero cost to any customer currently evaluating alternative migration paths. Our sales and marketing teams are broadcasting this update to all mid-market prospects today.",
+          "rationale": "By matching their low price point and offering instant automated migration for free, we neutralize their margin advantage and starve them of the mid-market cash flow they need to survive.",
+          "threatLevel": 5,
+          "targets": "The assumption that mid-market teams will pay [MONEY_3] per month when a bundled, free alternative exists.",
+          "source": "cloud",
+          "latencyMs": 5153,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC refuses term sheet revision and warns other investors off.",
+          "move": "I officially close our file on leading [COMPANY_1] at [MONEY_1] and pass the word to our syndicate network that your burn rate is outracing your self-serve margins. Without a institutional lead or a valuation cut matching the current market correction, your bridge to profitability looks too narrow. I wish you luck with the mid-market transition, but we are out.",
+          "rationale": "This exploits the fatal cash-flow gap between high-touch enterprise deals and low-margin self-serve onboarding while cutting off your access to our capital.",
+          "threatLevel": 5,
+          "targets": "Self-serve mid-market onboarding can fund enterprise burn without a institutional lead.",
+          "source": "cloud",
+          "latencyMs": 7838,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Mid-market buyers decline automated migration, citing entrenched incumbent renewal contracts.",
+          "move": "We decline the self-serve onboarding offer at [MONEY_3] per month. Our existing multi-year incumbent contracts for [OTHER_3] just renewed last quarter, meaning we have zero discretionary budget for new tool subscriptions right now regardless of how fast migration takes. Additionally, our engineering teams refuse to allocate internal hours to test a new automated migration script when the half-solution we already pay for is firmly embedded in our daily pipeline.",
+          "rationale": "This exploits the reality that mid-market buyers have already locked in and paid for incumbent tools, leaving no open budget or attention for fast self-serve alternatives.",
+          "threatLevel": 5,
+          "targets": "Mid-market buyers will adopt self-serve tools and migrate rapidly if onboarding friction is removed.",
+          "source": "cloud",
+          "latencyMs": 7868,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:04:03.148Z"
+}

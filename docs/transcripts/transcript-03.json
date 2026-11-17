@@ -1,0 +1,169 @@
+{
+  "transcriptId": "transcript-03",
+  "scenarioTitle": "03 · Cross-Border B2B FX & Treasury Bundle",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 20,
+  "tokensInMap": [
+    "[OTHER_1] (OTHER)",
+    "[MONEY_1] (MONEY)",
+    "[NUMBER_1] (NUMBER)",
+    "[DATE_1] (DATE)",
+    "[COMPANY_1] (COMPANY)",
+    "[NUMBER_2] (NUMBER)",
+    "[OTHER_2] (OTHER)",
+    "[OTHER_3] (OTHER)",
+    "[COMPANY_2] (COMPANY)",
+    "[OTHER_4] (OTHER)",
+    "[PERCENT_1] (PERCENT)",
+    "[MONEY_2] (MONEY)",
+    "[COMPANY_3] (COMPANY)",
+    "[PERSON_1] (PERSON)",
+    "[PRODUCT_1] (PRODUCT)",
+    "[DATE_2] (DATE)",
+    "[COMPANY_4] (COMPANY)",
+    "[MONEY_3] (MONEY)",
+    "[OTHER_5] (OTHER)",
+    "[OTHER_6] (OTHER)"
+  ],
+  "objective": "[OTHER_1] [MONEY_1] exporter volume and reach [NUMBER_1] exporters by [DATE_1].",
+  "brief": "[COMPANY_1] processes [MONEY_1] in cross-border invoices for [NUMBER_2] exporters in [OTHER_2] and [OTHER_3]. Rival [COMPANY_2] just cut [OTHER_4] spreads by [PERCENT_1] after raising [MONEY_2] from [COMPANY_3]. CEO [PERSON_1] proposes bundling free treasury accounts via [PRODUCT_1] before [DATE_2].",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "Launch [PRODUCT_1] free multi-currency treasury accounts for all [NUMBER_2] exporters in [OTHER_2] and [OTHER_3] while holding [OTHER_4] spreads steady.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers renew incumbent software contracts and ignore free treasury accounts",
+          "move": "I absorb zero new accounts from [COMPANY_1] this month as our finance teams have already locked in annual subscriptions with existing providers last quarter. Procurement windows have stretched past [DATE_2], meaning no one is willing to migrate core operational workflows just to access a zero-fee tier.",
+          "rationale": "Exploiting long corporate procurement cycles and existing vendor lock-in that make free offerings irrelevant in the short term.",
+          "threatLevel": 3,
+          "targets": "Exporters will rapidly adopt free treasury accounts before [DATE_2] despite active vendor contracts.",
+          "source": "cloud",
+          "latencyMs": 8154,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "I pass on the round due to unsustainable margin erosion risks.",
+          "move": "I decline to issue a term sheet for [COMPANY_1] at the current valuation, noting that seed rounds in this category have dropped by a third. I quietly warn my partners against any overlap with a portfolio company of ours operating in the adjacent payments layer.",
+          "rationale": "By refusing to match [COMPANY_2] on spreads while offering unproven free accounts, the founder is ignoring immediate churn risks for the sake of an unproven product.",
+          "threatLevel": 4,
+          "targets": "Exporters will adopt free treasury accounts while ignoring aggressive spread cuts from well-funded rivals.",
+          "source": "cloud",
+          "latencyMs": 9376,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We are bundling free multi-currency accounts into our enterprise suite today.",
+          "move": "I have instructed our engineering team to roll out a good-enough version of [PRODUCT_1] directly into our existing platform for all our mutual enterprise clients at zero additional cost. Since our roadmap is set well in advance, we are simply pulling forward a feature we already had in development and giving it away immediately. We will market this heavily to every exporter in [OTHER_2] and [OTHER_3] before [COMPANY_1] can establish a foothold.",
+          "rationale": "By giving away [PRODUCT_1] for free as part of our existing bundle, we neutralize [COMPANY_1]'s value proposition and starve them of the new user acquisition they need to reach [NUMBER_1] exporters.",
+          "threatLevel": 4,
+          "targets": "Exporters will adopt [COMPANY_1] solely for free treasury accounts without switching their core flows.",
+          "source": "cloud",
+          "latencyMs": 7508,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "[COMPANY_4] on spot [OTHER_4] rates only for exporters who lock [MONEY_3] minimum treasury balances and automate [OTHER_5] reconciliation.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We launch automated reconciliation and fee waivers for high-volume treasury deposits.",
+          "move": "We are matching the requirement by updating our platform to bundle automated reconciliation with waived spot fees for any user holding a minimum balance. Because we can leverage our existing engineering capacity, we are pushing this update live across our entire customer base immediately. We want to ensure that [COMPANY_1] cannot lock in those minimum balances before our users have access to the exact same incentive.",
+          "rationale": "By neutralizing the lock-in incentive with our own free bundle, we starve [COMPANY_1] of the cash deposits needed to sustain their model. This attacks the assumption that exporters will jump ship for features we can easily replicate and give away.",
+          "threatLevel": 4,
+          "targets": "Exporters will lock minimum treasury balances in exchange for automated reconciliation and better spot rates.",
+          "source": "cloud",
+          "latencyMs": 6692,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Enterprise procurement departments demand cash-flow proof before locking minimum balances.",
+          "move": "We decline to lock [MONEY_3] minimum balances with [COMPANY_1] while our existing finance systems handle reconciliation adequately. Our current vendor contract was renewed last quarter, and shifting treasury workflows requires committee approval that currently takes six months to clear. We continue routing spot [OTHER_4] transactions through [COMPANY_2] to avoid operational disruption.",
+          "rationale": "The requirement for locked minimum balances and automated reconciliation hits a wall of rigid corporate procurement cycles and existing software commitments.",
+          "threatLevel": 4,
+          "targets": "Exporters will lock minimum balances and automate workflows to access spot rates.",
+          "source": "cloud",
+          "latencyMs": 9029,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC demands valuation cut and rejects partner overlap",
+          "move": "I decline to lead the round at [COMPANY_1] and inform [PERSON_1] that our investment committee will not clear any structure that encroaches on our portfolio company in the adjacent payments layer. Furthermore, I advise three competing seed funds that market multiples in this space have contracted by a third, effectively capping any valuation markup they might chase.",
+          "rationale": "This exploits the fatal overlap with our existing portfolio company and forces the founder to face realistic valuation corrections in a down market.",
+          "threatLevel": 5,
+          "targets": "Assuming the fund can close an expensive round without competing with existing portfolio assets or market repricing.",
+          "source": "cloud",
+          "latencyMs": 10268,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "[OTHER_6] instant export-vat financing backed by partner banks so switching away from [COMPANY_1] breaks the exporter working-capital line.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We integrate export-vat financing natively into our enterprise treasury suite.",
+          "move": "We have directed our engineering resources to roll out a native export-vat financing module directly within our existing platform, partnering with our own network of banking institutions. Because our enterprise clients expect an all-in-one solution without managing external vendor integrations, we are offering this capability with zero implementation fees. This completely nullifies any unique working-capital leverage [COMPANY_1] hoped to secure through partner banks.",
+          "rationale": "By embedding VAT financing natively into our established enterprise dashboard, we strip away the switching incentive before [COMPANY_1] can deploy its banking partnerships to lock in exporters.",
+          "threatLevel": 5,
+          "targets": "Exporters will switch platforms solely to access partner-backed export-vat working-capital lines.",
+          "source": "cloud",
+          "latencyMs": 8817,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Commercial banks tighten lending criteria and reject new VAT financing partnerships.",
+          "move": "We decline to integrate the new export-vat financing product because our lending committees require a twelve-month track record of default rates before approving credit lines through third-party platforms. Exporters continue to rely on their established relationship banks for working-capital lines rather than risking operational delays with [COMPANY_1]. Our finance teams refuse to entrench our liquidity needs into a software provider when existing banking channels offer more reliable credit terms.",
+          "rationale": "This move exploits the reliance on partner banks for credit risk, which takes months of regulatory clearance and operational trust that has not been earned.",
+          "threatLevel": 3,
+          "targets": "Partner banks will instantly provide liquidity and exporters will shift working-capital lines.",
+          "source": "cloud",
+          "latencyMs": 9683,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC flags bank partner credit risk and passes entirely.",
+          "move": "I officially notify [PERSON_1] that we are out of the syndicate entirely and refuse to introduce [COMPANY_1] to our partner banks for the [OTHER_6] credit facility. I also share our compliance memo regarding balance sheet risk on partner-backed lending with two other funds who were looking at the memo. You are taking on hidden credit risk just to retain low-margin exporters.",
+          "rationale": "This exposes the fatal flaw of shifting a software business into balance-sheet intensive lending without proper banking infrastructure or capital backing.",
+          "threatLevel": 5,
+          "targets": "Partner banks will readily back unproven cross-border export-vat financing without severe credit loss exposure.",
+          "source": "cloud",
+          "latencyMs": 8218,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:01:34.388Z"
+}

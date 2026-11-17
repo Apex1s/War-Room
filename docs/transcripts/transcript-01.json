@@ -1,0 +1,168 @@
+{
+  "transcriptId": "transcript-01",
+  "scenarioTitle": "01 · Workflow Auditing Self-Serve Launch (Defensive Wedge)",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 19,
+  "tokensInMap": [
+    "[MONEY_1] (MONEY)",
+    "[NUMBER_1] (NUMBER)",
+    "[NUMBER_2] (NUMBER)",
+    "[COMPANY_1] (COMPANY)",
+    "[OTHER_1] (OTHER)",
+    "[OTHER_2] (OTHER)",
+    "[OTHER_3] (OTHER)",
+    "[PERSON_1] (PERSON)",
+    "[COMPANY_2] (COMPANY)",
+    "[MONEY_2] (MONEY)",
+    "[NUMBER_3] (NUMBER)",
+    "[COMPANY_3] (COMPANY)",
+    "[PERCENT_1] (PERCENT)",
+    "[MONEY_3] (MONEY)",
+    "[DATE_1] (DATE)",
+    "[OTHER_4] (OTHER)",
+    "[NUMBER_4] (NUMBER)",
+    "[PERCENT_2] (PERCENT)",
+    "[NUMBER_5] (NUMBER)"
+  ],
+  "objective": "Reach [MONEY_1] and [NUMBER_1] teams in [NUMBER_2] months without raising a seed round.",
+  "brief": "[COMPANY_1] is building [OTHER_1], an automated workflow auditing engine for mid-size operations teams in [OTHER_2] and [OTHER_3]. Founder [PERSON_1] left [COMPANY_2] to launch the product. Current ARR is [MONEY_2] across [NUMBER_3] design partners including [COMPANY_3], with [PERCENT_1] monthly growth. We plan to launch a self-serve tier at [MONEY_3] per seat on [DATE_1] to reach [NUMBER_1] teams without raising a seed round from [OTHER_4].",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "Launch as described in the brief with a [NUMBER_4]-day self-serve trial at [MONEY_3] per seat.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Enterprise buyers extend procurement cycles past trial windows as budgets tighten.",
+          "move": "We decline to convert the trial into paid seats at [DATE_1], citing internal policy reviews and the need for security compliance sign-offs that require three months of deliberation. Mid-size operations teams are freezing discretionary software spend and renewing existing contracts rather than onboarding unproven vendors without dedicated implementation support.",
+          "rationale": "This exploits the assumption that self-serve trials convert smoothly without enterprise-grade procurement and security friction, starving the business of the cash needed to reach [MONEY_1].",
+          "threatLevel": 4,
+          "targets": "Mid-size operations teams will rapidly convert from a self-serve trial to paid seats.",
+          "source": "cloud",
+          "latencyMs": 8445,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Bundling basic workflow auditing into our enterprise tier at no cost.",
+          "move": "We are routing a team of eight engineers to package the core auditing features requested by [COMPANY_3]'s profile into a standard module for our existing customers. Since our roadmap is locked for months on custom enterprise requests, offering this as a complimentary bundle to our broad base costs us nothing in near-term development flow. We will match the self-serve pricing point with a zero-cost tier for our base, neutralizing the willingness to pay for [COMPANY_1].",
+          "rationale": "This exploits the player's lack of capital and runway by giving away the exact functionality they are trying to monetize before they can scale their self-serve funnel.",
+          "threatLevel": 4,
+          "targets": "Mid-size operations teams will pay [MONEY_3] per seat instead of taking a free bundled alternative.",
+          "source": "cloud",
+          "latencyMs": 8394,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC passes on seed terms and calls portfolio allies.",
+          "move": "I will decline to issue a term sheet at your requested valuation, noting that market comps have softened significantly this year. Instead, I am quietly advising our existing enterprise portfolio company in the adjacent workflow automation space to accelerate its own mid-market auditing features. Let us see how easily you scale past [NUMBER_1] teams when a better-funded incumbent blocks the door.",
+          "rationale": "This exploits the vulnerability of trying to scale organically into a market where well-capitalized adjacent players can easily add your feature set before you reach critical mass.",
+          "threatLevel": 4,
+          "targets": "Can self-serve motion scale to [NUMBER_1] teams without heavy capital burn or defensive moats?",
+          "source": "cloud",
+          "latencyMs": 6540,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "Convert all [NUMBER_3] design partners including [COMPANY_3] to annual pre-paid contracts with a [PERCENT_2] discount and ship cross-vendor connectors that [COMPANY_2] cannot bundle.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Mid-market buyers lock in annual renewals with existing vendors, ignoring new connectors.",
+          "move": "We accept the annual renewal terms offered by our current supplier, locking in our workflow budget for the next twelve months. We choose not to deploy the new cross-vendor connectors from [COMPANY_1] because our internal teams have no capacity to migrate operational workflows mid-year without a dedicated implementation manager. The [PERCENT_2] discount fails to trigger movement because our discretionary software budget for this fiscal year is already fully allocated.",
+          "rationale": "Locking design partners into annual deals secures cash flow, but it fails to crack the wider mid-market where procurement freezes and locked-in incumbent contracts prevent adoption of [OTHER_1].",
+          "threatLevel": 3,
+          "targets": "Mid-size operations teams will abandon existing annual contracts to adopt new workflow connectors.",
+          "source": "cloud",
+          "latencyMs": 5958,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC asks portfolio company to match cross-vendor connectors.",
+          "move": "I appreciate the hustle in locking in your design partners on annual prepays, but it does not solve your distribution problem or your lack of capital. I am instructing our portfolio company in the adjacent space to prioritize building those exact same cross-vendor connectors within the quarter. Without a seed round to fund your customer acquisition, you will bleed cash trying to out-build an entrenched incumbent.",
+          "rationale": "This exploits the assumption that a bootstrapped team can out-engineer and out-market a well-funded incumbent once they enter each other's feature territory.",
+          "threatLevel": 4,
+          "targets": "Bootstrapped engineering velocity can outpace a well-funded incumbent's feature replication.",
+          "source": "cloud",
+          "latencyMs": 9454,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We release native cross-vendor connectors and lock in multi-year enterprise agreements.",
+          "move": "We appreciate [PERSON_1] securing those design partners, but we are deploying our engineering resources to release a native suite of cross-vendor connectors ahead of schedule. Simultaneously, our account management team is offering our existing enterprise base an extended multi-year package that incorporates these integrations at no additional charge. This effectively neutralizes the moat [COMPANY_1] is trying to build with proprietary interoperability.",
+          "rationale": "By matching their new integration feature and absorbing it into our existing enterprise contracts, we remove the unique value proposition of [OTHER_1] before they can scale it. We are exploiting their lack of a locked distribution base by locking ours down tighter.",
+          "threatLevel": 4,
+          "targets": "Cross-vendor connectors can protect [COMPANY_1] from being commoditized by our free bundle.",
+          "source": "cloud",
+          "latencyMs": 2047,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "Drop paid search completely; distribute free SOC2 workflow templates through compliance communities in [OTHER_3] and [OTHER_2] to keep payback under [NUMBER_5] days.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Compliance communities ignore unverified templates as security audits shift to incumbent vendors.",
+          "move": "We download the free SOC2 templates from [COMPANY_1] for internal policy reference, but we route our actual compliance audit through our incumbent security software provider rather than adopting an unproven auditing engine. Our risk committee requires vendor-backed indemnification for any workflow automation touching regulated data, which a community template distributed for free cannot provide. We allocate our engineering hours toward our existing vendor's integrated compliance modules instead of installing independent scripts.",
+          "rationale": "Free templates bypass budget friction but fail to clear enterprise risk and procurement hurdles without dedicated vendor support and indemnification.",
+          "threatLevel": 3,
+          "targets": "Compliance community distribution eliminates acquisition cost and friction to achieve rapid self-serve adoption.",
+          "source": "cloud",
+          "latencyMs": 2306,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Releasing free certified compliance templates natively integrated into our enterprise dashboard",
+          "move": "We see [COMPANY_1] pivoting toward community-driven distribution of compliance templates, so we are having our team package pre-vetted SOC2 workflow templates directly inside our platform at no extra charge. We will share these certified frameworks across the exact same compliance communities in [OTHER_3] and [OTHER_2] to intercept [PERSON_1]'s top-of-funnel traffic before they reach the self-serve tier. It is a pleasure to let smaller players do the heavy lifting of community education while we capture the intent.",
+          "rationale": "By distributing identical templates for free inside an established enterprise ecosystem, we remove the incentive for mid-size teams to adopt an unproven tool just for documentation.",
+          "threatLevel": 5,
+          "targets": "Free compliance templates driving organic acquisition without paid search.",
+          "source": "cloud",
+          "latencyMs": 2398,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC flags community-led growth limits and passes on funding.",
+          "move": "I appreciate the creative pivot to organic distribution through compliance communities, but relying entirely on zero-cost viral loops to hit [MONEY_1] without capital is wishful thinking. I am officially passing on this round, and I have already briefed our partners that we will not back any direct overlap with our existing portfolio footprint. Good luck bootstrapping against a well-funded incumbent holding the enterprise keys.",
+          "rationale": "This move exploits the fatal flaw in the boot-strapped timeline by proving that organic community loops cannot generate sufficient enterprise pipeline velocity to replace a venture-backed sales force.",
+          "threatLevel": 5,
+          "targets": "Organic compliance community distribution can scale revenue to [MONEY_1] without paid acquisition or capital.",
+          "source": "cloud",
+          "latencyMs": 1773,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:18:07.718Z"
+}

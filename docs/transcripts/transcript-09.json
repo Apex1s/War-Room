@@ -1,0 +1,174 @@
+{
+  "transcriptId": "transcript-09",
+  "scenarioTitle": "09 · Clinical Coding AI for Outpatient Clinics",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 25,
+  "tokensInMap": [
+    "[OTHER_1] (OTHER)",
+    "[NUMBER_1] (NUMBER)",
+    "[MONEY_1] (MONEY)",
+    "[OTHER_2] (OTHER)",
+    "[OTHER_3] (OTHER)",
+    "[OTHER_4] (OTHER)",
+    "[NUMBER_2] (NUMBER)",
+    "[NUMBER_3] (NUMBER)",
+    "[OTHER_5] (OTHER)",
+    "[OTHER_6] (OTHER)",
+    "[PERSON_1] (PERSON)",
+    "[PERSON_2] (PERSON)",
+    "[MONEY_2] (MONEY)",
+    "[PERSON_3] (PERSON)",
+    "[MONEY_3] (MONEY)",
+    "[COMPANY_1] (COMPANY)",
+    "[DATE_1] (DATE)",
+    "[OTHER_7] (OTHER)",
+    "[PERCENT_1] (PERCENT)",
+    "[OTHER_8] (OTHER)",
+    "[OTHER_9] (OTHER)",
+    "[OTHER_10] (OTHER)",
+    "[NUMBER_4] (NUMBER)",
+    "[OTHER_11] (OTHER)",
+    "[PERCENT_2] (PERCENT)"
+  ],
+  "objective": "[OTHER_1] [NUMBER_1] outpatient clinics at [MONEY_1]/month with zero [OTHER_2] incidents.",
+  "brief": "[OTHER_3] AI automates [OTHER_4] billing audits for [NUMBER_3] clinics in [OTHER_5] and [OTHER_6]. Founder [PERSON_1]. [PERSON_2] raised [MONEY_2] from [PERSON_3] and reached [MONEY_3]. [COMPANY_1] just announced a native coding assistant for [DATE_1].",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "[OTHER_7] AI as a payer-denial appeal engine rather than a generic note-taker, guaranteeing <[PERCENT_1] claim rejection for [OTHER_5] and [OTHER_6] clinics.",
+      "generalMoves": [
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Pass on round and flag valuation mismatch to syndicate members",
+          "move": "I pass on the round at [MONEY_2] and quietly let the other seed leads know that market prices for this category have dropped by a third. I suggest they re-cut their term sheets accordingly. Without our check and with a lower valuation expectation from the street, your runway math breaks down.",
+          "rationale": "Pivoting to payer-denial appeals requires heavy legal and compliance overhead that destroys the SaaS margins you pitched. I am squeezing your valuation to force a down-round reality check.",
+          "threatLevel": 4,
+          "targets": "Unit economics holding up when shifting from billing audits to complex payer-denial appeals.",
+          "source": "cloud",
+          "latencyMs": 8953,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "We are bundling a native payer-denial appeal engine for existing enterprise accounts.",
+          "move": "We have assigned a dedicated engineering pod to build a competitive denial-appeal workflow directly into our existing platform. We will make this available at no additional charge to all our enterprise clients starting next quarter. Since our sales team already owns the distribution in [OTHER_5] and [OTHER_6], we can land this in front of [OTHER_1] clinics before [COMPANY_1] finishes onboarding.",
+          "rationale": "By offering the denial-appeal feature for free inside our existing enterprise bundle, we neutralize the ROI argument for [COMPANY_1] and starve them of the cash flow needed to scale.",
+          "threatLevel": 4,
+          "targets": "Clinics will pay standalone SaaS fees for a specialized denial-appeal engine.",
+          "source": "cloud",
+          "latencyMs": 7852,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers renew existing half-solutions; customer acquisition costs double.",
+          "move": "We extend our contract with our incumbent vendor for another twelve months, locking in our current budget and avoiding the risk of a new vendor implementation. When contacted about [OTHER_7] AI, our procurement department adds an extra three layers of security review and legal compliance, pushing any potential buying decision past the next two quarters. Meanwhile, the cost of reaching our attention through standard digital channels has climbed past [MONEY_3], making initial outreach economically unviable.",
+          "rationale": "This exploits the assumption that buyers have open budgets and short procurement cycles when they are actually locked into recent renewals and facing longer decision gates.",
+          "threatLevel": 4,
+          "targets": "Assumes buyers can easily switch and have immediate budget without facing long procurement cycles.",
+          "source": "cloud",
+          "latencyMs": 14614,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "[OTHER_8] all [OTHER_9] scrubbing locally inside the clinic browser before cloud inference and [OTHER_1] [OTHER_10] with [NUMBER_4]-hour turnarounds.",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Bundling local browser scrubbing and rapid-turnaround compliance guarantees at zero cost",
+          "move": "We are instructing our engineering team to adapt our upcoming release to include a local browser-side data scrubber alongside our denial-appeal workflow. Because our enterprise roadmap allows us to repurpose existing development capacity immediately, we will match the [NUMBER_4]-hour turnaround guarantee and offer it bundled for free to our entire user base. Our account executives will begin pre-selling this integrated package to [OTHER_1] clinics this week to neutralize any wedge [COMPANY_1] is trying to drive.",
+          "rationale": "By copying the local scrubbing and fast turnaround features and bundling them for free, we strip away the player's primary technical differentiator and margin advantage.",
+          "threatLevel": 5,
+          "targets": "Local browser-based scrubbing and turnaround times can create an unassailable technical wedge against incumbents.",
+          "source": "cloud",
+          "latencyMs": 2303,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Enterprise procurement extends review cycles while incumbent vendor locks budgets.",
+          "move": "We acknowledge the local browser scrubbing approach, but our compliance committee still requires a full vendor risk assessment before any trial can be scheduled. Since our budget was already locked in with our incumbent provider last quarter, our finance department has frozen discretionary software spending for new entrants until the next fiscal year. Consequently, your outreach messages are routed directly to our standard vendor evaluation queue, where response times currently average over six months.",
+          "rationale": "This exploits the reality of frozen IT budgets and extended enterprise procurement timelines, neutralizing the technical reduction in friction by introducing administrative delay.",
+          "threatLevel": 4,
+          "targets": "Assuming local browser scrubbing instantly bypasses enterprise security and procurement timelines.",
+          "source": "cloud",
+          "latencyMs": 8092,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Decline term sheet revision; cite portfolio conflict and market pricing.",
+          "move": "I officially pass on the round and inform the founder that our investment committee will not approve exposure to this workflow due to an existing portfolio company operating just one step away. I also mention that the remaining syndicate leads are holding firm on the one-third valuation markdown we discussed last week. Without our capital and at the revised lower price, the dilution math will force a painful bridge or a down round.",
+          "rationale": "This exploit targets the founder's capital requirements and valuation assumptions, while quietly leveraging our internal portfolio conflict to ensure they get zero institutional momentum from us.",
+          "threatLevel": 5,
+          "targets": "The assumption that valuation and syndicate terms remain insulated from broader market drops.",
+          "source": "cloud",
+          "latencyMs": 8744,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "[OTHER_11] pricing to [PERCENT_2] of recovered denied claims above baseline so clinics pay only from cash we recover.",
+      "generalMoves": [
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Pass on contingency pricing model due to severe cash flow risks",
+          "move": "I officially close our file on this round and decline to participate in any capacity. When other syndicate members ask about your contingency pricing model, I will point out that working on a percentage of recovered claims delays cash collection significantly while your burn rate remains fixed. Without upfront SaaS revenue, your working capital requirements will break your runway before you reach profitability.",
+          "rationale": "Switching to pure contingency fee models destroys predictable software ARR and introduces massive cash flow volatility for an early-stage startup.",
+          "threatLevel": 5,
+          "targets": "Contingency pricing provides sufficient predictable cash flow to sustain operations without upfront SaaS revenue.",
+          "source": "cloud",
+          "latencyMs": 8032,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers demand risk-free contingency terms while finance mandates extended credit collection windows.",
+          "move": "We accept the contingency pricing model because it eliminates upfront budget risk, but our legal and finance departments now require a ninety-day payout window after the funds are actually collected from the payer. Since our cash flow cycles on denied claims already move slowly, this structure shifts the working capital burden entirely onto [PERSON_1] and [COMPANY_1]. Furthermore, our internal billing team insists on manual verification of every recovered dollar before releasing any percentage to you, adding administrative drag to your operations.",
+          "rationale": "Shifting to contingency pricing removes the budget barrier, but it exposes the player to severe cash flow delays and collection friction from payers who routinely stall payouts.",
+          "threatLevel": 3,
+          "targets": "Assuming contingency pricing instantly yields cash without collection delays or administrative payment friction.",
+          "source": "cloud",
+          "latencyMs": 8570,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Copycat Competitor launches contingency pricing matching recovery-based models for enterprise accounts.",
+          "move": "We are adjusting our commercial terms to match performance-based models for [OTHER_1] clinics, offering our bundled suite at a contingency fee of [PERCENT_2] of recovered denied claims above baseline. Because our existing enterprise contracts give us broad flexibility to package services, we can absorb this margin compression across our larger customer base. Our sales leadership will brief account managers tomorrow to offer this matching structure to any clinic currently evaluating [COMPANY_1].",
+          "rationale": "This neutralizes the player's primary pricing wedge by removing their financial risk advantage, exploiting the player's limited cash runway against our deeper balance sheet.",
+          "threatLevel": 5,
+          "targets": "Clinics will adopt the player's contingency pricing because incumbents cannot match performance terms.",
+          "source": "cloud",
+          "latencyMs": 7574,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:07:18.342Z"
+}

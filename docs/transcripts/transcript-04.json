@@ -1,0 +1,171 @@
+{
+  "transcriptId": "transcript-04",
+  "scenarioTitle": "04 · Cross-Border B2B Corridor Specialisation",
+  "templateId": "startup",
+  "redactionMethod": "basic",
+  "maskedEntityCount": 22,
+  "tokensInMap": [
+    "[OTHER_1] (OTHER)",
+    "[PERCENT_1] (PERCENT)",
+    "[OTHER_2] (OTHER)",
+    "[COMPANY_1] (COMPANY)",
+    "[MONEY_1] (MONEY)",
+    "[NUMBER_1] (NUMBER)",
+    "[OTHER_3] (OTHER)",
+    "[OTHER_4] (OTHER)",
+    "[COMPANY_2] (COMPANY)",
+    "[OTHER_5] (OTHER)",
+    "[PERCENT_2] (PERCENT)",
+    "[MONEY_2] (MONEY)",
+    "[COMPANY_3] (COMPANY)",
+    "[PERSON_1] (PERSON)",
+    "[PRODUCT_1] (PRODUCT)",
+    "[DATE_1] (DATE)",
+    "[OTHER_6] (OTHER)",
+    "[PERSON_2] (PERSON)",
+    "[PERSON_3] (PERSON)",
+    "[OTHER_7] (OTHER)",
+    "[OTHER_8] (OTHER)",
+    "[OTHER_9] (OTHER)"
+  ],
+  "objective": "[OTHER_1] net revenue retention to [PERCENT_1] across [OTHER_2] industrial exporters.",
+  "brief": "[COMPANY_1] processes [MONEY_1] in cross-border invoices for [NUMBER_1] exporters in [OTHER_3] and [OTHER_4]. Rival [COMPANY_2] just cut [OTHER_5] spreads by [PERCENT_2] after raising [MONEY_2] from [COMPANY_3]. CEO [PERSON_1] proposes bundling free treasury accounts via [PRODUCT_1] before [DATE_1].",
+  "rounds": [
+    {
+      "n": 1,
+      "userMove": "[OTHER_6] on automated supplier payouts in [PERSON_2] and [PERSON_3] corridors where [COMPANY_2] lacks local banking rails.",
+      "generalMoves": [
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC passes on round due to portfolio conflict and pricing pressure",
+          "move": "I officially decline to bring [COMPANY_1] to our investment committee, citing our existing exposure to a portfolio company of ours operating right on the edge of this market. At the same time, I quietly leak to [COMPANY_2]'s syndicate that your treasury bundling strategy is defensive and desperate.",
+          "rationale": "This exploit targets the capital intensity of your workaround in niche corridors and signals to the market that your margins are about to compress.",
+          "threatLevel": 4,
+          "targets": "Can automated supplier payouts in secondary corridors offset margin compression from [COMPANY_2]?",
+          "source": "cloud",
+          "latencyMs": 6987,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Bundling automated supplier payouts for free into our enterprise suite",
+          "move": "We have assigned a dedicated engineering team to release a robust suite for automated supplier payouts in the [PERSON_2] and [PERSON_3] corridors by next month. We are including this functionality at no additional cost for all existing enterprise customers who renew their annual contracts early. This neutralizes the regional advantage [COMPANY_1] is attempting to carve out before they can establish deep liquidity.",
+          "rationale": "By bundling these corridor payouts into our existing enterprise contracts for free, we starve [COMPANY_1] of the transactional volume they need to sustain their net revenue retention goal.",
+          "threatLevel": 4,
+          "targets": "The assumption that [COMPANY_1] can secure exclusive dominance in specific regional corridors without competing with our bundled pricing.",
+          "source": "cloud",
+          "latencyMs": 7538,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Buyers lock in annual vendor contracts, freezing out new treasury adoption.",
+          "move": "We decline to adopt [PRODUCT_1] or switch payout workflows, as our existing multi-bank arrangements were just renewed for the fiscal year. Procurement cycles have lengthened by a third, and finance teams refuse to introduce new operational risk or migrate ledger integrations until the next budget cycle. We continue routing through incumbent providers who already handle our baseline needs half-as-well at known cost.",
+          "rationale": "This targets the assumption that free bundling alone can trigger immediate platform switching while buyers are locked into freshly renewed contracts and longer procurement reviews.",
+          "threatLevel": 4,
+          "targets": "Buyers will abandon existing multi-year vendor commitments instantly to adopt a free treasury bundle.",
+          "source": "cloud",
+          "latencyMs": 7268,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "userMove": "[OTHER_7] exclusive [OTHER_8] plugin agreements with the top 3 accounting networks in [OTHER_3] and [OTHER_4].",
+      "generalMoves": [
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Integrating competing accounting networks natively into our core enterprise offering.",
+          "move": "We are reaching out to the major accounting networks in [OTHER_3] and [OTHER_4] this week to establish native integrations across our entire customer base. Since our existing sales channels already touch their primary customer segments, we can offer these networks broader distribution than any standalone plugin. We will roll out these native connections to our users at no additional charge ahead of schedule.",
+          "rationale": "By bypassing exclusive plugins with broader native integrations, we neutralize the distribution lock-in [COMPANY_1] is attempting to build. This exploits their reliance on niche partnerships by making those features standard across a much larger platform.",
+          "threatLevel": 4,
+          "targets": "Exclusive accounting network agreements provide sustainable distribution moats.",
+          "source": "cloud",
+          "latencyMs": 7999,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC warns accounting partners of compliance risk, stalling plugin rollout.",
+          "move": "I call my contacts at the top accounting networks in [OTHER_3] and [OTHER_4] who signed those exclusive [OTHER_8] plugin agreements with you. I remind them of our history together and quietly flag the regulatory uncertainty of letting an unhedged early-stage startup touch cross-border [OTHER_5] flows. That usually causes their risk committee to pause exclusivity until you can prove indemnity.",
+          "rationale": "Exclusive distribution deals look great on a slide, but enterprise accounting networks are risk-averse and easily spooked by institutional backers whispering about compliance exposure.",
+          "threatLevel": 4,
+          "targets": "Exclusive accounting network plugins guarantee secure, friction-free distribution.",
+          "source": "cloud",
+          "latencyMs": 8138,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Enterprise accounting plugin adoption stalls as finance teams freeze procurement.",
+          "move": "We acknowledge the accounting network integration, but our corporate finance committee has enacted a mandatory spending freeze on new software add-ons for the remainder of the fiscal year. Because we recently locked in our multi-bank arrangements and extended our contracts with incumbent providers, migrating our general ledger routing carries an unacceptable operational risk. We will not install or utilize the new plugin agreements until our next scheduled vendor review cycle.",
+          "rationale": "This exploits the reality that accounting integrations cannot bypass rigid annual procurement freezes and long vendor renewal cycles.",
+          "threatLevel": 3,
+          "targets": "Assuming accounting network plugins automatically trigger immediate software adoption and workflow migration.",
+          "source": "cloud",
+          "latencyMs": 8400,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "userMove": "[OTHER_9] tiered volume rebates paid quarterly so any exporter splitting volume with [COMPANY_2] loses their rebate tier.",
+      "generalMoves": [
+        {
+          "generalId": "market",
+          "generalName": "The Market",
+          "headline": "Exporters reject tier rebates, unwilling to forfeit existing multi-bank redundancy.",
+          "move": "We decline the volume rebate structure because consolidating all invoice flow through [COMPANY_1] exposes us to single-vendor concentration risk. Our treasury policy mandates maintaining relationships with incumbent providers who already handle our baseline needs half-as-well at known cost. Since our budget and vendor mix are locked for the fiscal year, no finance team is willing to forfeit flexibility for quarterly rebates.",
+          "rationale": "This exploits the assumption that financial incentives alone can overcome annual procurement freezes and institutional risk aversion.",
+          "threatLevel": 3,
+          "targets": "Exporters will consolidate volume with [COMPANY_1] to secure quarterly rebates.",
+          "source": "cloud",
+          "latencyMs": 8253,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "vc",
+          "generalName": "Skeptical VC",
+          "headline": "Skeptical VC flags predatory pricing concerns to industrial exporter associations.",
+          "move": "I call two major industry associations in [OTHER_3] and [OTHER_4] where your target exporters sit and mention that [COMPANY_1] is locking customers into exclusive volume tiers while burning cash. Industrial buyers hate supply chain risk and sudden vendor lock-in mechanics when margins are already thin. That kills your quarterly retention math before the rebates ever trigger.",
+          "rationale": "This exploits the weak assumption that industrial exporters will accept restrictive penalty structures without demanding higher baseline discounts to offset the compliance risk.",
+          "threatLevel": 4,
+          "targets": "Exporters will accept restrictive volume tier penalties without hurting net revenue retention.",
+          "source": "cloud",
+          "latencyMs": 9206,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        },
+        {
+          "generalId": "copycat",
+          "generalName": "Copycat Competitor",
+          "headline": "Launching universal multi-vendor rebate matching for enterprise accounts immediately.",
+          "move": "We are introducing a universal multi-vendor rebate matching program for all enterprise customers who commit to our platform. Our sales team is reaching out to match any tiered volume rebates offered by [COMPANY_1] while letting customers aggregate volume from multiple providers. Since our roadmap is locked for the next six months, we are utilizing our standing budget to absorb these rebate costs directly as a free bundle addition.",
+          "rationale": "This exploits the cash flow strain of [COMPANY_1] by neutralizing their tiered rebates with a broader, zero-cost matching program that undercuts their margin structure.",
+          "threatLevel": 5,
+          "targets": "Exporters will accept tiered volume rebates and refuse to split volume with alternative providers.",
+          "source": "cloud",
+          "latencyMs": 17565,
+          "model": "gemini-3.5-flash-lite",
+          "fallback": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-11-17T17:02:33.195Z"
+}
