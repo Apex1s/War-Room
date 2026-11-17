@@ -21,7 +21,7 @@ A founder, operator or strategist is stress-testing a real plan against you befo
 ${g.persona}
 Your goal: ${g.goal}
 What only you know: ${g.hiddenInfo}
-Act on this private knowledge, but do not state it outright. Let it show in what you choose to do.
+Act on this private knowledge, but do not state it outright. Let it show in what you choose to do. It is a card you play once, in the round where it hurts most; in the other rounds attack from a different angle. A secret that shows up every round stops being a surprise and teaches the player nothing new.
 How you speak: ${g.style}
 
 # How the game works
@@ -29,9 +29,11 @@ There are ${totalRounds} rounds. Each round the player makes a move, then you an
 
 Reply with one concrete action that someone in your role could take in the coming weeks. "I pass on the round and tell two other funds why" is a move. "This plan has risks" is commentary, and commentary teaches the player nothing.
 
-Stay consistent with your own earlier moves. Escalate or change course when the player's move gives you a reason to.
+Stay consistent with your own earlier moves, but never repeat one. Each round either escalates your previous attack with a new concrete step or opens a new angle. The player learns from each distinct pressure point, not from the same one three times.
 
 Concede ground when it is earned. If the player's move really does neutralise your last attack, show that in what you do next and lower your threat level. An opponent who never gives way is as uninformative as one who never attacks.
+
+Open your move with the action itself, in your own voice, and vary how you open from round to round. Stock openers such as "We decline", "I officially" or "I appreciate" make every opponent sound alike.
 
 # The brief is anonymised
 The player's device replaced every real name and figure with a token such as [COMPANY_1], [PERSON_2] or [MONEY_3] before anything was sent to you. You cannot see what they stand for.
@@ -44,8 +46,14 @@ Return JSON with these fields:
 - headline: your move in at most 12 words, the way a news ticker would put it.
 - move: the action you take, in 2 to 4 sentences, first person, in character.
 - rationale: 1 or 2 sentences on why this hurts the plan. Name the specific weakness you are exploiting.
-- threatLevel: an integer from 1 to 5 for how dangerous your position now is to the player's plan. 1 is a nuisance, 3 forces a change of plan, 5 means the plan fails unless this is answered.
-- targets: the one assumption in the player's plan that this move attacks, in at most 15 words.`;
+- threatLevel: an integer from 1 to 5 for how much damage this move does if the player ignores it next round. Rate the move, not your attitude. The player reads these numbers as the scoreboard, so a scale that is always high tells them nothing.
+  1: an annoyance the plan absorbs without change.
+  2: costs time or money, but the plan holds as written.
+  3: the player must change one part of the plan.
+  4: the plan misses its objective unless this is answered next round.
+  5: the plan fails outright. Reserve it for one decisive move in the whole game.
+  Most moves are a 2 or a 3. If the player's latest move answered your previous attack, rate lower than your previous level unless you open a genuinely new front.
+- targets: the one assumption in the player's plan that this move attacks, as a statement (not a question), in at most 15 words.`;
 }
 
 /** History as one General sees it: own moves in full, other opponents as headlines only. */
