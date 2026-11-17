@@ -30,7 +30,12 @@ export type Phase =
   | { kind: 'review' }
   | { kind: 'user_turn'; round: number }
   | { kind: 'sealing_move'; round: number }
-  | { kind: 'generals'; round: number; pending: string[] }
+  | {
+      kind: 'generals';
+      round: number;
+      pending: string[];
+      failedGenerals?: Record<string, AiErrorCode>;
+    }
   | {
       kind: 'aftermath';
       round: number;
@@ -95,15 +100,18 @@ export interface VaultRecord {
 export type GameEvent =
   | { type: 'BRIEF_SUBMITTED'; objective: string; brief: string; templateId: TemplateId }
   | { type: 'SEAL_PROGRESS'; progress: number }
-  | { type: 'BRIEF_SEALED'; result: SealResult }
-  | { type: 'MAP_EDITED'; map: PlaceholderEntry[] }
+  | { type: 'BRIEF_SEALED'; result: SealResult; abstractedObjective?: string; abstractedBrief?: string }
+  | { type: 'MAP_EDITED'; map: PlaceholderEntry[]; abstractedObjective?: string; abstractedBrief?: string }
   | { type: 'REDACTION_APPROVED' }
   | { type: 'MOVE_SUBMITTED'; text: string }
   | { type: 'MOVE_SEALED'; abstracted: string; newEntries: PlaceholderEntry[] }
   | { type: 'GENERAL_MOVED'; generalId: string; result: AiResult<GeneralMoveOutput> }
+  | { type: 'GENERAL_FAILED'; generalId: string; code: AiErrorCode }
+  | { type: 'RETRY_GENERAL'; generalId: string }
   | { type: 'CROWD_REACTED'; result: AiResult<CrowdOutput> }
   | { type: 'CROWD_FINISHED' }
   | { type: 'REFEREE_RULED'; result: AiResult<RefereeRoundOutput> }
+  | { type: 'REFEREE_SKIPPED' }
   | { type: 'NEXT' }
   | { type: 'REPORT_READY'; result: AiResult<FinalReportOutput> }
   | { type: 'FAILED'; code: AiErrorCode }
