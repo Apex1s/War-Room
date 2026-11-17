@@ -234,19 +234,29 @@ export async function run<K extends Task>(
     );
   }
 
-  // Step 3: Egress guard for any call that can reach the cloud
-  if (mode !== 'only_on_device' && egressGuard) {
-    try {
-      egressGuard(`${system}\n${user}`, opts?.gameId);
-    } catch (err) {
-      if (err instanceof AiError) throw err;
-      const msg = err instanceof Error ? err.message : String(err);
-      throw new AiError('egress_blocked', task, msg);
+  // Step 3: Egress guard for any call that can reach the cloud (fail closed on 'firebase' provider)
+  const provider = getProvider();
+  if (mode !== 'only_on_device') {
+    if (!egressGuard) {
+      if (provider.kind === 'firebase') {
+        throw new AiError(
+          'egress_blocked',
+          task,
+          'Egress guard must be configured before making cloud calls with the firebase provider.',
+        );
+      }
+    } else {
+      try {
+        egressGuard(`${system}\n${user}`, opts?.gameId);
+      } catch (err) {
+        if (err instanceof AiError) throw err;
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new AiError('egress_blocked', task, msg);
+      }
     }
   }
 
   // Step 4: Get or create cached primary model instance
-  const provider = getProvider();
   let activeModelInstance = getOrCreateModel(provider, {
     task,
     mode,

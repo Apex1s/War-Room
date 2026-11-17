@@ -363,4 +363,38 @@ describe('AI Router & Routing Table', () => {
       thinkingLevel: undefined,
     });
   });
+
+  it('fails closed with egress_blocked when provider is firebase and no egress guard is set', async () => {
+    let createdCount = 0;
+    setProvider({
+      kind: 'firebase',
+      createModel() {
+        createdCount++;
+        return {
+          async generateStream() {
+            return { text: '{}', inferenceSource: 'in_cloud' as const };
+          },
+        };
+      },
+    });
+    setEgressGuard(null);
+
+    await expect(
+      run('general_move', SAMPLE_GENERAL_MOVE_INPUT),
+    ).rejects.toMatchObject({
+      name: 'AiError',
+      code: 'egress_blocked',
+      task: 'general_move',
+    });
+
+    await expect(
+      run('crowd', SAMPLE_CROWD_INPUT),
+    ).rejects.toMatchObject({
+      name: 'AiError',
+      code: 'egress_blocked',
+      task: 'crowd',
+    });
+
+    expect(createdCount).toBe(0);
+  });
 });
