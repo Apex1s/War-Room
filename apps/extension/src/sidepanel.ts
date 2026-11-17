@@ -135,7 +135,8 @@ async function initSidePanel(): Promise<void> {
   const searchParams = new URLSearchParams(window.location.search);
   const usePlanB = searchParams.get('planB') === '1';
 
-  if (usePlanB && import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
+  // DEV only: a production build must never contain the debug token.
+  if (import.meta.env.DEV && usePlanB && import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
   }
 
