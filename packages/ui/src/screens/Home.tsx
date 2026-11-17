@@ -1,0 +1,111 @@
+import {
+  TEMPLATE_LIST,
+  type GameRecord,
+  type GameTemplate,
+  type TemplateId,
+} from '@warroom/core';
+import { TOKENS } from '../tokens';
+
+export interface HomeScreenProps {
+  savedGames: GameRecord[];
+  onSelectTemplate: (templateId: TemplateId) => void;
+  onResumeGame: (gameId: string) => void;
+}
+
+export function HomeScreen({
+  savedGames,
+  onSelectTemplate,
+  onResumeGame,
+}: HomeScreenProps) {
+  return (
+    <div className="flex flex-col gap-6" data-testid="screen-home">
+      <div>
+        <h2 className="text-xl font-semibold text-[#E6EDF3] m-0">
+          Select a Confidential War-Game Scenario
+        </h2>
+        <p className="text-sm text-[#8B9BB4] mt-1 mb-0">
+          The cloud does the thinking, the device keeps the secrets. Your real names and figures are sealed on-device before any round begins.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {TEMPLATE_LIST.map((tpl: GameTemplate) => (
+          <div
+            key={tpl.id}
+            onClick={() => onSelectTemplate(tpl.id)}
+            className={TOKENS.classes.cardInteractive + ' flex flex-col justify-between'}
+            data-testid={`template-card-${tpl.id}`}
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
+                  {tpl.id === 'startup' ? 'Lead Scenario' : 'Template'}
+                </span>
+                <span className="text-xs font-mono text-[#8B9BB4]">3 Rounds</span>
+              </div>
+              <h3 className="text-base font-semibold text-[#E6EDF3] m-0">
+                {tpl.title}
+              </h3>
+              <p className="text-xs text-[#8B9BB4] mt-2 leading-relaxed">
+                {tpl.situation}
+              </p>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-[#223049]">
+              <div className="text-[11px] font-mono text-[#8B9BB4] mb-2">
+                Opposing Generals
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {tpl.generals.map((g) => (
+                  <span
+                    key={g.id}
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0A0E17] border border-[#223049] text-xs"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: g.color }}
+                    />
+                    {g.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {savedGames.length > 0 && (
+        <div className={TOKENS.classes.card}>
+          <h3 className="text-sm font-semibold text-[#E6EDF3] m-0 mb-3">
+            Saved Local Sessions ({savedGames.length})
+          </h3>
+          <div className="flex flex-col gap-2">
+            {savedGames.map((g) => (
+              <div
+                key={g.id}
+                className="flex flex-wrap items-center justify-between gap-3 p-3 rounded bg-[#0A0E17] border border-[#223049]"
+              >
+                <div>
+                  <div className="text-xs font-mono text-[#E0A84B]">
+                    {g.templateId.toUpperCase()} · Phase: {g.phase.kind}
+                  </div>
+                  <div className="text-sm text-[#E6EDF3] mt-0.5">
+                    {g.objective || 'Untitled session'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onResumeGame(g.id)}
+                  className={TOKENS.classes.btnSecondary}
+                  data-testid={`btn-resume-${g.id}`}
+                >
+                  Resume
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

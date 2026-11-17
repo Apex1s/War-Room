@@ -1,8 +1,10 @@
-export interface PlatformInfo {
-  kind: 'web' | 'extension';
-  authMode: 'anonymous+google' | 'anonymous';
-}
-
-export function describePlatform(platform: PlatformInfo): string {
-  return `War Room (${platform.kind}, ${platform.authMode})`;
-}
+export * from './App';
+export * from './components/DeviceStatus';
+export * from './components/DiffView';
+export * from './components/PlaceholderTable';
+export * from './components/SourceBadge';
+export * from './hooks/useDeviceStatus';
+export * from './screens/Brief';
+export * from './screens/FirewallReview';
+export * from './screens/Home';
+export * from './tokens';

@@ -4,16 +4,25 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./styles.css": {
+      "types": "./src/styles.css.d.ts",
+      "default": "./src/styles.css"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit"
   },
   "dependencies": {
-    "@warroom/core": "workspace:*"
+    "@warroom/core": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.0",
     "typescript": "^7.0.2"
   }
 }
