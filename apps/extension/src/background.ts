@@ -4,6 +4,7 @@ interface ChromeSidePanel {
 }
 
 interface ChromeContextMenus {
+  removeAll(callback?: () => void): void;
   create(
     createProperties: {
       id: string;
@@ -22,6 +23,10 @@ interface ChromeContextMenus {
   };
 }
 
+interface ChromeStorageArea {
+  set(items: Record<string, unknown>): Promise<void>;
+}
+
 interface ChromeGlobal {
   runtime?: {
     onInstalled?: {
@@ -31,33 +36,49 @@ interface ChromeGlobal {
   sidePanel?: ChromeSidePanel;
   contextMenus?: ChromeContextMenus;
   storage?: {
-    session?: {
-      set(items: Record<string, unknown>): Promise<void>;
-    };
+    session?: ChromeStorageArea;
+    local?: ChromeStorageArea;
   };
 }
 
 const CONTEXT_MENU_ID = 'warroom-stress-test-selection';
 const chromeApi = (globalThis as { chrome?: ChromeGlobal }).chrome;
 
+function setupExtensionHooks(): void {
+  void chromeApi?.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true });
+  if (chromeApi?.contextMenus) {
+    chromeApi.contextMenus.removeAll(() => {
+      chromeApi.contextMenus?.create({
+        id: CONTEXT_MENU_ID,
+        title: 'Stress-test selection in War Room',
+        contexts: ['selection'],
+      });
+    });
+  }
+}
+
 chromeApi?.runtime?.onInstalled?.addListener(() => {
-  void chromeApi.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true });
-  chromeApi.contextMenus?.create({
-    id: CONTEXT_MENU_ID,
-    title: 'Stress-test selection in War Room',
-    contexts: ['selection'],
-  });
+  setupExtensionHooks();
 });
 
 chromeApi?.contextMenus?.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== CONTEXT_MENU_ID) return;
-  if (info.selectionText) {
-    void chromeApi.storage?.session?.set({
-      initialBrief: info.selectionText,
-    });
+  const trimmed = info.selectionText?.trim();
+  if (trimmed) {
+    const payload = {
+      initialBrief: trimmed,
+      initialBriefTs: Date.now(),
+    };
+    if (chromeApi.storage?.session) {
+      void chromeApi.storage.session.set(payload);
+    } else if (chromeApi.storage?.local) {
+      void chromeApi.storage.local.set(payload);
+    }
   }
   if (tab?.id !== undefined) {
     void chromeApi.sidePanel?.open({ tabId: tab.id });
+  } else if (tab?.windowId !== undefined) {
+    void chromeApi.sidePanel?.open({ windowId: tab.windowId });
   }
 });
 

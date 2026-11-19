@@ -1,15 +1,16 @@
 import {
   bindFirebaseAuth,
   createFirebaseProvider,
+  downloadDeviceModel,
   enableDefaultEgressGuard,
   initFirebaseRemoteConfig,
-  refreshDeviceAvailability,
-  run,
+  installNetGuard,
   setCloudSyncFirestore,
   setProvider,
 } from '@warroom/core';
-import { describePlatform } from '@warroom/ui';
-import { getAI, GoogleAIBackend } from 'firebase/ai';
+import { App } from '@warroom/ui';
+import '@warroom/ui/styles.css';
+import { getAI, GoogleAIBackend, type AI } from 'firebase/ai';
 import { initializeApp } from 'firebase/app';
 import {
   CustomProvider,
@@ -18,20 +19,44 @@ import {
 } from 'firebase/app-check';
 import { getAuth } from 'firebase/auth/web-extension';
 import { getFirestore } from 'firebase/firestore';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+
+installNetGuard();
+enableDefaultEgressGuard();
 
 const BRIDGE_URL = 'https://war-room-hybrid.web.app/appcheck-bridge.html';
 const BRIDGE_ORIGIN = 'https://war-room-hybrid.web.app';
 
-const titleEl = document.getElementById('ext-title');
-const authEl = document.getElementById('ext-auth');
-const appCheckEl = document.getElementById('ext-appcheck');
-const nanoEl = document.getElementById('ext-nano');
-const outputEl = document.getElementById('ext-output');
-const btnBridgeTest = document.getElementById('btn-ext-bridge-test') as HTMLButtonElement | null;
-const btnCloudCall = document.getElementById('btn-ext-cloud-call') as HTMLButtonElement | null;
+interface ChromeStorageArea {
+  get(keys: string | string[]): Promise<Record<string, unknown>>;
+  remove(keys: string | string[]): Promise<void>;
+}
 
-if (titleEl) {
-  titleEl.textContent = describePlatform({ kind: 'extension', authMode: 'anonymous' });
+interface ChromeStorageChange {
+  newValue?: unknown;
+  oldValue?: unknown;
+}
+
+interface ChromeGlobal {
+  storage?: {
+    session?: ChromeStorageArea;
+    local?: ChromeStorageArea;
+    onChanged?: {
+      addListener(
+        cb: (
+          changes: Record<string, ChromeStorageChange>,
+          areaName: string,
+        ) => void,
+      ): void;
+      removeListener(
+        cb: (
+          changes: Record<string, ChromeStorageChange>,
+          areaName: string,
+        ) => void,
+      ): void;
+    };
+  };
 }
 
 let bridgeIframe: HTMLIFrameElement | null = null;
@@ -121,28 +146,71 @@ export async function requestBridgeToken(): Promise<AppCheckToken> {
   });
 }
 
-async function initSidePanel(): Promise<void> {
-  const availability = await refreshDeviceAvailability();
-  if (nanoEl) {
-    nanoEl.textContent = `LanguageModel: ${availability}`;
+async function consumeInitialBrief(): Promise<string | null> {
+  const chromeApi = (globalThis as { chrome?: ChromeGlobal }).chrome;
+  const area = chromeApi?.storage?.session ?? chromeApi?.storage?.local;
+  if (!area) return null;
+
+  try {
+    const res = await area.get('initialBrief');
+    const text =
+      typeof res.initialBrief === 'string' ? res.initialBrief.trim() : '';
+    if (text.length > 0) {
+      await area.remove(['initialBrief', 'initialBriefTs']);
+      return text;
+    }
+  } catch {
+    // Ignore chrome.storage errors
+  }
+  return null;
+}
+
+function subscribeInitialBrief(onBrief: (text: string) => void): () => void {
+  const chromeApi = (globalThis as { chrome?: ChromeGlobal }).chrome;
+  const onChanged = chromeApi?.storage?.onChanged;
+  if (!onChanged) return () => {};
+
+  const listener = (
+    changes: Record<string, ChromeStorageChange>,
+    areaName: string,
+  ) => {
+    if (areaName !== 'session' && areaName !== 'local') return;
+    const change = changes.initialBrief;
+    const nextVal =
+      typeof change?.newValue === 'string' ? change.newValue.trim() : '';
+    if (nextVal.length > 0) {
+      const area =
+        areaName === 'session'
+          ? chromeApi.storage?.session
+          : chromeApi.storage?.local;
+      void area?.remove(['initialBrief', 'initialBriefTs']);
+      onBrief(nextVal);
+    }
+  };
+
+  onChanged.addListener(listener);
+  return () => {
+    onChanged.removeListener(listener);
+  };
+}
+
+function bootstrapExtensionFirebase(): AI | null {
+  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+  const appId = import.meta.env.VITE_FIREBASE_APP_ID;
+
+  if (!apiKey || !projectId || !appId) {
+    return null;
   }
 
   const app = initializeApp({
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    apiKey,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    projectId,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    appId,
   });
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const usePlanB = searchParams.get('planB') === '1';
-
-  // DEV only: a production build must never contain the debug token.
-  if (import.meta.env.DEV && usePlanB && import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
-  }
 
   initializeAppCheck(app, {
     provider: new CustomProvider({
@@ -151,24 +219,8 @@ async function initSidePanel(): Promise<void> {
     isTokenAutoRefreshEnabled: false,
   });
 
-  if (appCheckEl) {
-    appCheckEl.textContent = usePlanB
-      ? 'App Check: Plan B (Debug Token)'
-      : 'App Check: Plan A (Hosted Bridge CustomProvider)';
-  }
-
   const auth = getAuth(app);
-  try {
-    const authState = await bindFirebaseAuth(auth);
-    if (authEl) {
-      authEl.textContent = `Auth UID: ${authState.uid ?? 'signed-in'}`;
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (authEl) {
-      authEl.textContent = `Auth error: ${msg}`;
-    }
-  }
+  void bindFirebaseAuth(auth);
 
   setCloudSyncFirestore(getFirestore(app));
   void initFirebaseRemoteConfig(app);
@@ -179,59 +231,28 @@ async function initSidePanel(): Promise<void> {
   });
 
   setProvider(createFirebaseProvider(ai));
-  enableDefaultEgressGuard();
+  return ai;
 }
 
-btnBridgeTest?.addEventListener('click', async () => {
-  if (!outputEl) return;
-  outputEl.textContent = 'Requesting App Check token from hosted bridge (Plan A)…';
-  const t0 = performance.now();
-  try {
-    const token = await requestBridgeToken();
-    const elapsed = Math.round(performance.now() - t0);
-    outputEl.textContent = JSON.stringify(
-      {
-        plan: 'Plan A (Bridge)',
-        ok: true,
-        latencyMs: elapsed,
-        tokenPrefix: `${token.token.slice(0, 24)}…`,
-        expireTimeMillis: token.expireTimeMillis,
-      },
-      null,
-      2,
-    );
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    outputEl.textContent = `Plan A Bridge error: ${msg}`;
-  }
-});
+const aiInstance = bootstrapExtensionFirebase();
 
-btnCloudCall?.addEventListener('click', async () => {
-  if (!outputEl) return;
-  outputEl.textContent = 'Running cloud call via @warroom/core router…';
-  try {
-    const res = await run('crowd', {
-      situation:
-        'A founder is about to commit to a startup plan and is testing it against investors, rivals and the market.',
-      userHeadline:
-        'Launch self-serve tier for [COMPANY_1] at [MONEY_1]/seat with a 14-day free trial.',
-      generalHeadlines: [
-        { name: 'Skeptical VC', headline: 'Pass on seed round.' },
-      ],
-      personas: [
-        {
-          id: 'p1',
-          label: 'Busy team lead at a mid-size company',
-          outlook: 'Would pay to save time.',
-        },
-      ],
-    });
-    outputEl.textContent = JSON.stringify(res, null, 2);
-  } catch (err) {
-    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-    outputEl.textContent = `Cloud call error: ${msg}`;
-  }
-});
+const rootEl = document.getElementById('root');
+if (rootEl) {
+  createRoot(rootEl).render(
+    <StrictMode>
+      <App
+        platform={{
+          kind: 'extension',
+          authMode: 'anonymous',
+          onDownloadModel: aiInstance
+            ? () => downloadDeviceModel(aiInstance)
+            : undefined,
+          initialBrief: consumeInitialBrief,
+          subscribeInitialBrief,
+        }}
+      />
+    </StrictMode>,
+  );
+}
 
-void initSidePanel();
 export { bridgeIframe };

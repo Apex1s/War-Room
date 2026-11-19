@@ -3,68 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>War Room — Side Panel</title>
-    <style>
-      :root {
-        color-scheme: dark;
-        --bg: #0b0f17;
-        --panel: #131a26;
-        --border: #243044;
-        --text: #e6edf3;
-        --muted: #8b9bb4;
-        --accent: #e0a84b;
-      }
-      body {
-        margin: 0;
-        padding: 14px;
-        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        font-size: 0.85rem;
-      }
-      .card {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 12px;
-      }
-      button {
-        background: #1c2638;
-        color: var(--text);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 8px 12px;
-        font-size: 0.82rem;
-        cursor: pointer;
-        width: 100%;
-        margin-top: 8px;
-      }
-      pre {
-        background: #080b11;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 10px;
-        overflow-x: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 0.78rem;
-      }
-    </style>
+    <title>War Room — Confidential AI War-Gaming</title>
   </head>
-  <body>
-    <div id="root">
-      <div class="card">
-        <strong id="ext-title">War Room Extension</strong>
-        <div id="ext-auth">Auth: initialising…</div>
-        <div id="ext-appcheck">App Check: initialising…</div>
-        <div id="ext-nano">LanguageModel: checking…</div>
-        <button id="btn-ext-bridge-test" type="button">Test Bridge Token (Plan A)</button>
-        <button id="btn-ext-cloud-call" type="button">Run Cloud Call (crowd)</button>
-      </div>
-      <pre id="ext-output">Ready.</pre>
-    </div>
-    <script type="module" src="/src/sidepanel.ts"></script>
+  <body class="bg-[#0A0E17] text-[#E6EDF3] m-0">
+    <div id="root"></div>
+    <script type="module" src="/src/sidepanel.tsx"></script>
   </body>
 </html>
