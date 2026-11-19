@@ -438,7 +438,9 @@ export function App({ platform }: AppProps) {
               </button>
             </div>
 
-            <DeviceStatus onDownloadModel={platform.onDownloadModel} />
+            {activeGame?.phase.kind !== 'review' && (
+              <DeviceStatus onDownloadModel={platform.onDownloadModel} />
+            )}
 
             {/* Under 640px: single Menu button right */}
             <div className="sm:hidden">
