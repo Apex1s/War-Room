@@ -22,6 +22,7 @@ import { seal } from './firewall';
 import {
   applyMap,
   buildMap,
+  cleanPunctuation,
   clearInventedTokenLogs,
   getInventedTokenLogs,
   rehydrate,
@@ -389,5 +390,27 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
     expect(byName.get('Casablanca')).toBe('OTHER');
     expect(byName.get('PulseAudit')).toBe('OTHER');
     expect(byName.get('Sequoia')).toBe('OTHER');
+  });
+
+  it('cleans em and en dashes via cleanPunctuation and inside rehydrate', () => {
+    expect(cleanPunctuation('Threat level 1\u20135 and 10 \u2014 20 seats')).toBe(
+      'Threat level 1-5 and 10-20 seats',
+    );
+    expect(
+      cleanPunctuation(
+        'Self-serve tier \u2014 fast to launch \u2013 fails without enterprise lock-in.',
+      ),
+    ).toBe('Self-serve tier, fast to launch, fails without enterprise lock-in.');
+
+    const map = buildMap(
+      [],
+      [{ text: 'Kestrel Labs', type: 'COMPANY', detectedBy: 'ai' }],
+    );
+    expect(
+      rehydrate(
+        '[COMPANY_1] \u2014 rounds 1\u20133 \u2013 holds position.',
+        map,
+      ),
+    ).toBe('Kestrel Labs, rounds 1-3, holds position.');
   });
 });

@@ -316,7 +316,20 @@ export function extractTokens(promptText: string): Set<string> {
 }
 
 /**
- * Swap `[TYPE_N]` (or unbracketed `TYPE_N`) placeholders back to real names at render time.
+ * Render-time punctuation sanitizer (docs/04-design-system.md §1):
+ * - An em dash (\u2014) or en dash (\u2013) between two digits becomes a plain hyphen "-".
+ * - Any other em or en dash, along with surrounding spaces, becomes ", ".
+ */
+export function cleanPunctuation(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/(\d)[ \t]*[\u2013\u2014]+[ \t]*(\d)/g, '$1-$2')
+    .replace(/[ \t]*[\u2013\u2014]+[ \t]*/g, ', ');
+}
+
+/**
+ * Swap `[TYPE_N]` (or unbracketed `TYPE_N`) placeholders back to real names at render time,
+ * and pass the result through `cleanPunctuation`.
  *
  * Security / anti-hallucination rule:
  * - Only swaps tokens that were present in `sentTokens` (when provided) AND exist in `map`.
@@ -346,7 +359,7 @@ export function rehydrate(
   }
 
   const re = new RegExp(TOKEN_PATTERN.source, 'g');
-  return text.replace(re, (_fullMatch, rawType: string, rawNum: string) => {
+  const swapped = text.replace(re, (_fullMatch, rawType: string, rawNum: string) => {
     const type = rawType as EntityType;
     const canonicalToken = `[${type}_${rawNum}]`;
     const entry = byToken.get(canonicalToken);
@@ -367,4 +380,6 @@ export function rehydrate(
     });
     return neutral;
   });
+
+  return cleanPunctuation(swapped);
 }

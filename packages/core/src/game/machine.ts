@@ -34,13 +34,13 @@ export function formatPhaseStatus(phase: Phase, totalRounds: number = 3): string
     case 'done':
       return 'Final report ready';
     case 'failed':
-      return `Interrupted (${phase.code}) — ready to retry`;
+      return `Interrupted (${phase.code}), ready to retry`;
   }
 }
 
 /**
  * Honest status line for Generals in a round, counting replies and failures explicitly
- * (e.g. `"2 of 3 replied, 1 failed"` — never `"3/3 complete"` when one failed).
+ * (e.g. `"2 of 3 replied, 1 failed"`, never `"3/3 complete"` when one failed).
  */
 export function formatGeneralsStatus(
   totalGenerals: number,

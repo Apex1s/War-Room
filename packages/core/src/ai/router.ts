@@ -288,11 +288,11 @@ export async function run<K extends Task>(
   const overrides = parseUrlOverrides();
   const route = resolveTaskRoute(task, spec.privacy, getRoutingTable(), overrides);
 
-  // Step 1: PRIVACY CLAMP — raw tasks are forced to only_on_device regardless of Remote Config, URL, or modeOverride.
+  // Step 1: PRIVACY CLAMP: raw tasks are forced to only_on_device regardless of Remote Config, URL, or modeOverride.
   const requestedMode: Mode = opts?.modeOverride ?? route.mode;
   const mode: Mode = spec.privacy === 'raw' ? 'only_on_device' : requestedMode;
 
-  // Step 2: PRIVACY LOCK — before ANY model is built, verify globalThis.LanguageModel and availability.
+  // Step 2: PRIVACY LOCK: before ANY model is built, verify globalThis.LanguageModel and availability.
   if (mode === 'only_on_device') {
     if (
       overrides.forceCloud ||
