@@ -1,3 +1,7 @@
+import { matchTemplate } from '../game/templates/match';
+import { priceWarTemplate } from '../game/templates/price-war';
+import { startupTemplate } from '../game/templates/startup';
+
 export interface HandLabelledBrief {
   id: string;
   title: string;
@@ -7,14 +11,14 @@ export interface HandLabelledBrief {
 }
 
 /**
- * Five hand-labelled sample briefs for Day 3 firewall verification (the lead startup demo
- * brief plus four additional confidential scenarios).
+ * Five hand-labelled sample briefs for Day 3 firewall verification (the three template demo
+ * briefs plus two additional confidential scenarios).
  */
 export const SAMPLE_BRIEFS: HandLabelledBrief[] = [
   {
     id: 'startup-demo',
     title: 'Startup Idea Stress Test (Lead Demo)',
-    text: 'Kestrel Labs is building PulseAudit, an automated workflow auditing engine for mid-size operations teams in Casablanca and Lyon. Founder Amine Tazi left Atlas Cloud to launch the product. Current ARR is $240,000 across 18 design partners including Zenith Logistics, with 14% monthly growth. We plan to launch a self-serve tier at $49 per seat on 2026-12-01 (contact: amine@kestrellabs.io, https://kestrellabs.io) to reach 1,000 teams without raising a seed round from Sequoia.',
+    text: startupTemplate.demoBrief,
     expectedNames: [
       'Kestrel Labs',
       'PulseAudit',
@@ -39,7 +43,7 @@ export const SAMPLE_BRIEFS: HandLabelledBrief[] = [
   {
     id: 'price-war',
     title: 'Commodity B2B Price War',
-    text: 'Veridian Pay processes €18.5M in cross-border invoices for 420 exporters in Madrid and Barcelona. Rival Finova Corp just cut FX spreads by 35% after raising $12M from Northstar Ventures. CEO Elena Rostova proposes bundling free treasury accounts via Project Mercury before Q1 2027.',
+    text: priceWarTemplate.demoBrief,
     expectedNames: [
       'Veridian Pay',
       'Madrid',
@@ -48,8 +52,19 @@ export const SAMPLE_BRIEFS: HandLabelledBrief[] = [
       'Northstar Ventures',
       'Elena Rostova',
       'Project Mercury',
+      'Iberia Freight',
     ],
-    expectedValues: ['€18.5M', '420', '35%', '$12M', 'Q1 2027'],
+    expectedValues: [
+      '€18.5M',
+      '420',
+      '35%',
+      '$12M',
+      '€290',
+      '2027-01-15',
+      'elena@veridianpay.eu',
+      'https://veridianpay.eu',
+      '22%',
+    ],
   },
   {
     id: 'enterprise-expansion',
@@ -69,16 +84,29 @@ export const SAMPLE_BRIEFS: HandLabelledBrief[] = [
   {
     id: 'match-tactics',
     title: 'Match Tactical Plan',
-    text: 'Raja Athletic faces Wydad AC in Casablanca on 12/11/2026 before 45,000 supporters. Coach Karim Benali plans to press Youssef En-Nesyri high in the first 25 minutes and switch to Project Bastion if possession drops below 42%.',
+    text: matchTemplate.demoBrief,
     expectedNames: [
       'Raja Athletic',
       'Wydad AC',
       'Casablanca',
+      'Mohammed V Stadium',
       'Karim Benali',
+      'Sofia Mansouri',
       'Youssef En-Nesyri',
+      'Apex Sports',
       'Project Bastion',
+      'Mehdi Chraibi',
     ],
-    expectedValues: ['12/11/2026', '45,000', '25', '42%'],
+    expectedValues: [
+      '12/11/2026',
+      '45,000',
+      '25',
+      '$180,000',
+      '42%',
+      '60',
+      'karim@rajaathletic.ma',
+      'https://rajaathletic.ma',
+    ],
   },
   {
     id: 'corporate-acquisition',

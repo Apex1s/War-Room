@@ -1,6 +1,5 @@
 import {
   cleanPunctuation,
-  SAMPLE_BRIEFS,
   type GameTemplate,
 } from '@warroom/core';
 import { useEffect, useState } from 'react';
@@ -41,11 +40,8 @@ export function BriefScreen({
   const isSealing = sealingProgress !== null;
 
   const handleLoadDemo = () => {
-    const demo = SAMPLE_BRIEFS[0];
-    setObjective(
-      'Reach 1,000 paying teams for Kestrel Labs in 12 months without raising a seed round',
-    );
-    setBrief(demo.text);
+    setObjective(template.demoObjective);
+    setBrief(template.demoBrief);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

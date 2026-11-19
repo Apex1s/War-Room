@@ -10,6 +10,10 @@ export const startupTemplate: GameTemplate = {
     'e.g. Reach 1,000 paying teams for Kestrel Labs in 12 months without raising a seed round',
   briefPlaceholder:
     'Paste your confidential startup brief: company name, product, target city/market, current ARR, pricing, key customers and launch timeline…',
+  demoObjective:
+    'Reach 1,000 paying teams for Kestrel Labs in 12 months without raising a seed round',
+  demoBrief:
+    'Kestrel Labs is building PulseAudit, an automated workflow auditing engine for mid-size operations teams in Casablanca and Lyon. Founder Amine Tazi left Atlas Cloud to launch the product. Current ARR is $240,000 across 18 design partners including Zenith Logistics, with 14% monthly growth. We plan to launch a self-serve tier at $49 per seat on 2026-12-01 (contact: amine@kestrellabs.io, https://kestrellabs.io) to reach 1,000 teams without raising a seed round from Sequoia.',
   openingMove: 'Launch as described in the brief.',
   generals: [
     {

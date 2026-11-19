@@ -19,6 +19,8 @@ export interface GameTemplate {
   situation: string;
   objectivePlaceholder: string;
   briefPlaceholder: string;
+  demoObjective: string;
+  demoBrief: string;
   openingMove: string;
   generals: GeneralSpec[];
   crowd: CrowdPersona[];

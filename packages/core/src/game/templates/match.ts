@@ -10,6 +10,10 @@ export const matchTemplate: GameTemplate = {
     'e.g. Win away in Casablanca while keeping high-press intensity sustainable for 90 minutes',
   briefPlaceholder:
     'Paste your tactical plan: starting formation, pressing triggers, key player matchups, set-piece routines and substitution windows...',
+  demoObjective:
+    'Win the derby for Raja Athletic away in Casablanca while keeping high-press intensity sustainable for 90 minutes',
+  demoBrief:
+    'Raja Athletic faces Wydad AC in Casablanca on 12/11/2026 before 45,000 supporters at Mohammed V Stadium. Head coach Karim Benali and analyst Sofia Mansouri plan to press playmaker Youssef En-Nesyri high in the first 25 minutes using a $180,000 GPS load model from Apex Sports. If possession drops below 42% before minute 60, we trigger Project Bastion and bring on striker Mehdi Chraibi (briefing: karim@rajaathletic.ma, https://rajaathletic.ma).',
   openingMove: 'Start the match with the tactical setup described in the brief.',
   generals: [
     {
