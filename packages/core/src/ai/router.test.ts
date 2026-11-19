@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setDeviceStatusForTest } from './device';
+import type { AI } from 'firebase/ai';
+import {
+  hasDeviceWarmedUp,
+  refreshDeviceAvailability,
+  registerDeviceAi,
+  resetDeviceWarmUpForTest,
+  setDeviceStatusForTest,
+  warmUpDeviceModel,
+} from './device';
 import { clearLedger, getHybridStats, getLedger } from './ledger';
 import { buildFirebaseModelParams } from './provider-firebase';
 import { createMockProvider, type MockProviderController } from './provider-mock';
@@ -70,6 +78,7 @@ describe('AI Router & Routing Table', () => {
     setEgressGuard(null);
     clearLedger();
     clearModelCache();
+    resetDeviceWarmUpForTest();
 
     (globalThis as Record<string, unknown>).LanguageModel = {
       availability: async () => 'available',
@@ -475,5 +484,54 @@ describe('AI Router & Routing Table', () => {
     });
     expect(mock.createdModels).toHaveLength(3);
     expect(mock.createdModels[2].schemaIds).toEqual(['vc', 'copycat', 'market']);
+  });
+
+  it('fires one tiny background ONLY_ON_DEVICE warm-up prompt when device status becomes available without recording in the ledger', async () => {
+    const promptsSent: { mode: string; req: unknown }[] = [];
+    (globalThis as Record<string, unknown>).LanguageModel = {
+      availability: async () => 'available',
+    };
+
+    const fakeAi = {
+      app: {
+        name: '[DEFAULT]',
+        options: { apiKey: 'test-key', projectId: 'test-proj', appId: 'test-app' },
+      },
+      backend: { backendType: 'GOOGLE_AI' },
+      location: 'us-central1',
+      chromeAdapterFactory: (mode: string) => ({
+        mode,
+        isAvailable: async () => true,
+        generateContent: async (req: unknown) => {
+          promptsSent.push({ mode, req });
+          return new Response(
+            JSON.stringify({
+              candidates: [{ content: { role: 'model', parts: [{ text: 'ok' }] } }],
+            }),
+          );
+        },
+      }),
+    } as unknown as AI;
+
+    setDeviceStatusForTest('unknown', 0);
+    registerDeviceAi(fakeAi);
+    expect(hasDeviceWarmedUp()).toBe(false);
+
+    const status = await refreshDeviceAvailability();
+    expect(status).toBe('available');
+
+    // Wait for background warm-up promise
+    await warmUpDeviceModel();
+
+    expect(hasDeviceWarmedUp()).toBe(true);
+    expect(promptsSent).toHaveLength(1);
+    expect(promptsSent[0].mode).toBe('only_on_device');
+    expect(getLedger()).toHaveLength(0);
+
+    // Calling again is a no-op
+    const secondRun = await warmUpDeviceModel();
+    expect(secondRun).toBe(false);
+    expect(promptsSent).toHaveLength(1);
+    expect(getLedger()).toHaveLength(0);
   });
 });

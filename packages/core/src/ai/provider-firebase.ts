@@ -15,6 +15,7 @@ import type {
   StreamCallOptions,
   StreamCallResult,
 } from './provider';
+import { registerDeviceAi } from './device';
 import type { Mode } from './routing-table';
 import {
   cloudSchema,
@@ -92,6 +93,7 @@ export function buildFirebaseModelParams(params: ProviderModelParams): HybridPar
 }
 
 export function createFirebaseProvider(ai: AI): ModelProvider {
+  registerDeviceAi(ai);
   return {
     kind: 'firebase',
     createModel(params: ProviderModelParams): ProviderModelInstance {

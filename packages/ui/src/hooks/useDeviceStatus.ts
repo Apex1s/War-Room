@@ -2,6 +2,7 @@ import {
   getDeviceState,
   refreshDeviceAvailability,
   subscribeDeviceState,
+  warmUpDeviceModel,
   type DeviceState,
 } from '@warroom/core';
 import { useCallback, useEffect, useState } from 'react';
@@ -14,6 +15,12 @@ export function useDeviceStatus(onDownloadModel?: () => Promise<unknown>) {
     void refreshDeviceAvailability();
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (state.status === 'available') {
+      void warmUpDeviceModel();
+    }
+  }, [state.status]);
 
   const triggerDownload = useCallback(async () => {
     if (!onDownloadModel) return;
