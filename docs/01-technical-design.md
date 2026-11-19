@@ -1,4 +1,4 @@
-# War Room — Technical Design
+# War Room: Technical Design
 
 Status: v1.1, 17 Nov 2026. Source of truth for structure, router, data model and game loop.
 Prompts and schemas are in [02-prompts-and-schemas.md](02-prompts-and-schemas.md); the schedule is in [03-plan.md](03-plan.md).
@@ -23,7 +23,7 @@ Checked 16 Nov 2026 against the Firebase AI Logic docs, the Chrome Prompt API do
 | 8 | Chrome flag setup | Prompt API is stable in **extensions** since Chrome 138. For **web pages** it is listed as shipping in Chrome 148, but the Firebase guide still tells you to enable `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input`. | Test on a clean Chrome profile on Day 1. The app must detect and explain, never assume. |
 | 9 | (not mentioned) | Prompt API is unavailable in Web Workers. On-device languages: en, ja, es, de, fr. Firebase console AI monitoring shows nothing for on-device calls. | Router runs on the main thread. Arabic briefs get basic redaction. The Hybrid stats panel is instrumented by us. |
 | 10 | Google sign-in everywhere | `signInWithPopup` does not work in an MV3 extension without an offscreen document. Anonymous sign-in works directly via `firebase/auth/web-extension`. | Extension is anonymous-only. Google sign-in is web-only. |
-| 11 | Judging criteria in priority order | Official: four **equally weighted** criteria scored 1–5: Technological Implementation, Design, Potential Impact, Quality of the Idea. Multi-platform is "preferred", not a criterion. There is a separate $3k Best Web/Chrome prize. | Two of four criteria are judged from the text and the video. Reserve two full days for them. |
+| 11 | Judging criteria in priority order | Official: four **equally weighted** criteria scored 1-5: Technological Implementation, Design, Potential Impact, Quality of the Idea. Multi-platform is "preferred", not a criterion. There is a separate $3k Best Web/Chrome prize. | Two of four criteria are judged from the text and the video. Reserve two full days for them. |
 | 12 | Deliverables | Video ≤ 3 min, public on YouTube, English. License must be detectable in the repo's About section. Repo must show `firebase/ai` imported **and called**. A "what I built during the submission period" summary is required. No secrets in repo. | Create the public repo with `LICENSE` on Day 1. |
 
 The project is $0 with no credit card (AGENTS.md). Billing-only models (`gemini-4-argon`, `gemini-4-carbon`) and the rules' Quota Form for them are out of scope; the design does not depend on them.
@@ -260,9 +260,11 @@ One JSON parameter, `routing_table`, parsed with zod. Invalid or missing falls b
 
 Defaults set from the Day 2 measurements (§10).
 
-**Retry policy (updated 19 Nov after an end-to-end test).** `AI/parse-failed` is usually Google's server breaking off a streamed reply mid-way with a 500 "high demand" JSON body appended to the SSE stream; the SDK cannot parse it. Order for a cloud call: (1) on 500/503, `parse-failed` or timeout, retry the **same** model once after about 2 s; on 429, wait `retryDelay` if it is 20 s or less, then retry the same model once; (2) then `fallbackModel`; (3) then Nano when `deviceLastResort`. Jumping straight to `gemini-3.8-flash` failed every time on 19 Nov because it is saturated too. Attach a `.catch`
+**Retry policy (updated 19 Nov after an end-to-end test).** `AI/parse-failed` is usually Google's server breaking off a streamed reply mid-way with a 500 "high demand" JSON body appended to the SSE stream; the SDK cannot parse it. Order for a cloud call: (1) on 500/503, `parse-failed` or timeout, retry the **same** model once after about 2 s; on 429, wait `retryDelay` if it is 20 s or less, then retry the same model once; (2) then `fallbackModel`; (3) then Nano when `deviceLastResort`. Jumping straight to `gemini-3.8-flash` failed every time on 19 Nov because it is saturated too. Attach a `.catch` to `streamResult.response` before iterating the stream, or a mid-stream error surfaces twice, once as an unhandled rejection.
 
-**Update after the Day 9 production test (19 Nov evening).** With that policy live, 1 of 3 Generals still failed on hosted production. A direct test of `gemini-3.5-flash-lite` then failed 3 of 6 calls at random (any General, streamed or not), mostly within 1–2 s; the 3.8-flash fallback cost 25 s and never succeeded. So: (1) retry the same model up to 3 times with backoff of 1.5 s, 4 s and 8 s (fast failures are cheap, and three attempts take a 50% failure rate to about 6%); (2) give `fallbackModel` a short timeout of 12 s; (3) if a General still fails, the round continues without it ("holds position this round", Retry still offered) so one overloaded call never blocks a judge; (4) the status line counts failures ("2 of 3 replied, 1 failed"), never "3/3 complete". to `streamResult.response` before iterating the stream, or a mid-stream error surfaces twice, once as an unhandled rejection. `thinkingLevel` is optional; when absent no `thinkingConfig` is sent. `fallbackModel` gets one retry on HTTP 429/500/503, timeout or `AI/parse-failed`, in `prefer_in_cloud` mode when `deviceLastResort` is true (§10, decision 3). `thinkingLevel` applies to the primary model only. `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
+**Update after the Day 9 production test (19 Nov evening).** With that policy live, 1 of 3 Generals still failed on hosted production. A direct test of `gemini-3.5-flash-lite` then failed 3 of 6 calls at random (any General, streamed or not), mostly within 1-2 s; the 3.8-flash fallback cost 25 s and never succeeded. So: (1) retry the same model up to 3 times with backoff of 1.5 s, 4 s and 8 s (fast failures are cheap, and three attempts take a 50% failure rate to about 6%); (2) give `fallbackModel` a short timeout of 12 s; (3) if a General still fails, the round continues without it ("holds position this round", Retry still offered) so one overloaded call never blocks a judge; (4) the status line counts failures ("2 of 3 replied, 1 failed"), never "3/3 complete".
+
+`thinkingLevel` is optional; when absent no `thinkingConfig` is sent. `fallbackModel` gets one retry on HTTP 429/500/503, timeout or `AI/parse-failed`, in `prefer_in_cloud` mode when `deviceLastResort` is true (§10, decision 3). `thinkingLevel` applies to the primary model only. `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
 
 ---
 
@@ -295,7 +297,7 @@ export interface PlaceholderEntry {
   aliases: string[];        // "ACME", "Acme Inc."
   detectedBy: 'ai' | 'regex' | 'user';
   enabled: boolean;         // user can un-redact in review
-  hint?: string;            // optional magnitude shared with the cloud, e.g. "$1M–$5M" (stretch)
+  hint?: string;            // optional magnitude shared with the cloud, e.g. "$1M-$5M" (stretch)
 }
 ```
 
@@ -506,10 +508,10 @@ Status after Day 1 in brackets.
 3. [DONE] `responseConstraint` name verified. Integer bounds accepted by the typings; still unmeasured on a real Nano. `normalize` clamps regardless.
 4. [DONE] Plain-object `responseSchema` works in the cloud (button 3 returned schema-valid JSON on the hosted URL).
 5. [PARTLY] On-device with the network off: by code reading, the on-device path makes no App Check, Auth or network call. Not yet run on real hardware.
-6. [MEASURED 19 Nov] Nano latency on the dev machine (11.8 GB, CPU path, bypass flag), one crowd persona: 204 s first call after download; 122 s warm with the old schema (Nano padded the array to 12 invented personas); with the per-call schema (`crowdDeviceSchema`, exact length, enum ids) 40 s first call after a reload and **16.7 s warm**. Output length dominates on CPU. Decisions: crowd shows 5 rotating personas per round in ONE batched call (`perRound: 5`, `batchOnDevice: 5`); every array in a device schema is exact-length where the count is known (crowd, referee scores); a background warm-up prompt runs when the device becomes ready. Expect a 5-persona call and a referee call at roughly 25–45 s each, running in the background while the player writes the next move. Measure both on Day 6.
+6. [MEASURED 19 Nov] Nano latency on the dev machine (11.8 GB, CPU path, bypass flag), one crowd persona: 204 s first call after download; 122 s warm with the old schema (Nano padded the array to 12 invented personas); with the per-call schema (`crowdDeviceSchema`, exact length, enum ids) 40 s first call after a reload and **16.7 s warm**. Output length dominates on CPU. Decisions: crowd shows 5 rotating personas per round in ONE batched call (`perRound: 5`, `batchOnDevice: 5`); every array in a device schema is exact-length where the count is known (crowd, referee scores); a background warm-up prompt runs when the device becomes ready. Expect a 5-persona call and a referee call at roughly 25-45 s each, running in the background while the player writes the next move. Measure both on Day 6.
 7. [OPEN] Nano recall on entity extraction (Day 3).
 8. [MITIGATED] `gemini-4-hydrogen` latency and free-tier capacity: 144 s on Day 1, then only 500s and timeouts on Day 2. Generals moved to flash-lite with a fallback chain (§10). Re-probe hydrogen daily.
-9. **[MEASURED 17 Nov, high] Free-tier rate limit: `gemini-3.5-flash-lite` allows 15 requests per minute per project**, shared by every visitor of the hosted app (429 `GenerateRequestsPerMinutePerProjectPerModel-FreeTier`, with a `retryDelay` in the error). A cloud-only game is about 16 calls in 3–5 minutes, so roughly three judges playing at once saturate it; on-device crowd and referee cut a game to about 7 cloud calls. Mitigations: on 429, read `retryDelay` and, if it is 20 s or less, show "Cloud is busy, retrying in N s" and retry the same model once before the fallback chain; never retry in a tight loop; keep crowd and referee on-device wherever Nano exists. Each model has its own per-model quota, so the fallback model adds headroom only when it is not saturated.
+9. **[MEASURED 17 Nov, high] Free-tier rate limit: `gemini-3.5-flash-lite` allows 15 requests per minute per project**, shared by every visitor of the hosted app (429 `GenerateRequestsPerMinutePerProjectPerModel-FreeTier`, with a `retryDelay` in the error). A cloud-only game is about 16 calls in 3-5 minutes, so roughly three judges playing at once saturate it; on-device crowd and referee cut a game to about 7 cloud calls. Mitigations: on 429, read `retryDelay` and, if it is 20 s or less, show "Cloud is busy, retrying in N s" and retry the same model once before the fallback chain; never retry in a tight loop; keep crowd and referee on-device wherever Nano exists. Each model has its own per-model quota, so the fallback model adds headroom only when it is not saturated.
 10. [OPEN] App Check in the extension (§7).
 
 ---
@@ -520,7 +522,7 @@ Status after Day 1 in brackets.
 
 | Check | Result |
 |---|---|
-| App Check, production | reCAPTCHA Enterprise exchange 200. With `useLimitedUseAppCheckTokens` a fresh token is exchanged per AI call (~170–210 ms added per call). |
+| App Check, production | reCAPTCHA Enterprise exchange 200. With `useLimitedUseAppCheckTokens` a fresh token is exchanged per AI call (~170-210 ms added per call). |
 | Anonymous Auth | Works; UID issued. |
 | Button 1, `ONLY_ON_DEVICE`, device unavailable | Throws `AI/api-not-enabled`. **Zero network requests.** |
 | Button 2, `PREFER_ON_DEVICE`, device unavailable | Fell back to `gemini-3.5-flash-lite`, `inferenceSource: 'in_cloud'`, 2.4 s end to end (1.9 s model), schema-valid. |
@@ -542,10 +544,10 @@ Target: a General's move in under 20 s with streaming visible from the first sec
 | Model | Setting | Result |
 |---|---|---|
 | `gemini-4-hydrogen` | MINIMAL | HTTP 400: level not supported |
-| `gemini-4-hydrogen` | LOW, MEDIUM | HTTP 500 "high demand" after 6–38 s, or no first chunk before the 60 s timeout. 0 successes in 6 tries |
+| `gemini-4-hydrogen` | LOW, MEDIUM | HTTP 500 "high demand" after 6-38 s, or no first chunk before the 60 s timeout. 0 successes in 6 tries |
 | `gemini-3.8-flash` | MINIMAL | HTTP 400: level not supported |
 | `gemini-3.8-flash` | LOW | HTTP 500 "high demand" or timeout. 0 successes in 5 tries |
-| `gemini-3.5-flash-lite` | none, MINIMAL, LOW | 6 of 8 valid, 2–10 s total. 2 failures were `AI/parse-failed` mid-stream (transient; retry worked) |
+| `gemini-3.5-flash-lite` | none, MINIMAL, LOW | 6 of 8 valid, 2-10 s total. 2 failures were `AI/parse-failed` mid-stream (transient; retry worked) |
 
 Reading: the 4-series and 3.8 free-tier capacity is saturated, not slow by design. Hydrogen with thinking streams nothing until it has finished thinking, so streaming does not help perceived latency on it. Flash-lite's move was schema-valid and usable but flatter than hydrogen's, and it **invented a `[COMPANY_2]` token** that was not in the brief.
 

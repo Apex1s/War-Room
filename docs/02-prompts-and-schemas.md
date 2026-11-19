@@ -1,4 +1,4 @@
-# War Room — Prompts and Schemas
+# War Room: Prompts and Schemas
 
 Companion to [01-technical-design.md](01-technical-design.md).
 
@@ -157,7 +157,7 @@ export interface GeneralSpec {
   id: string;            // 'vc'
   name: string;          // 'Skeptical VC'
   role: string;          // 'a partner at an early-stage fund who has seen this pitch forty times'
-  persona: string;       // 3–5 sentences
+  persona: string;       // 3-5 sentences
   goal: string;
   hiddenInfo: string;    // never shown to the user until the report
   style: string;
@@ -427,7 +427,7 @@ Player's move: ${i.move}
 
 Give your reply for round ${i.round}.`;
 
-// compact.ts — own moves in full, other opponents as headlines only
+// compact.ts: own moves in full, other opponents as headlines only
 function renderRoundFor(selfId: string, r: RoundRecord): string {
   const lines = [`Round ${r.n}`, `Player: ${r.userMove}`];
   for (const m of r.generalMoves) {

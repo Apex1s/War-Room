@@ -1,4 +1,4 @@
-# War Room — 14-Day Plan
+# War Room: 14-Day Plan
 
 Mon 16 Nov → Sun 29 Nov are build days. Mon 30 Nov is buffer only. Deadline: 30 Nov, 22:00 GMT (2:00 PM PT).
 
@@ -10,7 +10,7 @@ Each day has an exit test. If it fails, fix it or cut from the list at the botto
 
 ## Week 1: prove the risky parts, then get to end-to-end
 
-### Day 1, Mon 16 — Hybrid inference spike
+### Day 1, Mon 16: Hybrid inference spike
 
 The whole project rests on this day. All code is throwaway, in `spike/`.
 
@@ -27,7 +27,7 @@ The whole project rests on this day. All code is throwaway, in `spike/`.
 
 **Exit test:** all three buttons return valid JSON on the hosted URL, and you have written down the answers to the VERIFY items in the design doc (option names, integer bounds on-device, plain-object cloud schema, offline behaviour, flag needed or not).
 
-### Day 2, Tue 17 — Monorepo, router, extension spike
+### Day 2, Tue 17: Monorepo, router, extension spike
 
 Day 1 result: cloud path, App Check and the privacy refusal all pass on the hosted URL. Two things failed and come first today (design doc §9 items 1 and 8, §10).
 
@@ -44,7 +44,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** you know which machine runs Nano; a General's move streams its first text within a few seconds and finishes under 20 s; `run('crowd', …)` and `run('general_move', …)` return typed results with the right `source` from a scratch page; `?forceCloud=1` flips the crowd badge; you know which App Check plan the extension uses.
 
-### Day 3, Wed 18 — Firewall core
+### Day 3, Wed 18: Firewall core
 
 - `detectors.ts`, `chunk.ts`, `placeholders.ts`, `firewall.ts`, `egress-guard.ts`, `net-guard.ts` (fetch wrapper, design doc §4).
 - The `redact` prompt on Nano. Write five sample briefs (the startup demo brief plus four others) and hand-label the names.
@@ -53,7 +53,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** the demo brief is sealed on-device with no missed names after one pass, and the fallback path produces a usable abstraction of the same brief.
 
-### Day 4, Thu 19 — Firewall UI and local storage
+### Day 4, Thu 19: Firewall UI and local storage
 
 - Design tokens and Tailwind preset: colours, type scale, card, badge. Decide the accent colour now.
 - Screens: Home (template picker), Brief (objective + plan), FirewallReview (diff view, placeholder table, approve).
@@ -62,7 +62,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** paste the brief, watch it seal, toggle one entry off and add one by selecting text, approve, reload the page and land back on the same state.
 
-### Day 5, Fri 20 — Game engine and the Generals
+### Day 5, Fri 20: Game engine and the Generals
 
 - `machine.ts`, `engine.ts`, `compact.ts`, `scoring.ts`, `templates/startup.ts`.
 - Reducer tests for every transition including `failed` and `RETRY`.
@@ -71,7 +71,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** three rounds complete from the debug page against the real cloud model, with all three Generals replying in parallel and no token broken.
 
-### Day 6, Sat 21 — Crowd and Referee on-device
+### Day 6, Sat 21: Crowd and Referee on-device
 
 - `crowd`, `referee_round`, `referee_live` wired into the engine.
 - Crowd: 5 rotating personas per round in one batched on-device call (design doc §9 item 6). Measure the warm latency of that call and of `referee_round`; the round's aftermath must never block `NEXT`.
@@ -80,7 +80,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** a round's aftermath completes on-device with the network tab showing zero requests for crowd and referee, and `NEXT` works while the crowd is still running.
 
-### Day 7, Sun 22 — War room UI, report, re-hydration
+### Day 7, Sun 22: War room UI, report, re-hydration
 
 - WarRoom screen: round timeline, agent cards, crowd wall, referee panel, move composer with live coaching, `SourceBadge` on every AI output.
 - `final_report` and the Report screen, with real names swapped back in at render time and the "What your opponents knew" reveal.
@@ -91,7 +91,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 ## Week 2: complete the product, then the deliverables
 
-### Day 8, Mon 23 — Replay, offline, hybrid stats
+### Day 8, Mon 23: Replay, offline, hybrid stats
 
 - Replay from a finished `GameRecord`. PWA shell with `vite-plugin-pwa`.
 - What-if: edit a past move, re-run crowd and referee with `only_on_device`.
@@ -99,7 +99,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** with the network off, open a finished game, change a move, and get new crowd and referee output.
 
-### Day 9, Tue 24 — Auth, Firestore, Remote Config, production deploy
+### Day 9, Tue 24: Auth, Firestore, Remote Config, production deploy
 
 - Anonymous sign-in at start; "Sign in with Google" via `linkWithPopup`.
 - Opt-in "Save to cloud", Firestore rules, load on another browser.
@@ -108,7 +108,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** on the hosted URL in a clean profile, play a full game with `?forceCloud=1`, save it, and flip `crowd` to cloud from the Remote Config console while watching the badges change.
 
-### Day 10, Wed 25 — Chrome extension
+### Day 10, Wed 25: Chrome extension
 
 - Side panel mounting `<App platform={extensionPlatform} />`, anonymous auth, the App Check plan chosen on Day 2.
 - Context menu "Stress-test selection in War Room" that prefills the brief.
@@ -116,14 +116,14 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** load unpacked from a fresh build, select text on a page, and finish a full game in the side panel.
 
-### Day 11, Thu 26 — Two more templates, design pass
+### Day 11, Thu 26: Two more templates, design pass
 
 - `price-war.ts` and `match.ts`: three Generals and ten crowd personas each. Data only, no new code paths.
 - Design pass on every screen: spacing, empty states, loading and streaming states, error states with retry, focus order.
 
 **Exit test:** each template completes one full game; no screen shows a raw spinner or an unstyled error.
 
-### Day 12, Fri 27 — Hardening, then feature freeze
+### Day 12, Fri 27: Hardening, then feature freeze
 
 - The judge matrix: (a) Nano available, (b) clean profile without Nano, (c) `?forceCloud=1`, (d) offline replay, (e) extension, (f) phone-width layout.
 - Failure drills: kill the network mid-round; return invalid JSON twice from the mock; hit the rate limit by running three games back to back.
@@ -132,7 +132,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** all six matrix cells pass twice in a row.
 
-### Day 13, Sat 28 — Written deliverables and recording
+### Day 13, Sat 28: Written deliverables and recording
 
 - README: what it is, the hybrid table, architecture diagram, setup from a fresh clone, how to load the extension, App Check notes, license.
 - Devpost text: how Firebase AI Logic is used, features, value proposition, and the required summary of what was built during the submission period.
@@ -140,13 +140,13 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 
 **Exit test:** a fresh clone on a clean directory builds and runs by following the README only.
 
-### Day 14, Sun 29 — Video, final deploy, submit a draft
+### Day 14, Sun 29: Video, final deploy, submit a draft
 
 - Edit to under 3:00, add captions, upload to YouTube as public.
 - Final deploy. Tag the release. Attach the built extension zip if Plan A (no embedded token) is in use.
 - Fill in the Devpost form completely and **submit on Sunday night**. It can still be edited until the deadline.
 
-### Mon 30 Nov — Buffer
+### Mon 30 Nov: Buffer
 
 Nothing is planned. Re-check the hosted URL, the video link and the repo from a logged-out browser. Final edits in by 18:00 GMT, four hours ahead of the deadline. No commits after submission are evaluated.
 
@@ -177,10 +177,10 @@ Never cut: the firewall with its review screen, the labelled basic-redaction fal
 
 | Time | Shot |
 |---|---|
-| 0:00–0:20 | The problem: you cannot paste your real plan into a cloud model. One line, one screen. |
-| 0:20–0:55 | Paste the brief. Firewall seals it on-device. Diff view. Open the egress inspector: this is all the cloud will ever see. |
-| 0:55–1:50 | Round 1 and 2: Generals from the cloud, crowd wall filling in on-device, referee verdict, badges and latency visible. Live coaching while typing a move. |
-| 1:50–2:15 | Final report with real names back. Hybrid stats panel: calls on-device, cloud calls avoided. |
-| 2:15–2:35 | Flip Remote Config in the console; badges change live. Then network off: replay and what-if still work. |
-| 2:35–2:55 | Same app in the Chrome side panel, started from selected text. Price War template for two seconds. |
-| 2:55–3:00 | The line: the cloud does the thinking, the device keeps the secrets. URL. |
+| 0:00-0:20 | The problem: you cannot paste your real plan into a cloud model. One line, one screen. |
+| 0:20-0:55 | Paste the brief. Firewall seals it on-device. Diff view. Open the egress inspector: this is all the cloud will ever see. |
+| 0:55-1:50 | Round 1 and 2: Generals from the cloud, crowd wall filling in on-device, referee verdict, badges and latency visible. Live coaching while typing a move. |
+| 1:50-2:15 | Final report with real names back. Hybrid stats panel: calls on-device, cloud calls avoided. |
+| 2:15-2:35 | Flip Remote Config in the console; badges change live. Then network off: replay and what-if still work. |
+| 2:35-2:55 | Same app in the Chrome side panel, started from selected text. Price War template for two seconds. |
+| 2:55-3:00 | The line: the cloud does the thinking, the device keeps the secrets. URL. |
