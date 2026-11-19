@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 const dir = import.meta.dirname;
 const transcriptsDir = path.resolve(dir, '../../docs/transcripts');
@@ -89,7 +90,51 @@ function saveTranscriptDevPlugin(): Plugin {
 
 export default defineConfig({
   envDir: path.resolve(dir, '../..'),
-  plugins: [tailwindcss(), saveTranscriptDevPlugin()],
+  plugins: [
+    tailwindcss(),
+    saveTranscriptDevPlugin(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      manifest: {
+        name: 'War Room: Confidential AI War-Gaming',
+        short_name: 'War Room',
+        description:
+          'Run a multi-agent war game on your most confidential plan without your secrets ever leaving your device.',
+        theme_color: '#121413',
+        background_color: '#121413',
+        display: 'standalone',
+        start_url: '/',
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globIgnores: ['**/appcheck-bridge*'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/appcheck-bridge\.html$/],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        runtimeCaching: [
+          {
+            urlPattern:
+              /^https:\/\/(?:firebasevertexai|firestore|firebaseinstallations|firebaseremoteconfig|identitytoolkit|securetoken|content-firebaseappcheck)\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
+            method: 'GET',
+          },
+          {
+            urlPattern:
+              /^https:\/\/(?:firebasevertexai|firestore|firebaseinstallations|firebaseremoteconfig|identitytoolkit|securetoken|content-firebaseappcheck)\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
+            method: 'POST',
+          },
+          {
+            urlPattern: /^https:\/\/www\.google\.com\/recaptcha\/.*/i,
+            handler: 'NetworkOnly',
+          },
+        ],
+      },
+    }),
+  ],
   build: {
     rollupOptions: {
       input: {
