@@ -17,7 +17,7 @@ export interface GeneralSpec {
   id: string; // 'vc'
   name: string; // 'Skeptical VC'
   role: string; // 'a partner at an early-stage fund who has heard this pitch forty times'
-  persona: string; // 3–5 sentences
+  persona: string; // 3-5 sentences
   goal: string;
   hiddenInfo: string; // private to the General until the final report
   style: string;

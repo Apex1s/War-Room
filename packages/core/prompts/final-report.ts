@@ -2,7 +2,7 @@ import { renderBrief } from './general-move';
 import type { PromptInput, PromptRound, PromptSpec } from './types';
 
 /**
- * final_report — the debrief after the last round.
+ * final_report: the debrief after the last round.
  * ONLY_IN_CLOUD, one call per game, streamed. Sees only abstracted text.
  * The device swaps real names back in when it renders the report.
  *
@@ -40,6 +40,7 @@ Real names and figures were replaced on the player's device with tokens such as 
 ${generals.map((g) => `- ${g.name}: ${g.hiddenInfo}`).join('\n')}
 
 # Your reply
+Write every text field with plain punctuation: commas, periods, colons. Never use a dash (— or –) between words.
 Return JSON with: verdict, verdictLine (one sentence the player could repeat to a co-founder), summary (3 or 4 sentences on how the game went), risks, counterStrategies, nextSteps, confidence.`;
 }
 

@@ -1,7 +1,7 @@
 import type { PromptInput, PromptRound, PromptSpec } from './types';
 
 /**
- * general_move — THE GENERALS, one opponent's reply to the player's move.
+ * general_move: THE GENERALS, one opponent's reply to the player's move.
  * ONLY_IN_CLOUD. One call per General per round, run in parallel.
  * Sees only abstracted text. Each General sees the history up to the previous round
  * and the player's current move, not the other Generals' current replies.
@@ -42,6 +42,7 @@ The player's device replaced every real name and figure with a token such as [CO
 - If the legend gives a rough size for a figure, reason with it. If it does not, reason about the structure of the plan instead of assuming numbers.
 
 # Your reply
+Write every text field with plain punctuation: commas, periods, colons. Never use a dash (— or –) between words.
 Return JSON with these fields:
 - headline: your move in at most 12 words, the way a news ticker would put it.
 - move: the action you take, in 2 to 4 sentences, first person, in character.

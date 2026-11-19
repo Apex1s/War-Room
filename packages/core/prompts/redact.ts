@@ -1,7 +1,7 @@
 import { LIMITS, type PromptSpec } from './types';
 
 /**
- * redact — PRIVACY FIREWALL, name extraction.
+ * redact: PRIVACY FIREWALL, name extraction.
  * Runs on Gemini Nano, ONLY_ON_DEVICE, locked in code: this prompt sees raw text.
  *
  * The model only lists names. Code does the substitution, and regex finds numbers,

@@ -1,14 +1,14 @@
 import { LIMITS, clip, numbered, type PromptSpec } from './types';
 
 /**
- * referee_round — THE REFEREE, verdict after each round.
+ * referee_round: THE REFEREE, verdict after each round.
  * PREFER_ON_DEVICE with cloud fallback. Input is abstracted, so the fallback is safe.
  *
  * Output schema: RefereeRoundOutput  { summary, scores: { generalId, delta }[], contradiction, commitments }
  * After the call: one score per known generalId (missing ones get 0), clamp delta to -2..2,
  * drop commitments that are already recorded.
  */
-const SYSTEM = `You are the neutral referee of a turn-based war game between a Player and several Opponents. Return JSON only.
+const SYSTEM = `You are the neutral referee of a turn-based war game between a Player and several Opponents. Return JSON only. Plain punctuation, no dashes.
 
 After reading the round, give:
 - summary: 2 sentences on what changed this round. No advice.

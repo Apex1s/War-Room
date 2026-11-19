@@ -1,14 +1,14 @@
 import { LIMITS, clip, type PromptSpec } from './types';
 
 /**
- * crowd — THE CROWD, short in-character reactions to a round.
+ * crowd: THE CROWD, short in-character reactions to a round.
  * PREFER_ON_DEVICE. One persona per call on Gemini Nano; all personas in one call
  * when it falls back to the cloud. Same prompt for both.
  *
  * Output schema: CrowdOutput  { reactions: { personaId, quote, sentiment }[] }
  * After the call: keep only requested personaIds, clamp sentiment to -2..2.
  */
-const SYSTEM = `You voice ordinary people reacting to one round of a business contest. Return JSON only.
+const SYSTEM = `You voice ordinary people reacting to one round of a business contest. Return JSON only. Plain punctuation, no dashes.
 
 Write exactly one reaction for each persona listed, in the order listed, and no others. Do not voice the Player or the opponents.
 Each reaction is what that person would say out loud:
