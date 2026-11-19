@@ -106,14 +106,18 @@ export function AgentCard({
               />
             )}
             {scoreDelta !== undefined && (
-              <span
-                className="font-mono text-label text-muted"
+              <div
+                className="flex flex-wrap items-center justify-end gap-5 font-mono text-label text-muted"
                 title={formatPlayerVsGeneralScore(general.name, cumulativeScore)}
               >
-                You vs {general.name}: {formatSignedScore(cumulativeScore)} (
-                {describeScoreStanding(cumulativeScore)}) · R{roundNumber}{' '}
-                {formatSignedScore(scoreDelta)}
-              </span>
+                <span className="px-5 py-3 rounded-[3px] bg-bg border border-line whitespace-nowrap">
+                  You vs {general.name}: {formatSignedScore(cumulativeScore)} (
+                  {describeScoreStanding(cumulativeScore)})
+                </span>
+                <span className="px-5 py-3 rounded-[3px] bg-bg border border-line whitespace-nowrap">
+                  R{roundNumber} {formatSignedScore(scoreDelta)}
+                </span>
+              </div>
             )}
           </div>
         </div>

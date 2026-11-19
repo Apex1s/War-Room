@@ -348,12 +348,11 @@ export function WarRoomScreen({
               <div className={TOKENS.classes.card + ' flex flex-col gap-8'}>
                 <div className="flex flex-wrap items-center justify-between gap-8">
                   <div className="flex flex-wrap items-center gap-8">
-                    <span className="terminal-label">
+                    <span className="px-8 py-3 rounded-[3px] border border-line bg-bg terminal-label whitespace-nowrap">
                       ROUND {displayedRound.n} OF {game.totalRounds}
                     </span>
-                    <span className="font-mono text-label text-muted">·</span>
                     <span
-                      className="font-mono text-label text-muted"
+                      className="px-8 py-3 rounded-[3px] border border-line bg-bg font-mono text-label text-muted whitespace-nowrap"
                       data-testid={`round-${displayedRound.n}-generals-status`}
                     >
                       {formatGeneralsStatus(
