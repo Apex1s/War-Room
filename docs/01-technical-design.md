@@ -258,7 +258,9 @@ One JSON parameter, `routing_table`, parsed with zod. Invalid or missing falls b
 }
 ```
 
-Defaults set from the Day 2 measurements (§10). `thinkingLevel` is optional; when absent no `thinkingConfig` is sent. `fallbackModel` gets one retry on HTTP 429/500/503, timeout or `AI/parse-failed`, in `prefer_in_cloud` mode when `deviceLastResort` is true (§10, decision 3). `thinkingLevel` applies to the primary model only. `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
+Defaults set from the Day 2 measurements (§10).
+
+**Retry policy (updated 19 Nov after an end-to-end test).** `AI/parse-failed` is usually Google's server breaking off a streamed reply mid-way with a 500 "high demand" JSON body appended to the SSE stream; the SDK cannot parse it. Order for a cloud call: (1) on 500/503, `parse-failed` or timeout, retry the **same** model once after about 2 s; on 429, wait `retryDelay` if it is 20 s or less, then retry the same model once; (2) then `fallbackModel`; (3) then Nano when `deviceLastResort`. Jumping straight to `gemini-3.8-flash` failed every time on 19 Nov because it is saturated too. Attach a `.catch` to `streamResult.response` before iterating the stream, or a mid-stream error surfaces twice, once as an unhandled rejection. `thinkingLevel` is optional; when absent no `thinkingConfig` is sent. `fallbackModel` gets one retry on HTTP 429/500/503, timeout or `AI/parse-failed`, in `prefer_in_cloud` mode when `deviceLastResort` is true (§10, decision 3). `thinkingLevel` applies to the primary model only. `redact` and `referee_live` are deliberately absent. `onConfigUpdate` → `activate` → router clears its model cache. Flipping `crowd` to `only_in_cloud` in the console changes the badges live, which is a good ten seconds of demo video.
 
 ---
 
