@@ -77,11 +77,8 @@ export function findVaultLeak(
 
 /**
  * Throws if `outgoingText` contains any enabled vaulted original or alias (length >= 3).
- *
- * TODO(Day 9): Firestore writes in `cloud-sync.ts` do not go through `window.fetch`
- * (the Firestore SDK uses WebChannel / gRPC-Web streams), so `net-guard.ts` cannot
- * inspect them. The Day 9 `saveToCloud` function MUST call `assertClean(JSON.stringify(cloudGame), gameId)`
- * before every Firestore write.
+ * Called by the router before every cloud-capable AI call and by `cloud-sync.ts` before
+ * every Firestore write.
  */
 export function assertClean(outgoingText: string, gameId?: string): void {
   const leaked = findVaultLeak(outgoingText, gameId);

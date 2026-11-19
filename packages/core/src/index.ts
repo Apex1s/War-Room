@@ -22,4 +22,5 @@ export * from './game/machine';
 export * from './game/scoring';
 export * from './game/templates';
 export * from './game/types';
+export * from './storage/cloud-sync';
 export * from './storage/local-db';

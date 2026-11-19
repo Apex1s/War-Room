@@ -1,0 +1,11 @@
+{
+  "parameters": {
+    "routing_table": {
+      "defaultValue": {
+        "value": "{\"v\":1,\"rounds\":3,\"tasks\":{\"crowd\":{\"mode\":\"prefer_on_device\",\"cloudModel\":\"gemini-3.5-flash-lite\",\"fallbackModel\":\"gemini-3.8-flash\",\"deviceLastResort\":false,\"timeoutMs\":20000},\"referee_round\":{\"mode\":\"prefer_on_device\",\"cloudModel\":\"gemini-3.5-flash-lite\",\"fallbackModel\":\"gemini-3.8-flash\",\"deviceLastResort\":false,\"timeoutMs\":20000},\"general_move\":{\"mode\":\"only_in_cloud\",\"cloudModel\":\"gemini-3.5-flash-lite\",\"fallbackModel\":\"gemini-3.8-flash\",\"deviceLastResort\":true,\"timeoutMs\":25000},\"final_report\":{\"mode\":\"only_in_cloud\",\"cloudModel\":\"gemini-4-hydrogen\",\"fallbackModel\":\"gemini-3.5-flash-lite\",\"deviceLastResort\":false,\"thinkingLevel\":\"LOW\",\"timeoutMs\":90000}},\"crowd\":{\"personas\":10,\"perRound\":5,\"batchOnDevice\":5,\"batchInCloud\":5}}"
+      },
+      "description": "Hybrid inference routing table (mode, cloudModel, fallbackModel, deviceLastResort, thinkingLevel, timeoutMs, and crowd batch settings).",
+      "valueType": "JSON"
+    }
+  }
+}
