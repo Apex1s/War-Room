@@ -41,86 +41,88 @@ export function RoundTimeline({
 
   return (
     <div
-      className={TOKENS.classes.card + ' flex flex-col gap-4'}
+      className={TOKENS.classes.card + ' flex flex-col gap-13'}
       data-testid="round-timeline"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-13">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-mono uppercase tracking-wider text-emerald-400">
-              🔒 Vault Sealed ({maskedCount} secrets kept on-device)
+          <div className="flex flex-wrap items-center gap-8">
+            <span className="font-mono text-label uppercase tracking-[0.12em] text-mint">
+              VAULT SEALED ({maskedCount} SECRETS KEPT ON-DEVICE)
             </span>
-            <span className="text-xs font-mono text-[#8B9BB4]">·</span>
+            <span className="font-mono text-label text-muted">·</span>
             <span
-              className="text-xs font-mono text-[#E0A84B]"
+              className="terminal-label"
               data-testid="game-phase-badge"
             >
               {formatPhaseStatus(game.phase, game.totalRounds)}
             </span>
           </div>
-          <h2 className="text-xl font-semibold text-[#E6EDF3] mt-1 mb-0">
-            Situation Room — Multi-Agent Stress Test
+          <h2 className="text-title font-semibold text-text mt-5 mb-0">
+            Situation room: multi-agent stress test
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-8">
           <button
             type="button"
             onClick={onToggleRehydrated}
-            className="px-3 py-1.5 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3] hover:border-[#E0A84B]/60 cursor-pointer"
+            className={TOKENS.classes.btnSecondary}
             data-testid="btn-toggle-rehydration"
           >
             {showRehydrated
-              ? '👁️ Real Names (Local Re-hydration)'
-              : '🛡️ Abstracted Tokens (Cloud View)'}
+              ? 'Real names (local re-hydration)'
+              : 'Abstracted tokens (cloud view)'}
           </button>
 
           <button
             type="button"
             onClick={onBackToReview}
-            className={TOKENS.classes.btnSecondary + ' text-xs py-1.5'}
+            className={TOKENS.classes.btnSecondary}
             data-testid="btn-return-review"
           >
-            ← Firewall Map
+            Firewall map
           </button>
         </div>
       </div>
 
       {/* Round pills + Final Report pill */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#223049]">
-        <div className="flex flex-wrap items-center gap-2">
-          {Array.from({ length: game.totalRounds }, (_, i) => i + 1).map((rNum) => {
-            const roundRec = game.rounds.find((r) => r.n === rNum);
-            const hasAllGenerals =
-              roundRec !== undefined &&
-              roundRec.generalMoves.length === game.generals.length;
-            const isCurrentPhase =
-              currentPhaseRound === rNum &&
-              game.phase.kind !== 'reporting' &&
-              game.phase.kind !== 'done';
-            const isSelected = activeViewRound === rNum;
+      <div className="flex flex-wrap items-center justify-between gap-13 pt-13 border-t border-line">
+        <div className="flex flex-wrap items-center gap-8">
+          {Array.from({ length: game.totalRounds }, (_, i) => i + 1).map(
+            (rNum) => {
+              const roundRec = game.rounds.find((r) => r.n === rNum);
+              const hasAllGenerals =
+                roundRec !== undefined &&
+                roundRec.generalMoves.length === game.generals.length;
+              const isCurrentPhase =
+                currentPhaseRound === rNum &&
+                game.phase.kind !== 'reporting' &&
+                game.phase.kind !== 'done';
+              const isSelected = activeViewRound === rNum;
 
-            return (
-              <button
-                key={rNum}
-                type="button"
-                onClick={() => onSelectViewRound(rNum)}
-                className={`px-3 py-1.5 rounded text-xs font-mono border transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#E0A84B]/20 border-[#E0A84B] text-[#E0A84B] font-semibold'
-                    : hasAllGenerals
-                      ? 'bg-emerald-950/50 border-emerald-700/60 text-emerald-300 hover:border-emerald-500'
-                      : isCurrentPhase
-                        ? 'bg-[#162032] border-[#E0A84B]/60 text-[#E6EDF3]'
-                        : 'bg-[#0A0E17] border-[#223049] text-[#8B9BB4]'
-                }`}
-                data-testid={`round-pill-${rNum}`}
-              >
-                Round {rNum}{' '}
-                {hasAllGenerals ? '✓' : isCurrentPhase ? '●' : ''}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={rNum}
+                  type="button"
+                  onClick={() => onSelectViewRound(rNum)}
+                  className={`px-13 py-5 rounded-[3px] font-mono text-label uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'border-mint bg-bg text-mint font-semibold'
+                      : hasAllGenerals
+                        ? 'border-line bg-bg text-text hover:border-mint'
+                        : isCurrentPhase
+                          ? 'border-line bg-surface text-text'
+                          : 'border-line bg-bg text-muted'
+                  }`}
+                  data-testid={`round-pill-${rNum}`}
+                >
+                  ROUND {rNum} OF {game.totalRounds}{' '}
+                  {hasAllGenerals ? '[DONE]' : isCurrentPhase ? '●' : ''}
+                </button>
+              );
+            },
+          )}
 
           {(game.phase.kind === 'reporting' ||
             game.phase.kind === 'done' ||
@@ -129,42 +131,25 @@ export function RoundTimeline({
               <button
                 type="button"
                 onClick={onViewReport}
-                className="px-3 py-1.5 rounded text-xs font-mono border border-[#E0A84B] bg-[#E0A84B] text-[#0A0E17] font-semibold cursor-pointer"
+                className={TOKENS.classes.btnSecondary}
                 data-testid="round-pill-report"
               >
-                Final Verdict Report →
+                Final verdict report
               </button>
             )}
         </div>
 
         {/* Running General Scores */}
-        <div className="flex flex-wrap items-center gap-2">
-          {scores.map((s) => {
-            const gen = game.generals.find((g) => g.id === s.generalId);
-            return (
-              <span
-                key={s.generalId}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#0A0E17] border border-[#223049] text-xs font-mono"
-                data-testid={`timeline-score-${s.generalId}`}
-              >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: gen?.color ?? '#E0A84B' }}
-                />
-                <span
-                  className={
-                    s.score > 0
-                      ? 'text-emerald-400 font-semibold'
-                      : s.score < 0
-                        ? 'text-red-400 font-semibold'
-                        : 'text-[#E6EDF3]'
-                  }
-                >
-                  {formatPlayerVsGeneralScore(s.name, s.score)}
-                </span>
-              </span>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-8">
+          {scores.map((s) => (
+            <span
+              key={s.generalId}
+              className="inline-flex items-center gap-5 px-8 py-3 rounded-[3px] bg-bg border border-line font-mono text-label text-text"
+              data-testid={`timeline-score-${s.generalId}`}
+            >
+              {formatPlayerVsGeneralScore(s.name, s.score)}
+            </span>
+          ))}
         </div>
       </div>
     </div>

@@ -1,4 +1,8 @@
-import { SAMPLE_BRIEFS, type GameTemplate } from '@warroom/core';
+import {
+  cleanPunctuation,
+  SAMPLE_BRIEFS,
+  type GameTemplate,
+} from '@warroom/core';
 import { useEffect, useState } from 'react';
 import { TOKENS } from '../tokens';
 
@@ -53,22 +57,22 @@ export function BriefScreen({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-21"
       data-testid="screen-brief"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-13">
         <div>
           <button
             type="button"
             onClick={onBack}
-            className="text-xs font-mono text-[#8B9BB4] hover:text-[#E6EDF3] mb-1 cursor-pointer"
+            className="font-mono text-label uppercase tracking-[0.12em] text-muted hover:text-text mb-5 cursor-pointer"
           >
-            ← Back to scenarios
+            Back to scenarios
           </button>
-          <h2 className="text-xl font-semibold text-[#E6EDF3] m-0">
-            {template.title} — Confidential Brief
+          <h2 className="text-title font-semibold text-text m-0">
+            {cleanPunctuation(template.title)}: confidential brief
           </h2>
-          <p className="text-xs text-[#8B9BB4] mt-1 mb-0">
+          <p className="text-body text-muted mt-5 mb-0">
             Paste your real company names, metrics, pricing and locations. The Privacy Firewall seals them locally before anything leaves this device.
           </p>
         </div>
@@ -80,24 +84,24 @@ export function BriefScreen({
           className={TOKENS.classes.btnSecondary}
           data-testid="btn-load-demo-brief"
         >
-          Load Demo Brief
+          Load demo brief
         </button>
       </div>
 
-      <div className={TOKENS.classes.card + ' flex flex-col gap-4'}>
+      <div className={TOKENS.classes.card + ' flex flex-col gap-21'}>
         <div>
           <label
             htmlFor="wr-objective-input"
-            className="block text-xs font-mono uppercase tracking-wider text-[#8B9BB4] mb-1.5"
+            className="block terminal-label mb-8"
           >
-            Objective (One Line)
+            OBJECTIVE (ONE LINE)
           </label>
           <input
             id="wr-objective-input"
             type="text"
             value={objective}
             onChange={(e) => setObjective(e.target.value)}
-            placeholder={template.objectivePlaceholder}
+            placeholder={cleanPunctuation(template.objectivePlaceholder)}
             disabled={isSealing}
             className={TOKENS.classes.input}
             data-testid="input-objective"
@@ -107,35 +111,38 @@ export function BriefScreen({
         <div>
           <label
             htmlFor="wr-brief-textarea"
-            className="block text-xs font-mono uppercase tracking-wider text-[#8B9BB4] mb-1.5"
+            className="block terminal-label mb-8"
           >
-            Confidential Plan &amp; Context
+            CONFIDENTIAL PLAN AND CONTEXT
           </label>
           <textarea
             id="wr-brief-textarea"
             rows={8}
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
-            placeholder={template.briefPlaceholder}
+            placeholder={cleanPunctuation(template.briefPlaceholder)}
             disabled={isSealing}
-            className={TOKENS.classes.input + ' leading-relaxed resize-y'}
+            className={TOKENS.classes.input + ' resize-y'}
             data-testid="textarea-brief"
           />
         </div>
 
         {isSealing && (
-          <div className="p-3 rounded bg-[#162032] border border-[#E0A84B]/50 text-xs font-mono">
-            <div className="flex justify-between mb-1.5 text-[#E0A84B]">
-              <span>Sealing brief in local Privacy Firewall…</span>
+          <div className="p-13 rounded-[3px] bg-bg border border-mint font-mono text-label">
+            <div className="flex items-center justify-between mb-8 text-mint">
+              <span className="inline-flex items-center gap-8">
+                <span className="wr-live-dot" aria-hidden="true" />
+                <span>SEALING BRIEF IN LOCAL PRIVACY FIREWALL...</span>
+              </span>
               <span>{Math.round(sealingProgress * 100)}%</span>
             </div>
-            <progress value={sealingProgress} max={1} className="w-full h-2" />
+            <progress value={sealingProgress} max={1} className="w-full h-5" />
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2">
-          <span className="text-xs font-mono text-[#8B9BB4]">
-            🔒 Vault storage: local IndexedDB only
+        <div className="flex flex-wrap items-center justify-between gap-13 pt-8">
+          <span className="font-mono text-label uppercase tracking-[0.12em] text-muted">
+            VAULT STORAGE: LOCAL INDEXEDDB ONLY
           </span>
           <button
             type="submit"
@@ -143,7 +150,7 @@ export function BriefScreen({
             className={TOKENS.classes.btnPrimary}
             data-testid="btn-seal-brief"
           >
-            {isSealing ? 'Sealing…' : 'Seal Brief in Privacy Firewall →'}
+            {isSealing ? 'Sealing...' : 'Seal brief in privacy firewall'}
           </button>
         </div>
       </div>

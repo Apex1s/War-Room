@@ -13,7 +13,11 @@ import { TOKENS } from '../tokens';
 export interface FirewallReviewScreenProps {
   game: GameRecord;
   vaultRecord: VaultRecord;
-  onUpdateMap: (nextMap: PlaceholderEntry[], nextAbstractedObjective: string, nextAbstractedBrief: string) => void;
+  onUpdateMap: (
+    nextMap: PlaceholderEntry[],
+    nextAbstractedObjective: string,
+    nextAbstractedBrief: string,
+  ) => void;
   onApprove: () => void;
   onBackToEdit: () => void;
 }
@@ -35,7 +39,10 @@ export function FirewallReviewScreen({
   onApprove,
   onBackToEdit,
 }: FirewallReviewScreenProps) {
-  const objApplied = applyMapWithSpans(vaultRecord.rawObjective, vaultRecord.map);
+  const objApplied = applyMapWithSpans(
+    vaultRecord.rawObjective,
+    vaultRecord.map,
+  );
   const briefApplied = applyMapWithSpans(vaultRecord.rawBrief, vaultRecord.map);
 
   const handleToggleEntry = (token: string) => {
@@ -52,7 +59,8 @@ export function FirewallReviewScreen({
         const m = /_(\d+)\]$/.exec(e.token);
         return m ? Number(m[1]) : 0;
       });
-    const nextNum = (existingNumbers.length ? Math.max(...existingNumbers) : 0) + 1;
+    const nextNum =
+      (existingNumbers.length ? Math.max(...existingNumbers) : 0) + 1;
     const newToken = `[${newType}_${nextNum}]`;
 
     const nextMap = vaultRecord.map.map((entry) =>
@@ -71,40 +79,39 @@ export function FirewallReviewScreen({
   };
 
   return (
-    <div className="flex flex-col gap-5" data-testid="screen-firewall-review">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-col gap-21" data-testid="screen-firewall-review">
+      <div className="flex flex-wrap items-center justify-between gap-13">
         <div>
           <button
             type="button"
             onClick={onBackToEdit}
-            className="text-xs font-mono text-[#8B9BB4] hover:text-[#E6EDF3] mb-1 cursor-pointer"
+            className="font-mono text-label uppercase tracking-[0.12em] text-muted hover:text-text mb-5 cursor-pointer"
           >
-            ← Edit raw brief
+            Edit raw brief
           </button>
-          <h2 className="text-xl font-semibold text-[#E6EDF3] m-0">
-            Privacy Firewall Review
+          <h2 className="text-title font-semibold text-text m-0">
+            Privacy firewall review
           </h2>
-          <p className="text-xs text-[#8B9BB4] mt-1 mb-0">
+          <p className="text-body text-muted mt-5 mb-0">
             Verify the abstracted text below. Nothing touches the cloud until you click "Approve and send".
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-13">
           {game.redactionMethod === 'basic' ? (
             <span
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-mono bg-amber-950/70 text-amber-300 border border-amber-500/40"
+              className="inline-flex items-center gap-8 px-13 py-8 rounded-[3px] font-mono text-label uppercase border border-orange bg-surface text-orange"
               data-testid="redaction-method-label"
             >
-              <span>🛡️</span>
-              <span>Basic redaction (on-device AI unavailable)</span>
+              <span>BASIC REDACTION: ON-DEVICE AI UNAVAILABLE</span>
             </span>
           ) : (
             <span
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-mono bg-emerald-950/70 text-emerald-300 border border-emerald-500/40"
+              className="inline-flex items-center gap-8 px-13 py-8 rounded-[3px] font-mono text-label uppercase border border-mint bg-surface text-mint"
               data-testid="redaction-method-label"
             >
-              <span>🔒</span>
-              <span>On-device AI redaction (Gemini Nano)</span>
+              <span>●</span>
+              <span>ON-DEVICE AI REDACTION: GEMINI NANO</span>
             </span>
           )}
 
@@ -114,7 +121,7 @@ export function FirewallReviewScreen({
             className={TOKENS.classes.btnPrimary}
             data-testid="btn-approve-redaction"
           >
-            Approve and send →
+            Approve and send
           </button>
         </div>
       </div>

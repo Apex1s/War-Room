@@ -41,29 +41,33 @@ export function PlaceholderTable({
 
   return (
     <div className={TOKENS.classes.card}>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-13 mb-13">
         <div>
-          <h3 className="text-sm font-semibold text-[#E6EDF3] m-0">
-            Placeholder Vault Map ({map.filter((e) => e.enabled).length} of {map.length} active)
-          </h3>
-          <p className="text-xs text-[#8B9BB4] mt-0.5 mb-0">
-            Stored only in local IndexedDB (`vault`). Never sent to the cloud or written to Firestore.
+          <div className="terminal-label">
+            PLACEHOLDER VAULT MAP ({map.filter((e) => e.enabled).length} OF{' '}
+            {map.length} ACTIVE)
+          </div>
+          <p className="text-label text-muted mt-3 mb-0">
+            Stored only in local IndexedDB (vault). Never sent to the cloud or written to Firestore.
           </p>
         </div>
 
-        <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <form
+          onSubmit={handleAdd}
+          className="flex flex-wrap items-center gap-8 w-full sm:w-auto"
+        >
           <input
             type="text"
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
-            placeholder="Add term to mask…"
-            className="flex-1 min-w-[130px] rounded bg-[#0A0E17] border border-[#223049] px-2.5 py-1.5 text-xs text-[#E6EDF3] focus:outline-none focus:border-[#E0A84B]"
+            placeholder="Add term to mask..."
+            className="flex-1 min-w-[130px] rounded-[3px] bg-bg border border-line px-8 py-5 text-label text-text placeholder:text-muted focus:outline-none focus:border-mint"
             data-testid="input-manual-redact"
           />
           <select
             value={customType}
             onChange={(e) => setCustomType(e.target.value as EntityType)}
-            className="rounded bg-[#0A0E17] border border-[#223049] px-2 py-1.5 text-xs text-[#E6EDF3]"
+            className="rounded-[3px] bg-bg border border-line px-8 py-5 text-label font-mono text-text"
             aria-label="Custom entity type"
           >
             {ENTITY_TYPES.map((t) => (
@@ -74,62 +78,68 @@ export function PlaceholderTable({
           </select>
           <button
             type="submit"
-            className={TOKENS.classes.btnSecondary + ' !py-1.5 !px-3 !text-xs'}
+            className={TOKENS.classes.btnSecondary}
             data-testid="btn-add-manual-redact"
           >
-            + Add
+            Add term
           </button>
         </form>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs font-mono" data-testid="placeholder-table">
+        <table
+          className="w-full text-left border-collapse font-mono text-label"
+          data-testid="placeholder-table"
+        >
           <thead>
-            <tr className="border-b border-[#223049] text-[#8B9BB4]">
-              <th className="py-2 px-3">Active</th>
-              <th className="py-2 px-3">Token</th>
-              <th className="py-2 px-3">Original Value (Local Only)</th>
-              <th className="py-2 px-3">Type</th>
-              <th className="py-2 px-3">Detected By</th>
+            <tr className="border-b border-line text-muted uppercase tracking-[0.12em]">
+              <th className="py-8 px-13">ACTIVE</th>
+              <th className="py-8 px-13">TOKEN</th>
+              <th className="py-8 px-13">ORIGINAL VALUE (LOCAL ONLY)</th>
+              <th className="py-8 px-13">TYPE</th>
+              <th className="py-8 px-13">DETECTED BY</th>
             </tr>
           </thead>
           <tbody>
             {map.map((entry) => (
               <tr
                 key={entry.token}
-                className={`border-b border-[#223049]/60 ${
-                  entry.enabled ? 'text-[#E6EDF3]' : 'text-[#8B9BB4]/50 line-through'
+                className={`border-b border-line ${
+                  entry.enabled ? 'text-text' : 'text-muted line-through'
                 }`}
                 data-testid={`placeholder-row-${entry.token}`}
               >
-                <td className="py-2 px-3">
+                <td className="py-8 px-13">
                   <input
                     type="checkbox"
                     checked={entry.enabled}
                     onChange={() => onToggleEntry(entry.token)}
-                    className="accent-[#E0A84B] cursor-pointer"
+                    className="accent-mint cursor-pointer"
                     aria-label={`Toggle redaction for ${entry.original}`}
                     data-testid={`toggle-${entry.token}`}
                   />
                 </td>
-                <td className="py-2 px-3 text-emerald-400 font-semibold">
+                <td className="py-8 px-13 text-mint font-semibold">
                   {entry.token}
                 </td>
-                <td className="py-2 px-3 font-sans">
+                <td className="py-8 px-13 font-sans">
                   <span>{entry.original}</span>
                   {entry.aliases.length > 0 && (
-                    <span className="ml-2 text-[11px] text-[#8B9BB4]">
+                    <span className="ml-8 text-label text-muted">
                       ({entry.aliases.join(', ')})
                     </span>
                   )}
                 </td>
-                <td className="py-2 px-3">
+                <td className="py-8 px-13">
                   <select
                     value={entry.type}
                     onChange={(e) =>
-                      onChangeEntryType(entry.token, e.target.value as EntityType)
+                      onChangeEntryType(
+                        entry.token,
+                        e.target.value as EntityType,
+                      )
                     }
-                    className="bg-[#0A0E17] border border-[#223049] rounded px-2 py-1 text-xs text-[#E6EDF3]"
+                    className="bg-bg border border-line rounded-[3px] px-8 py-3 text-label font-mono text-text"
                     aria-label={`Entity type for ${entry.original}`}
                   >
                     {ENTITY_TYPES.map((t) => (
@@ -139,8 +149,8 @@ export function PlaceholderTable({
                     ))}
                   </select>
                 </td>
-                <td className="py-2 px-3">
-                  <span className="px-2 py-0.5 rounded bg-[#162032] border border-[#223049] text-[11px]">
+                <td className="py-8 px-13">
+                  <span className="px-8 py-3 rounded-[3px] bg-bg border border-line text-label uppercase">
                     {entry.detectedBy}
                   </span>
                 </td>

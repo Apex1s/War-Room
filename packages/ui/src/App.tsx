@@ -1,5 +1,6 @@
 import {
   applyMap,
+  cleanPunctuation,
   gamesStore,
   getAuthUserState,
   hydrateLedgerFromStore,
@@ -21,13 +22,13 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { DeviceStatus } from './components/DeviceStatus';
 import { EgressInspector } from './components/EgressInspector';
-import { HybridStats } from './components/HybridStats';
 import { BriefScreen } from './screens/Brief';
 import { FirewallReviewScreen } from './screens/FirewallReview';
 import { HomeScreen } from './screens/Home';
 import { ReplayScreen } from './screens/Replay';
 import { ReportScreen } from './screens/Report';
 import { WarRoomScreen } from './screens/WarRoom';
+import { TOKENS } from './tokens';
 
 export interface PlatformInfo {
   kind: 'web' | 'extension';
@@ -48,7 +49,8 @@ export interface AppProps {
 export function App({ platform }: AppProps) {
   const [loading, setLoading] = useState(true);
   const [savedGames, setSavedGames] = useState<GameRecord[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateId | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] =
+    useState<TemplateId | null>(null);
   const [activeGame, setActiveGame] = useState<GameRecord | null>(null);
   const [activeVault, setActiveVault] = useState<VaultRecord | null>(null);
   const [sealingProgress, setSealingProgress] = useState<number | null>(null);
@@ -69,15 +71,18 @@ export function App({ platform }: AppProps) {
     return subscribeAuthUserState(setAuthState);
   }, []);
 
-  const applyExternalBriefSelection = useCallback(async (selectionText: string) => {
-    const trimmed = selectionText.trim();
-    if (!trimmed) return;
-    await settingsStore.setActiveGameId(null);
-    setActiveGame(null);
-    setActiveVault(null);
-    setPrefilledBrief(trimmed);
-    setSelectedTemplateId('startup');
-  }, []);
+  const applyExternalBriefSelection = useCallback(
+    async (selectionText: string) => {
+      const trimmed = selectionText.trim();
+      if (!trimmed) return;
+      await settingsStore.setActiveGameId(null);
+      setActiveGame(null);
+      setActiveVault(null);
+      setPrefilledBrief(trimmed);
+      setSelectedTemplateId('startup');
+    },
+    [],
+  );
 
   const loadPersistedState = useCallback(async () => {
     setLoading(true);
@@ -145,9 +150,6 @@ export function App({ platform }: AppProps) {
       vault.get(gameId),
     ]);
     if (game) {
-      // If a game was loaded from Firestore on another browser, its local vault does not exist
-      // because secrets never leave the original device. Create an empty local vault record so
-      // the user can inspect and replay the abstracted game on the second browser.
       const vaultRec: VaultRecord = existingVault ?? {
         gameId: game.id,
         rawObjective: game.objective,
@@ -186,11 +188,11 @@ export function App({ platform }: AppProps) {
     }
 
     setCloudSaveBusy(true);
-    setCloudSaveStatus('Saving abstracted game to Firestore…');
+    setCloudSaveStatus('Saving abstracted game to Firestore...');
     try {
       const { updatedGame } = await saveGameToCloud(activeGame, uid);
       setActiveGame(updatedGame);
-      setCloudSaveStatus('✓ Saved to cloud (abstracted only)');
+      setCloudSaveStatus('Saved to cloud (abstracted only)');
     } catch (err) {
       setCloudSaveStatus(
         err instanceof Error ? err.message : 'Cloud save failed',
@@ -204,12 +206,12 @@ export function App({ platform }: AppProps) {
     if (cloudSyncBusy) return;
     const uid = authState.uid;
     if (!uid) {
-      setCloudSyncStatus('Waiting for anonymous/Google auth…');
+      setCloudSyncStatus('Waiting for anonymous or Google auth...');
       return;
     }
 
     setCloudSyncBusy(true);
-    setCloudSyncStatus('Fetching from Firestore…');
+    setCloudSyncStatus('Fetching from Firestore...');
     try {
       const cloudGames = await listCloudGames(uid);
       for (const cg of cloudGames) {
@@ -219,7 +221,7 @@ export function App({ platform }: AppProps) {
       setSavedGames(allGames);
       setCloudSyncStatus(
         cloudGames.length > 0
-          ? `✓ Loaded ${cloudGames.length} cloud ${cloudGames.length === 1 ? 'game' : 'games'}`
+          ? `Loaded ${cloudGames.length} cloud ${cloudGames.length === 1 ? 'game' : 'games'}`
           : 'No cloud games found for this account',
       );
     } catch (err) {
@@ -352,50 +354,50 @@ export function App({ platform }: AppProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0E17] text-[#E6EDF3] overflow-x-hidden">
-      <header className="border-b border-[#223049] bg-[#111826]/90 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen text-text overflow-x-hidden">
+      <header className="border-b border-line bg-surface sticky top-0 z-10">
+        <div className="max-w-[1180px] mx-auto px-13 sm:px-21 py-13 flex flex-wrap items-center justify-between gap-13">
+          <div className="flex items-center gap-13">
             <button
               type="button"
               onClick={() => void handleResetToHome()}
               className="text-left cursor-pointer"
               data-testid="brand-home-button"
             >
-              <span className="text-base font-bold tracking-tight text-[#E6EDF3]">
-                WAR ROOM
+              <span className="font-mono font-semibold text-body tracking-[0.08em] text-text">
+                WAR ROOM<span className="wr-cursor">_</span>
               </span>
-              <span className="ml-2 text-xs font-mono text-[#E0A84B]">
+              <span className="ml-13 terminal-label">
                 CONFIDENTIAL AI WAR-GAMING
               </span>
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-8">
             {activeGame &&
               activeGame.phase.kind !== 'draft' &&
               activeGame.phase.kind !== 'sealing_brief' && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-8">
                   {cloudSaveStatus && (
                     <span
-                      className="text-xs font-mono text-emerald-300"
+                      className="font-mono text-label text-mint"
                       data-testid="cloud-save-status"
                     >
-                      {cloudSaveStatus}
+                      {cleanPunctuation(cloudSaveStatus)}
                     </span>
                   )}
                   <button
                     type="button"
                     onClick={() => void handleSaveToCloud()}
                     disabled={cloudSaveBusy}
-                    className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3] hover:border-[#E0A84B]/60 cursor-pointer disabled:opacity-50"
+                    className={TOKENS.classes.btnSecondary}
                     data-testid="btn-save-to-cloud"
                   >
                     {cloudSaveBusy
-                      ? '☁️ Saving…'
+                      ? 'Saving...'
                       : activeGame.cloudSavedAt
-                        ? '☁️ Saved to cloud'
-                        : '☁️ Save to cloud'}
+                        ? 'Saved to cloud'
+                        : 'Save to cloud'}
                   </button>
                 </div>
               )}
@@ -405,16 +407,16 @@ export function App({ platform }: AppProps) {
                 {!authState.isAnonymous &&
                 (authState.email || authState.displayName) ? (
                   <span
-                    className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-emerald-300"
+                    className="px-8 py-5 rounded-[3px] font-mono text-label border border-line bg-bg text-mint"
                     data-testid="auth-user-badge"
                   >
-                    👤 {authState.email ?? authState.displayName}
+                    {authState.email ?? authState.displayName}
                   </span>
                 ) : (
                   <button
                     type="button"
                     onClick={() => void handleGoogleSignIn()}
-                    className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3] hover:border-[#E0A84B]/60 cursor-pointer"
+                    className={TOKENS.classes.btnSecondary}
                     data-testid="btn-google-signin"
                   >
                     Sign in with Google
@@ -426,20 +428,21 @@ export function App({ platform }: AppProps) {
             <button
               type="button"
               onClick={() => setEgressInspectorOpen(true)}
-              className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3] hover:border-[#E0A84B]/60 cursor-pointer"
+              className={TOKENS.classes.btnSecondary}
               data-testid="header-btn-egress-inspector"
             >
-              🔍 Egress Inspector
+              Egress inspector
             </button>
             <DeviceStatus onDownloadModel={platform.onDownloadModel} />
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <main className="max-w-[1180px] mx-auto px-13 sm:px-21 pt-21 sm:pt-55 pb-55">
         {loading ? (
-          <div className="text-sm font-mono text-[#8B9BB4]">
-            Loading local vault…
+          <div className="font-mono text-label uppercase tracking-[0.12em] text-muted">
+            [THINKING
+            <span className="wr-thinking-dots" />] LOADING LOCAL VAULT
           </div>
         ) : activeGame && activeVault && activeGame.phase.kind === 'review' ? (
           <FirewallReviewScreen
@@ -456,7 +459,8 @@ export function App({ platform }: AppProps) {
           (activeGame.phase.kind === 'reporting' ||
             (activeGame.phase.kind === 'failed' &&
               activeGame.phase.at.kind === 'reporting') ||
-            (activeGame.phase.kind === 'done' && !inspectingRoundsFromReport)) ? (
+            (activeGame.phase.kind === 'done' &&
+              !inspectingRoundsFromReport)) ? (
           <ReportScreen
             game={activeGame}
             vaultRecord={activeVault}
@@ -465,6 +469,7 @@ export function App({ platform }: AppProps) {
               setActiveVault(nextVault);
             }}
             onBackToWarRoom={() => setInspectingRoundsFromReport(true)}
+            onOpenEgressInspector={() => setEgressInspectorOpen(true)}
           />
         ) : activeGame &&
           activeVault &&
@@ -478,6 +483,7 @@ export function App({ platform }: AppProps) {
               setActiveVault(nextVault);
             }}
             onViewReport={() => setInspectingRoundsFromReport(false)}
+            onOpenEgressInspector={() => setEgressInspectorOpen(true)}
           />
         ) : activeGame &&
           activeVault &&
@@ -504,6 +510,7 @@ export function App({ platform }: AppProps) {
               void gamesStore.put(backToReview);
             }}
             onOpenReport={() => setInspectingRoundsFromReport(false)}
+            onOpenEgressInspector={() => setEgressInspectorOpen(true)}
           />
         ) : selectedTemplateId ? (
           <BriefScreen
@@ -524,21 +531,6 @@ export function App({ platform }: AppProps) {
             cloudSyncStatus={cloudSyncStatus}
           />
         )}
-
-        {activeGame &&
-          activeVault &&
-          activeGame.phase.kind !== 'draft' &&
-          activeGame.phase.kind !== 'sealing_brief' && (
-            <div className="mt-6">
-              <HybridStats
-                gameId={activeGame.id}
-                rawBriefChars={
-                  activeVault.rawObjective.length + activeVault.rawBrief.length
-                }
-                onOpenEgressInspector={() => setEgressInspectorOpen(true)}
-              />
-            </div>
-          )}
       </main>
 
       <EgressInspector

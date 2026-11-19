@@ -1,4 +1,5 @@
 import {
+  cleanPunctuation,
   describeScoreStanding,
   formatPlayerVsGeneralScore,
   formatSignedScore,
@@ -9,8 +10,36 @@ import {
   type PlaceholderEntry,
   type RoundRecord,
 } from '@warroom/core';
-import { isMockProviderActive, SourceBadge } from './SourceBadge';
 import { TOKENS } from '../tokens';
+import { SourceBadge } from './SourceBadge';
+
+export interface ThreatMeterProps {
+  level: number;
+  testId?: string;
+}
+
+export function ThreatMeter({ level, testId }: ThreatMeterProps) {
+  const clamped = Math.max(1, Math.min(5, Math.round(level)));
+  return (
+    <div
+      className="inline-flex items-center gap-8"
+      title={`Threat level ${clamped} of 5`}
+      data-testid={testId}
+    >
+      <div className="inline-flex items-center gap-3" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((cell) => (
+          <span
+            key={cell}
+            className={`inline-block w-13 h-5 rounded-[1px] ${
+              cell <= clamped ? 'bg-orange' : 'bg-line'
+            }`}
+          />
+        ))}
+      </div>
+      <span className="font-mono text-label text-muted">{clamped}/5</span>
+    </div>
+  );
+}
 
 export interface AgentCardProps {
   general: GeneralSpec;
@@ -40,7 +69,7 @@ export function AgentCard({
   onRetryGeneral,
 }: AgentCardProps) {
   const formatText = (text: string) =>
-    showRehydrated ? rehydrate(text, vaultMap) : text;
+    showRehydrated ? rehydrate(text, vaultMap) : cleanPunctuation(text);
 
   const initials = general.name
     .split(/\s+/)
@@ -51,63 +80,39 @@ export function AgentCard({
 
   return (
     <div
-      className="rounded-lg border border-[#223049] bg-[#0A0E17] p-4 flex flex-col justify-between gap-3 shadow-sm"
-      style={{ borderTopWidth: '3px', borderTopColor: general.color }}
+      className={TOKENS.classes.card + ' flex flex-col justify-between gap-13'}
       data-testid={`general-card-r${roundNumber}-${general.id}`}
     >
-      <div className="flex flex-col gap-2.5">
-        {/* Header with Avatar + Name + Threat & Score */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded flex items-center justify-center text-xs font-mono font-bold text-[#0A0E17] shrink-0"
-              style={{ backgroundColor: general.color }}
-            >
+      <div className="flex flex-col gap-13">
+        {/* Header with 34 px Monogram Square + Name + Role + Threat Meter */}
+        <div className="flex flex-wrap items-start justify-between gap-13">
+          <div className="flex items-center gap-13 min-w-0">
+            <div className="w-34 h-34 rounded-[3px] border border-line bg-bg flex items-center justify-center font-mono text-label font-semibold text-text shrink-0">
               {initials}
             </div>
-            <div>
-              <div className="text-sm font-bold text-[#E6EDF3]">
+            <div className="min-w-0">
+              <div className="font-sans text-body font-semibold text-text">
                 {general.name}
               </div>
-              <div className="text-[11px] text-[#8B9BB4] line-clamp-1">
-                {general.role}
-              </div>
+              <div className="text-label text-muted">{general.role}</div>
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex flex-col items-end gap-5 shrink-0">
             {reply && (
-              <span
-                className={`px-2 py-0.5 rounded text-xs font-mono border ${
-                  reply.threatLevel >= 4
-                    ? 'bg-red-950/60 border-red-700/60 text-red-300'
-                    : reply.threatLevel === 3
-                      ? 'bg-amber-950/60 border-amber-700/60 text-amber-300'
-                      : 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
-                }`}
-                data-testid={`general-threat-r${roundNumber}-${general.id}`}
-              >
-                Threat {reply.threatLevel}/5
-              </span>
+              <ThreatMeter
+                level={reply.threatLevel}
+                testId={`general-threat-r${roundNumber}-${general.id}`}
+              />
             )}
             {scoreDelta !== undefined && (
               <span
-                className="text-[11px] font-mono text-[#8B9BB4]"
+                className="font-mono text-label text-muted"
                 title={formatPlayerVsGeneralScore(general.name, cumulativeScore)}
               >
-                You vs {general.name}:{' '}
-                <span
-                  className={
-                    cumulativeScore > 0
-                      ? 'text-emerald-400'
-                      : cumulativeScore < 0
-                        ? 'text-red-400'
-                        : 'text-[#E6EDF3]'
-                  }
-                >
-                  {formatSignedScore(cumulativeScore)} ({describeScoreStanding(cumulativeScore)})
-                </span>{' '}
-                · R{roundNumber} {formatSignedScore(scoreDelta)}
+                You vs {general.name}: {formatSignedScore(cumulativeScore)} (
+                {describeScoreStanding(cumulativeScore)}) · R{roundNumber}{' '}
+                {formatSignedScore(scoreDelta)}
               </span>
             )}
           </div>
@@ -115,58 +120,63 @@ export function AgentCard({
 
         {isPending && (
           <div
-            className="py-6 text-xs font-mono text-[#8B9BB4] animate-pulse"
+            className="py-21 font-mono text-label uppercase tracking-[0.12em] text-muted"
             data-testid={`general-pending-r${roundNumber}-${general.id}`}
           >
-            ☁️ Generating adversarial move in parallel…
+            [THINKING
+            <span className="wr-thinking-dots" />]
           </div>
         )}
 
         {failedCode && (
           <div
-            className="p-3 rounded bg-[#162032] border border-amber-600/50 flex flex-col gap-2"
+            className="p-13 rounded-[3px] bg-bg border border-line flex flex-wrap items-center justify-between gap-13"
             data-testid={`general-holds-r${roundNumber}-${general.id}`}
           >
-            <div className="text-xs font-semibold text-amber-300">
-              Holds position this round
-            </div>
-            <div className="text-[11px] font-mono text-[#8B9BB4]">
-              Cloud call exhausted retries ({failedCode}). The round continues with the other Generals.
+            <div>
+              <div className="font-mono text-label uppercase tracking-[0.12em] text-orange font-semibold">
+                HOLDS POSITION THIS ROUND
+              </div>
+              <div className="font-mono text-label text-muted mt-3">
+                Cloud call exhausted retries ({failedCode}). The round continues with the other Generals.
+              </div>
             </div>
             <button
               type="button"
               onClick={() => onRetryGeneral(general.id)}
               disabled={busy}
-              className={TOKENS.classes.btnSecondary + ' text-xs'}
+              className={TOKENS.classes.btnSecondary}
               data-testid={`btn-retry-general-r${roundNumber}-${general.id}`}
             >
-              ↻ Retry {general.name}
+              Retry {general.name}
             </button>
           </div>
         )}
 
         {reply && (
           <>
-            <div
-              className="text-sm font-semibold text-[#E6EDF3] leading-snug"
+            <h4
+              className="text-title font-semibold text-text m-0"
               data-testid={`general-headline-r${roundNumber}-${general.id}`}
             >
               {formatText(reply.headline)}
-            </div>
-            <div
-              className="text-xs text-[#E6EDF3]/90 leading-relaxed font-mono"
+            </h4>
+            <p
+              className="text-body text-text m-0"
               data-testid={`general-move-r${roundNumber}-${general.id}`}
             >
               {formatText(reply.move)}
-            </div>
-            <div className="text-xs text-[#8B9BB4] border-t border-[#223049] pt-2">
-              <span className="font-mono text-[#E0A84B]">Rationale:</span>{' '}
-              {formatText(reply.rationale)}
+            </p>
+            <div className="text-body text-muted border-t border-line pt-13">
+              <span className="terminal-label mr-8">RATIONALE:</span>
+              <span>{formatText(reply.rationale)}</span>
             </div>
             {reply.targets && (
-              <div className="text-xs text-[#8B9BB4]">
-                <span className="font-mono text-[#8B9BB4]">Targets assumption:</span>{' '}
-                {formatText(reply.targets)}
+              <div className="border-l-[3px] border-l-orange pl-13 py-3 text-label text-muted">
+                <span className="font-mono text-label uppercase tracking-[0.12em] text-orange mr-8">
+                  TARGETS:
+                </span>
+                <span>{formatText(reply.targets)}</span>
               </div>
             )}
           </>
@@ -174,17 +184,13 @@ export function AgentCard({
       </div>
 
       {reply && (
-        <div className="pt-2 border-t border-[#223049] flex items-center justify-between gap-2">
+        <div className="pt-13 border-t border-line flex items-center justify-between gap-8">
           <SourceBadge
             source={reply.source}
             latencyMs={reply.latencyMs}
             fallback={reply.fallback}
+            model={reply.model}
           />
-          {!isMockProviderActive() && (
-            <span className="text-[11px] font-mono text-[#8B9BB4] truncate">
-              {reply.model}
-            </span>
-          )}
         </div>
       )}
     </div>

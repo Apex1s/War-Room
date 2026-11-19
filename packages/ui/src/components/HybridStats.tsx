@@ -19,16 +19,14 @@ export function HybridStats({
 
   return (
     <div
-      className={TOKENS.classes.card + ' flex flex-col gap-3'}
+      className={TOKENS.classes.card + ' flex flex-col gap-13'}
       data-testid="hybrid-stats-panel"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-13">
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-            ⚡ Hybrid Inference Telemetry (Local Call Ledger)
-          </span>
-          <p className="text-xs text-[#8B9BB4] mt-0.5 mb-0">
-            Firebase Console AI monitoring only sees cloud calls; this ledger tracks both on-device Gemini Nano and cloud calls locally.
+          <span className="terminal-label">HYBRID TELEMETRY</span>
+          <p className="text-label text-muted mt-3 mb-0">
+            Local call ledger across on-device Gemini Nano and cloud models.
           </p>
         </div>
 
@@ -36,86 +34,78 @@ export function HybridStats({
           <button
             type="button"
             onClick={onOpenEgressInspector}
-            className={TOKENS.classes.btnSecondary + ' text-xs py-1.5'}
+            className={TOKENS.classes.btnSecondary}
             data-testid="btn-open-egress-inspector"
           >
-            🔍 Inspect Cloud Egress ({cloudEntries.length} payloads
+            Inspect cloud egress ({cloudEntries.length} payloads
             {blockedRequests.length > 0
-              ? ` · ${blockedRequests.length} blocked`
+              ? `, ${blockedRequests.length} blocked`
               : ''}
             )
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 gap-13">
         <div
-          className="p-3 rounded bg-[#0A0E17] border border-[#223049]"
+          className="p-13 rounded-[3px] bg-bg border border-line"
           data-testid="stat-on-device-share"
         >
-          <div className="text-[11px] font-mono text-[#8B9BB4]">
-            Calls On-Device
-          </div>
-          <div className="text-lg font-mono font-bold text-emerald-400 mt-0.5">
+          <div className="terminal-label">CALLS ON-DEVICE</div>
+          <div className="text-title font-mono font-semibold text-mint mt-5">
             {stats.onDeviceSharePercent}%
           </div>
-          <div className="text-[11px] font-mono text-[#8B9BB4]">
+          <div className="font-mono text-label text-muted mt-3">
             {stats.onDeviceCalls} on-device / {stats.totalCalls} total
           </div>
         </div>
 
         <div
-          className="p-3 rounded bg-[#0A0E17] border border-[#223049]"
+          className="p-13 rounded-[3px] bg-bg border border-line"
           data-testid="stat-cloud-avoided"
         >
-          <div className="text-[11px] font-mono text-[#8B9BB4]">
-            Cloud Calls Avoided
-          </div>
-          <div className="text-lg font-mono font-bold text-[#E0A84B] mt-0.5">
+          <div className="terminal-label">CLOUD CALLS AVOIDED</div>
+          <div className="text-title font-mono font-semibold text-text mt-5">
             {stats.cloudCallsAvoided}
           </div>
-          <div className="text-[11px] font-mono text-[#8B9BB4]">
-            Crowd & Referee answered locally
+          <div className="font-mono text-label text-muted mt-3">
+            Crowd and referee local
           </div>
         </div>
 
         <div
-          className="p-3 rounded bg-[#0A0E17] border border-[#223049]"
+          className="p-13 rounded-[3px] bg-bg border border-line"
           data-testid="stat-chars-kept-local"
         >
-          <div className="text-[11px] font-mono text-[#8B9BB4]">
-            Data Kept Local
+          <div className="terminal-label">DATA KEPT LOCAL</div>
+          <div className="text-title font-mono font-semibold text-text mt-5">
+            {stats.charsKeptLocal.toLocaleString()}
           </div>
-          <div className="text-lg font-mono font-bold text-[#E6EDF3] mt-0.5">
-            {stats.charsKeptLocal.toLocaleString()} chars
-          </div>
-          <div className="text-[11px] font-mono text-[#8B9BB4]">
-            Raw brief + local prompts
+          <div className="font-mono text-label text-muted mt-3">
+            Characters kept on device
           </div>
         </div>
 
         <div
-          className="p-3 rounded bg-[#0A0E17] border border-[#223049]"
+          className="p-13 rounded-[3px] bg-bg border border-line"
           data-testid="stat-median-latency"
         >
-          <div className="text-[11px] font-mono text-[#8B9BB4]">
-            Median Latency
-          </div>
-          <div className="text-xs font-mono text-[#E6EDF3] mt-1 flex flex-col gap-0.5">
+          <div className="terminal-label">MEDIAN LATENCY</div>
+          <div className="font-mono text-label text-text mt-8 flex flex-col gap-5">
             <span>
-              🔒 Device:{' '}
+              ● DEVICE:{' '}
               <strong>
                 {stats.onDeviceCalls > 0
-                  ? `${stats.medianOnDeviceLatencyMs} ms`
-                  : '—'}
+                  ? `${(stats.medianOnDeviceLatencyMs / 1000).toFixed(1)}S`
+                  : 'N/A'}
               </strong>
             </span>
             <span>
-              ☁️ Cloud:{' '}
+              ○ CLOUD:{' '}
               <strong>
                 {stats.cloudCalls > 0
-                  ? `${stats.medianCloudLatencyMs} ms`
-                  : '—'}
+                  ? `${(stats.medianCloudLatencyMs / 1000).toFixed(1)}S`
+                  : 'N/A'}
               </strong>
             </span>
           </div>

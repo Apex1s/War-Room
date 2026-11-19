@@ -1,4 +1,5 @@
 import {
+  cleanPunctuation,
   computeCrowdSentimentAverage,
   rehydrate,
   selectRoundPersonas,
@@ -6,8 +7,8 @@ import {
   type PlaceholderEntry,
   type RoundRecord,
 } from '@warroom/core';
-import { SourceBadge } from './SourceBadge';
 import { TOKENS } from '../tokens';
+import { SourceBadge } from './SourceBadge';
 
 export interface CrowdWallProps {
   roundNumber: number;
@@ -16,6 +17,50 @@ export interface CrowdWallProps {
   crowdStatus: 'idle' | 'running' | 'done';
   vaultMap: PlaceholderEntry[];
   showRehydrated: boolean;
+}
+
+function SentimentBar({ sentiment }: { sentiment: number }) {
+  // 5-step bar for -2..+2: steps 1..5 correspond to -2, -1, 0, +1, +2
+  const clamped = Math.max(-2, Math.min(2, Math.round(sentiment)));
+  const activeStep = clamped + 3; // 1..5
+  const sign = clamped > 0 ? `+${clamped}` : `${clamped}`;
+
+  return (
+    <div
+      className="inline-flex items-center gap-8"
+      title={`Sentiment ${sign}`}
+    >
+      <div className="inline-flex items-center gap-3" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((step) => {
+          let colorClass = 'bg-line';
+          if (clamped > 0 && step >= 3 && step <= activeStep) {
+            colorClass = 'bg-mint';
+          } else if (clamped < 0 && step <= 3 && step >= activeStep) {
+            colorClass = 'bg-orange';
+          } else if (clamped === 0 && step === 3) {
+            colorClass = 'bg-line';
+          }
+          return (
+            <span
+              key={step}
+              className={`inline-block w-8 h-5 rounded-[1px] ${colorClass}`}
+            />
+          );
+        })}
+      </div>
+      <span
+        className={`font-mono text-label ${
+          clamped > 0
+            ? 'text-mint'
+            : clamped < 0
+              ? 'text-orange'
+              : 'text-muted'
+        }`}
+      >
+        {sign}
+      </span>
+    </div>
+  );
 }
 
 export function CrowdWall({
@@ -32,38 +77,37 @@ export function CrowdWall({
   const firstReaction = reactions[0];
 
   const formatText = (text: string) =>
-    showRehydrated ? rehydrate(text, vaultMap) : text;
+    showRehydrated ? rehydrate(text, vaultMap) : cleanPunctuation(text);
 
   return (
     <div
-      className={TOKENS.classes.card + ' flex flex-col gap-3'}
+      className={TOKENS.classes.card + ' flex flex-col gap-13'}
       data-testid={`crowd-wall-r${roundNumber}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-            👥 The Crowd — 5 Rotating Personas (Round {roundNumber})
+      <div className="flex flex-wrap items-center justify-between gap-8">
+        <div className="flex flex-wrap items-center gap-8">
+          <span className="terminal-label">
+            THE CROWD: 5 ROTATING PERSONAS (ROUND {roundNumber})
           </span>
           {avgSentiment !== null && (
             <span
-              className={`px-2 py-0.5 rounded text-xs font-mono border ${
-                avgSentiment > 0
-                  ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
-                  : avgSentiment < 0
-                    ? 'bg-red-950/60 border-red-700/60 text-red-300'
-                    : 'bg-[#0A0E17] border-[#223049] text-[#8B9BB4]'
-              }`}
+              className="px-8 py-3 rounded-[3px] font-mono text-label border border-line bg-bg text-text"
               data-testid={`crowd-avg-sentiment-r${roundNumber}`}
             >
-              Avg sentiment: {avgSentiment > 0 ? `+${avgSentiment}` : avgSentiment}
+              AVG SENTIMENT:{' '}
+              {avgSentiment > 0 ? `+${avgSentiment}` : avgSentiment}
             </span>
           )}
           {crowdStatus === 'running' && (
             <span
-              className="text-xs font-mono text-[#8B9BB4] animate-pulse"
+              className="inline-flex items-center gap-5 font-mono text-label uppercase tracking-[0.12em] text-muted"
               data-testid={`crowd-running-r${roundNumber}`}
             >
-              · 🔒 Batched call running in background (never blocks Next Round)…
+              <span className="wr-live-dot" aria-hidden="true" />
+              <span>
+                [THINKING
+                <span className="wr-thinking-dots" />]
+              </span>
             </span>
           )}
         </div>
@@ -73,66 +117,48 @@ export function CrowdWall({
             source={firstReaction.source}
             latencyMs={firstReaction.latencyMs}
             fallback={firstReaction.fallback}
+            model={firstReaction.model}
           />
         )}
       </div>
 
       {reactions.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="flex flex-col gap-13">
           {reactions.map((rx) => {
             const persona = personaMap.get(rx.personaId);
-            const sign = rx.sentiment > 0 ? `+${rx.sentiment}` : `${rx.sentiment}`;
             return (
               <div
                 key={rx.personaId}
-                className="p-3 rounded bg-[#0A0E17] border border-[#223049] flex flex-col justify-between gap-2"
+                className="p-13 rounded-[3px] bg-bg border border-line flex flex-col gap-8"
                 data-testid={`crowd-card-r${roundNumber}-${rx.personaId}`}
               >
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-start justify-between gap-1.5">
-                    <span className="text-xs font-semibold text-[#E6EDF3] leading-tight">
-                      {persona?.label ?? rx.personaId}
-                    </span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[11px] font-mono shrink-0 ${
-                        rx.sentiment > 0
-                          ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-700/50'
-                          : rx.sentiment < 0
-                            ? 'bg-red-950/70 text-red-300 border border-red-700/50'
-                            : 'bg-[#162032] text-[#8B9BB4] border border-[#223049]'
-                      }`}
-                    >
-                      {sign}
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#E6EDF3]/90 font-mono m-0 leading-relaxed">
-                    "{formatText(rx.quote)}"
-                  </p>
+                <div className="flex flex-wrap items-center justify-between gap-8">
+                  <span className="font-sans text-label font-semibold text-text">
+                    {persona?.label ?? rx.personaId}
+                  </span>
+                  <SentimentBar sentiment={rx.sentiment} />
                 </div>
-
-                <div className="pt-1.5 border-t border-[#223049]/60 flex items-center justify-between">
-                  <SourceBadge
-                    source={rx.source}
-                    latencyMs={rx.latencyMs}
-                    fallback={rx.fallback}
-                  />
-                </div>
+                <p className="text-body text-text m-0">
+                  "{formatText(rx.quote)}"
+                </p>
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="flex flex-col gap-8">
           {rotatingPersonas.map((p) => (
             <div
               key={p.id}
-              className="p-3 rounded bg-[#0A0E17]/60 border border-[#223049]/60 flex flex-col gap-1"
+              className="p-13 rounded-[3px] bg-bg border border-line flex flex-col gap-5"
             >
-              <span className="text-xs font-semibold text-[#8B9BB4]">
+              <span className="font-sans text-label font-semibold text-muted">
                 {p.label}
               </span>
-              <span className="text-[11px] text-[#8B9BB4]/70 font-mono">
-                {crowdStatus === 'running' ? 'Reacting…' : p.outlook}
+              <span className="font-mono text-label text-muted">
+                {crowdStatus === 'running'
+                  ? '[THINKING...]'
+                  : cleanPunctuation(p.outlook)}
               </span>
             </div>
           ))}

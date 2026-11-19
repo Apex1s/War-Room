@@ -1,4 +1,5 @@
 import {
+  cleanPunctuation,
   computeGeneralScores,
   dispatchAndPersist,
   formatGeneralsStatus,
@@ -15,6 +16,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { AgentCard } from '../components/AgentCard';
 import { CrowdWall } from '../components/CrowdWall';
+import { HybridStats } from '../components/HybridStats';
 import { MoveComposer } from '../components/MoveComposer';
 import { RefereePanel } from '../components/RefereePanel';
 import { RoundTimeline } from '../components/RoundTimeline';
@@ -26,6 +28,7 @@ export interface WarRoomScreenProps {
   onGameUpdated: (game: GameRecord, vaultRecord: VaultRecord) => void;
   onBackToReview: () => void;
   onOpenReport?: () => void;
+  onOpenEgressInspector?: () => void;
 }
 
 export function WarRoomScreen({
@@ -34,6 +37,7 @@ export function WarRoomScreen({
   onGameUpdated,
   onBackToReview,
   onOpenReport,
+  onOpenEgressInspector,
 }: WarRoomScreenProps) {
   const template = TEMPLATES[game.templateId];
 
@@ -58,7 +62,6 @@ export function WarRoomScreen({
     setActiveViewRound(currentPhaseRound);
   }, [currentPhaseRound]);
 
-  // Resume interrupted sealing_move or generals work on mount/reload so no card spins with nothing in flight.
   useEffect(() => {
     if (busy || resumeInFlightRef.current) return;
     const needsResume =
@@ -82,8 +85,6 @@ export function WarRoomScreen({
       });
   }, [game, vaultRecord, busy, onGameUpdated]);
 
-  // If the page reloads while already in aftermath with referee/crowd still marked 'running',
-  // kick off runAftermathEffect once for that round.
   useEffect(() => {
     if (
       game.phase.kind === 'aftermath' &&
@@ -186,7 +187,6 @@ export function WarRoomScreen({
       return;
     }
 
-    // Pressing NEXT aborts any still-running background crowd call so it never blocks
     if (game.phase.crowd === 'running' && crowdAbortRef.current) {
       crowdAbortRef.current.abort();
       crowdAbortRef.current = null;
@@ -208,7 +208,7 @@ export function WarRoomScreen({
   };
 
   const formatText = (text: string) =>
-    showRehydrated ? rehydrate(text, vaultRecord.map) : text;
+    showRehydrated ? rehydrate(text, vaultRecord.map) : cleanPunctuation(text);
 
   const scores = computeGeneralScores(game.generals, game.rounds);
   const scoreMap = new Map(scores.map((s) => [s.generalId, s.score]));
@@ -226,7 +226,7 @@ export function WarRoomScreen({
     game.phase.kind === 'aftermath' && game.phase.referee !== 'running';
 
   return (
-    <div className="flex flex-col gap-5" data-testid="screen-war-room">
+    <div className="flex flex-col gap-21" data-testid="screen-war-room">
       <RoundTimeline
         game={game}
         vaultRecord={vaultRecord}
@@ -238,257 +238,271 @@ export function WarRoomScreen({
         onViewReport={onOpenReport}
       />
 
-      {/* Brief Summary Card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 rounded-lg bg-[#111826] border border-[#223049]">
-        <div>
-          <div className="text-xs font-mono text-[#8B9BB4] mb-1">
-            Objective ({showRehydrated ? 'Re-hydrated locally' : 'Abstracted'})
-          </div>
-          <div
-            className="text-xs font-mono text-emerald-300"
-            data-testid="war-room-objective"
-          >
-            {formatText(game.objective)}
-          </div>
-        </div>
-        <div>
-          <div className="text-xs font-mono text-[#8B9BB4] mb-1">
-            Confidential Brief ({showRehydrated ? 'Re-hydrated locally' : 'Abstracted'})
-          </div>
-          <div
-            className="text-xs font-mono text-[#E6EDF3] whitespace-pre-wrap line-clamp-3"
-            data-testid="war-room-brief"
-          >
-            {formatText(game.brief)}
-          </div>
-        </div>
-      </div>
-
-      {/* Failed Phase Banner with Retry Button */}
-      {game.phase.kind === 'failed' && (
-        <div
-          className="p-4 rounded-lg border border-red-700/70 bg-red-950/40 flex flex-wrap items-center justify-between gap-3"
-          data-testid="war-room-failed-banner"
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-mono uppercase tracking-wider text-red-400">
-              Interrupted / Failed ({game.phase.code})
-            </span>
-            <span className="text-xs font-mono text-[#E6EDF3]">
-              The previous operation did not complete. Click Retry to resume from the last checkpoint.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleRetryFailedPhase()}
-            disabled={busy}
-            className={TOKENS.classes.btnPrimary}
-            data-testid="btn-retry-failed-phase"
-          >
-            ↻ Retry
-          </button>
-        </div>
-      )}
-
-      {/* Move Composer (shown when in user_turn, sealing_move, or generals for current round) */}
-      {(game.phase.kind === 'user_turn' ||
-        game.phase.kind === 'sealing_move' ||
-        game.phase.kind === 'generals') && (
-        <MoveComposer
-          game={game}
-          vaultRecord={vaultRecord}
-          roundNumber={currentPhaseRound}
-          moveText={moveText}
-          placeholder={template.openingMove}
-          onChangeMoveText={setMoveText}
-          onSubmitMove={() => void handleSubmitMove()}
-          onUndoMoveChip={(rNum, tok) => void handleUndoMoveChip(rNum, tok)}
-          busy={busy}
-        />
-      )}
-
-      {/* Aftermath Control Bar (NEXT works as soon as Referee completes, even while Crowd is still running) */}
-      {game.phase.kind === 'aftermath' && (
-        <div
-          className="p-4 rounded-lg border border-[#E0A84B]/60 bg-[#162032] flex flex-wrap items-center justify-between gap-3"
-          data-testid="aftermath-advance-bar"
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-              Round {game.phase.round} Aftermath
-            </span>
-            <span className="text-xs font-mono text-[#E6EDF3]">
-              {game.phase.referee === 'running'
-                ? '🔒 Waiting for Referee verdict before advancing…'
-                : game.phase.crowd === 'running'
-                  ? '✓ Referee done. Crowd is still reacting in background — you can advance now.'
-                  : '✓ Referee and Crowd complete.'}
-            </span>
+      {/* Golden-ratio 61.8% / 38.2% split (docs/04-design-system.md §3) */}
+      <div className="wr-split-golden">
+        {/* Left Column (61.8%): Brief summary, MoveComposer / Aftermath bar, Round & 3 Generals */}
+        <div className="flex flex-col gap-13 min-w-0">
+          <div className={TOKENS.classes.card + ' grid grid-cols-1 md:grid-cols-2 gap-13'}>
+            <div>
+              <div className="terminal-label mb-5">
+                OBJECTIVE ({showRehydrated ? 'LOCAL RE-HYDRATION' : 'ABSTRACTED'})
+              </div>
+              <div
+                className="text-body text-text"
+                data-testid="war-room-objective"
+              >
+                {formatText(game.objective)}
+              </div>
+            </div>
+            <div>
+              <div className="terminal-label mb-5">
+                CONFIDENTIAL BRIEF ({showRehydrated ? 'LOCAL RE-HYDRATION' : 'ABSTRACTED'})
+              </div>
+              <div
+                className="text-label text-muted whitespace-pre-wrap line-clamp-3"
+                data-testid="war-room-brief"
+              >
+                {formatText(game.brief)}
+              </div>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void handleNextRound()}
-            disabled={!canAdvanceAftermath}
-            className={TOKENS.classes.btnPrimary}
-            data-testid="btn-next-round"
-          >
-            {game.phase.round < game.totalRounds
-              ? `Next: Round ${game.phase.round + 1} →`
-              : 'Generate Final Verdict Report →'}
-          </button>
-        </div>
-      )}
+          {game.phase.kind === 'failed' && (
+            <div
+              className={TOKENS.classes.card + ' border-orange flex flex-wrap items-center justify-between gap-13'}
+              data-testid="war-room-failed-banner"
+            >
+              <div className="flex flex-col gap-3">
+                <span className="font-mono text-label uppercase tracking-[0.12em] text-orange">
+                  INTERRUPTED OR FAILED ({game.phase.code})
+                </span>
+                <span className="text-body text-text">
+                  The previous operation did not complete. Click Retry to resume from the last checkpoint.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleRetryFailedPhase()}
+                disabled={busy}
+                className={TOKENS.classes.btnPrimary}
+                data-testid="btn-retry-failed-phase"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
-      {/* Displayed Round Details: Player Move + 3 Generals + Referee Panel + Crowd Wall */}
-      {displayedRound && (
-        <div
-          className="flex flex-col gap-4"
-          data-testid={`round-section-${displayedRound.n}`}
-        >
-          <div className={TOKENS.classes.card + ' flex flex-col gap-4'}>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#223049] pb-3">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-                    Round {displayedRound.n} of {game.totalRounds}
-                  </span>
-                  <span className="text-xs font-mono text-[#8B9BB4]">·</span>
-                  <span
-                    className="text-xs font-mono text-[#8B9BB4]"
-                    data-testid={`round-${displayedRound.n}-generals-status`}
-                  >
-                    {formatGeneralsStatus(
-                      game.generals.length,
-                      displayedRound.generalMoves.length,
-                      Object.keys(
-                        (game.phase.kind === 'generals' ||
-                          game.phase.kind === 'aftermath') &&
+          {(game.phase.kind === 'user_turn' ||
+            game.phase.kind === 'sealing_move' ||
+            game.phase.kind === 'generals') && (
+            <MoveComposer
+              game={game}
+              vaultRecord={vaultRecord}
+              roundNumber={currentPhaseRound}
+              moveText={moveText}
+              placeholder={cleanPunctuation(template.openingMove)}
+              onChangeMoveText={setMoveText}
+              onSubmitMove={() => void handleSubmitMove()}
+              onUndoMoveChip={(rNum, tok) => void handleUndoMoveChip(rNum, tok)}
+              busy={busy}
+            />
+          )}
+
+          {game.phase.kind === 'aftermath' && (
+            <div
+              className={TOKENS.classes.card + ' flex flex-wrap items-center justify-between gap-13'}
+              data-testid="aftermath-advance-bar"
+            >
+              <div className="flex flex-col gap-5">
+                <span className="terminal-label">
+                  ROUND {game.phase.round} OF {game.totalRounds} AFTERMATH
+                </span>
+                <span className="font-mono text-label text-text">
+                  {game.phase.referee === 'running'
+                    ? 'Waiting for Referee verdict before advancing...'
+                    : game.phase.crowd === 'running'
+                      ? 'Referee done. Crowd is reacting in background; you can advance now.'
+                      : 'Referee and Crowd complete.'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleNextRound()}
+                disabled={!canAdvanceAftermath}
+                className={TOKENS.classes.btnPrimary}
+                data-testid="btn-next-round"
+              >
+                {game.phase.round < game.totalRounds
+                  ? `Next: round ${game.phase.round + 1}`
+                  : 'Generate final verdict report'}
+              </button>
+            </div>
+          )}
+
+          {displayedRound && (
+            <div
+              className="flex flex-col gap-13"
+              data-testid={`round-section-${displayedRound.n}`}
+            >
+              <div className={TOKENS.classes.card + ' flex flex-col gap-8'}>
+                <div className="flex flex-wrap items-center justify-between gap-8">
+                  <div className="flex flex-wrap items-center gap-8">
+                    <span className="terminal-label">
+                      ROUND {displayedRound.n} OF {game.totalRounds}
+                    </span>
+                    <span className="font-mono text-label text-muted">·</span>
+                    <span
+                      className="font-mono text-label text-muted"
+                      data-testid={`round-${displayedRound.n}-generals-status`}
+                    >
+                      {formatGeneralsStatus(
+                        game.generals.length,
+                        displayedRound.generalMoves.length,
+                        Object.keys(
+                          (game.phase.kind === 'generals' ||
+                            game.phase.kind === 'aftermath') &&
+                            game.phase.round === displayedRound.n
+                            ? (game.phase.failedGenerals ??
+                                displayedRound.failedGenerals ??
+                                {})
+                            : (displayedRound.failedGenerals ?? {}),
+                        ).length,
+                        game.phase.kind === 'generals' &&
                           game.phase.round === displayedRound.n
-                          ? (game.phase.failedGenerals ??
-                              displayedRound.failedGenerals ??
-                              {})
-                          : (displayedRound.failedGenerals ?? {}),
-                      ).length,
-                      game.phase.kind === 'generals' &&
-                        game.phase.round === displayedRound.n
-                        ? game.phase.pending.length
-                        : 0,
-                    )}
-                  </span>
+                          ? game.phase.pending.length
+                          : 0,
+                      )}
+                    </span>
+                  </div>
+
+                  {(displayedRound.newEntries?.length ?? 0) > 0 && (
+                    <div className="flex flex-wrap items-center gap-8">
+                      <span className="font-mono text-label text-mint uppercase">
+                        {displayedRound.newEntries!.length} NEW MASKED IN MOVE:
+                      </span>
+                      {displayedRound.newEntries!.map((chip) => (
+                        <span
+                          key={chip.token}
+                          className="inline-flex items-center gap-5 px-8 py-3 rounded-[3px] bg-bg border border-line font-mono text-label"
+                        >
+                          <span className="text-mint">{chip.token}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleUndoMoveChip(
+                                displayedRound.n,
+                                chip.token,
+                              )
+                            }
+                            className="text-label text-text underline cursor-pointer"
+                          >
+                            Undo
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 <div
-                  className="text-sm font-mono text-[#E6EDF3] mt-1"
+                  className="text-body text-text"
                   data-testid={`round-${displayedRound.n}-user-move`}
                 >
-                  <span className="text-[#8B9BB4]">Your Move:</span>{' '}
-                  {formatText(displayedRound.userMove)}
+                  <span className="terminal-label mr-8">YOUR MOVE:</span>
+                  <span>{formatText(displayedRound.userMove)}</span>
                 </div>
               </div>
 
-              {(displayedRound.newEntries?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-mono text-emerald-400">
-                    {displayedRound.newEntries!.length} new masked in move:
-                  </span>
-                  {displayedRound.newEntries!.map((chip) => (
-                    <span
-                      key={chip.token}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#0A0E17] border border-[#223049] text-xs font-mono"
-                    >
-                      <span className="text-emerald-300">{chip.token}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void handleUndoMoveChip(displayedRound.n, chip.token)
-                        }
-                        className="ml-1 text-[11px] text-[#E0A84B] hover:underline cursor-pointer"
-                      >
-                        Undo
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              {/* Three General cards */}
+              <div className="flex flex-col gap-13">
+                {game.generals.map((gen) => {
+                  const reply = displayedRound.generalMoves.find(
+                    (m) => m.generalId === gen.id,
+                  );
+                  const isPending =
+                    game.phase.kind === 'generals' &&
+                    game.phase.round === displayedRound.n &&
+                    game.phase.pending.includes(gen.id);
+                  const failedCode =
+                    (game.phase.kind === 'generals' ||
+                      game.phase.kind === 'aftermath') &&
+                    game.phase.round === displayedRound.n
+                      ? (game.phase.failedGenerals?.[gen.id] ??
+                        displayedRound.failedGenerals?.[gen.id])
+                      : displayedRound.failedGenerals?.[gen.id];
+                  const scoreDelta = displayedRound.referee?.scores.find(
+                    (s) => s.generalId === gen.id,
+                  )?.delta;
+
+                  return (
+                    <AgentCard
+                      key={gen.id}
+                      general={gen}
+                      roundNumber={displayedRound.n}
+                      reply={reply}
+                      scoreDelta={scoreDelta}
+                      cumulativeScore={scoreMap.get(gen.id) ?? 0}
+                      isPending={isPending}
+                      failedCode={failedCode}
+                      vaultMap={vaultRecord.map}
+                      showRehydrated={showRehydrated}
+                      busy={busy}
+                      onRetryGeneral={(gid) => void handleRetryGeneral(gid)}
+                    />
+                  );
+                })}
+              </div>
             </div>
-
-            {/* 3 Generals Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {game.generals.map((gen) => {
-                const reply = displayedRound.generalMoves.find(
-                  (m) => m.generalId === gen.id,
-                );
-                const isPending =
-                  game.phase.kind === 'generals' &&
-                  game.phase.round === displayedRound.n &&
-                  game.phase.pending.includes(gen.id);
-                const failedCode =
-                  (game.phase.kind === 'generals' ||
-                    game.phase.kind === 'aftermath') &&
-                  game.phase.round === displayedRound.n
-                    ? (game.phase.failedGenerals?.[gen.id] ??
-                      displayedRound.failedGenerals?.[gen.id])
-                    : displayedRound.failedGenerals?.[gen.id];
-                const scoreDelta = displayedRound.referee?.scores.find(
-                  (s) => s.generalId === gen.id,
-                )?.delta;
-
-                return (
-                  <AgentCard
-                    key={gen.id}
-                    general={gen}
-                    roundNumber={displayedRound.n}
-                    reply={reply}
-                    scoreDelta={scoreDelta}
-                    cumulativeScore={scoreMap.get(gen.id) ?? 0}
-                    isPending={isPending}
-                    failedCode={failedCode}
-                    vaultMap={vaultRecord.map}
-                    showRehydrated={showRehydrated}
-                    busy={busy}
-                    onRetryGeneral={(gid) => void handleRetryGeneral(gid)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Referee Verdict Panel */}
-          {(displayedRound.referee !== null || isAftermathForDisplayedRound) && (
-            <RefereePanel
-              roundNumber={displayedRound.n}
-              referee={displayedRound.referee}
-              refereeStatus={
-                isAftermathForDisplayedRound && game.phase.kind === 'aftermath'
-                  ? game.phase.referee
-                  : displayedRound.referee
-                    ? 'done'
-                    : 'skipped'
-              }
-              generals={game.generals}
-              commitments={game.commitments}
-              vaultMap={vaultRecord.map}
-              showRehydrated={showRehydrated}
-            />
-          )}
-
-          {/* Crowd Wall (5 Rotating Personas) */}
-          {(displayedRound.crowd.length > 0 || isAftermathForDisplayedRound) && (
-            <CrowdWall
-              roundNumber={displayedRound.n}
-              allPersonas={game.crowd}
-              reactions={displayedRound.crowd}
-              crowdStatus={
-                isAftermathForDisplayedRound && game.phase.kind === 'aftermath'
-                  ? game.phase.crowd
-                  : 'done'
-              }
-              vaultMap={vaultRecord.map}
-              showRehydrated={showRehydrated}
-            />
           )}
         </div>
-      )}
+
+        {/* Right Column (38.2%): Referee verdict, Crowd wall, Hybrid telemetry */}
+        <div className="flex flex-col gap-13 min-w-0">
+          {displayedRound && (
+            <>
+              <RefereePanel
+                roundNumber={displayedRound.n}
+                referee={displayedRound.referee}
+                refereeStatus={
+                  isAftermathForDisplayedRound &&
+                  game.phase.kind === 'aftermath'
+                    ? game.phase.referee
+                    : displayedRound.referee
+                      ? 'done'
+                      : 'idle'
+                }
+                generals={game.generals}
+                commitments={game.commitments}
+                vaultMap={vaultRecord.map}
+                showRehydrated={showRehydrated}
+              />
+
+              <CrowdWall
+                roundNumber={displayedRound.n}
+                allPersonas={game.crowd}
+                reactions={displayedRound.crowd}
+                crowdStatus={
+                  isAftermathForDisplayedRound &&
+                  game.phase.kind === 'aftermath'
+                    ? game.phase.crowd
+                    : 'done'
+                }
+                vaultMap={vaultRecord.map}
+                showRehydrated={showRehydrated}
+              />
+            </>
+          )}
+
+          <HybridStats
+            gameId={game.id}
+            rawBriefChars={
+              vaultRecord.rawObjective.length + vaultRecord.rawBrief.length
+            }
+            onOpenEgressInspector={onOpenEgressInspector}
+          />
+        </div>
+      </div>
     </div>
   );
 }

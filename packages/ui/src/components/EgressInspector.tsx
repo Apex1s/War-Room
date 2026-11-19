@@ -26,51 +26,49 @@ export function EgressInspector({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex justify-end bg-bg/80 backdrop-blur-xs"
       data-testid="egress-inspector-drawer"
     >
-      <div className="w-full max-w-2xl bg-[#111826] border-l border-[#223049] h-full flex flex-col">
+      <div className="w-full max-w-2xl bg-surface border-l border-line h-full flex flex-col">
         {/* Drawer Header */}
-        <div className="p-4 border-b border-[#223049] flex items-center justify-between gap-3">
+        <div className="p-21 border-b border-line flex items-center justify-between gap-13">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-                🔍 Cloud Egress Inspector
-              </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-700/60 text-[11px] font-mono text-emerald-300">
-                ✓ 0 Vaulted Secrets Leaked
+            <div className="flex flex-wrap items-center gap-8">
+              <span className="terminal-label">CLOUD EGRESS INSPECTOR</span>
+              <span className="px-8 py-3 rounded-[3px] border border-mint bg-bg font-mono text-label uppercase text-mint">
+                0 VAULTED SECRETS LEAKED
               </span>
             </div>
-            <h3 className="text-base font-semibold text-[#E6EDF3] mt-1 mb-0">
-              Exact Text of Every Outbound Cloud Call ({cloudEntries.length})
+            <h3 className="text-title font-semibold text-text mt-5 mb-0">
+              Exact text of every outbound cloud call ({cloudEntries.length})
             </h3>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className={TOKENS.classes.btnSecondary + ' text-xs'}
+            className={TOKENS.classes.btnSecondary}
             data-testid="btn-close-egress-inspector"
           >
-            ✕ Close
+            Close
           </button>
         </div>
 
         {/* Drawer Body */}
-        <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
-          <div className="p-3 rounded bg-[#0A0E17] border border-[#223049] text-xs font-mono text-[#8B9BB4]">
+        <div className="p-21 overflow-y-auto flex-1 flex flex-col gap-13">
+          <div className="p-13 rounded-[3px] bg-bg border border-line font-mono text-label text-muted">
             <div>
-              Active Egress Guard & Network Guard (`window.fetch` wrapper) scan every request to{' '}
-              <span className="text-[#E6EDF3]">firebasevertexai.googleapis.com</span> and{' '}
-              <span className="text-[#E6EDF3]">firestore.googleapis.com</span>.
+              Egress Guard and Network Guard (window.fetch wrapper) scan every request to{' '}
+              <span className="text-text">firebasevertexai.googleapis.com</span> and{' '}
+              <span className="text-text">firestore.googleapis.com</span>.
             </div>
             {enabledOriginals.length > 0 && (
-              <div className="mt-1.5 text-emerald-400">
+              <div className="mt-8 text-mint">
                 Protected vault terms blocked from egress ({enabledOriginals.length}):{' '}
                 {enabledOriginals.map((e, i) => (
                   <span
                     key={i}
-                    className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-[#162032] border border-[#223049] text-[#E6EDF3]"
+                    className="inline-block mr-5 mb-3 px-5 py-3 rounded-[3px] bg-surface border border-line text-text"
                   >
                     {e}
                   </span>
@@ -81,21 +79,24 @@ export function EgressInspector({
 
           {blockedRequests.length > 0 && (
             <div
-              className="p-3 rounded bg-red-950/40 border border-red-700/60 flex flex-col gap-2"
+              className="p-13 rounded-[3px] bg-bg border border-orange flex flex-col gap-8"
               data-testid="egress-blocked-list"
             >
-              <div className="text-xs font-mono font-bold text-red-300">
-                🛑 Blocked Outbound Leaks ({blockedRequests.length})
+              <div className="flex items-center justify-between gap-8">
+                <span className="font-mono text-label uppercase tracking-[0.12em] text-orange font-semibold">
+                  BLOCKED OUTBOUND LEAKS ({blockedRequests.length})
+                </span>
+                <span className="px-8 py-3 rounded-[3px] border border-orange font-mono text-label uppercase text-orange">
+                  BLOCKED
+                </span>
               </div>
               {blockedRequests.map((b, idx) => (
                 <div
                   key={idx}
-                  className="p-2 rounded bg-[#0A0E17] border border-red-800/50 text-xs font-mono text-red-200"
+                  className="p-8 rounded-[3px] bg-surface border border-line font-mono text-label text-orange"
                 >
                   <div>Reason: {b.reason}</div>
-                  <div className="text-[11px] text-[#8B9BB4] truncate">
-                    URL: {b.url}
-                  </div>
+                  <div className="text-muted truncate">URL: {b.url}</div>
                 </div>
               ))}
             </div>
@@ -103,7 +104,7 @@ export function EgressInspector({
 
           {cloudEntries.length === 0 ? (
             <div
-              className="p-6 rounded bg-[#0A0E17] border border-[#223049] text-center text-xs font-mono text-[#8B9BB4]"
+              className="p-21 rounded-[3px] bg-bg border border-line text-center font-mono text-label text-muted"
               data-testid="egress-empty-state"
             >
               Zero cloud calls recorded for this session so far. Everything has stayed 100% on-device.
@@ -112,15 +113,15 @@ export function EgressInspector({
             cloudEntries.map((entry, idx) => (
               <div
                 key={`${entry.ts}-${idx}`}
-                className="p-3.5 rounded bg-[#0A0E17] border border-[#223049] flex flex-col gap-2"
+                className="p-13 rounded-[3px] bg-bg border border-line flex flex-col gap-8"
                 data-testid={`egress-call-${idx + 1}`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#223049] pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#E0A84B]">
+                <div className="flex flex-wrap items-center justify-between gap-8 border-b border-line pb-8">
+                  <div className="flex items-center gap-8">
+                    <span className="font-mono text-label uppercase tracking-[0.12em] text-text font-semibold">
                       #{idx + 1} · {entry.task}
                     </span>
-                    <span className="text-xs font-mono text-[#8B9BB4]">
+                    <span className="font-mono text-label text-muted">
                       ({entry.inChars} chars in / {entry.outChars} chars out)
                     </span>
                   </div>
@@ -128,11 +129,12 @@ export function EgressInspector({
                     source={entry.source}
                     latencyMs={entry.latencyMs}
                     fallback={entry.fallback}
+                    model={entry.model}
                   />
                 </div>
 
                 <pre
-                  className="m-0 p-2.5 rounded bg-[#111826] border border-[#223049] text-xs font-mono text-[#E6EDF3] whitespace-pre-wrap overflow-x-auto max-h-64"
+                  className="m-0 p-13 rounded-[3px] bg-bg border border-line font-mono text-label text-text whitespace-pre-wrap overflow-x-auto max-h-64"
                   data-testid={`egress-payload-${idx + 1}`}
                 >
                   {entry.cloudPayload ?? '(No cloud payload captured)'}

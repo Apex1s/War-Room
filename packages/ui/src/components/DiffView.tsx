@@ -26,7 +26,7 @@ function renderRedactedOriginal(text: string, spans: TextSpan[]): ReactNode[] {
     nodes.push(
       <mark
         key={`${span.start}-${idx}`}
-        className="bg-red-950/80 text-red-300 border border-red-500/40 rounded px-1 py-0.5 font-mono text-[0.82em]"
+        className="bg-transparent text-orange underline decoration-orange underline-offset-4 font-mono px-3"
         title={`Replaced by ${span.token}`}
       >
         {text.slice(span.start, span.end)}
@@ -42,7 +42,8 @@ function renderRedactedOriginal(text: string, spans: TextSpan[]): ReactNode[] {
   return nodes;
 }
 
-const TOKEN_SPLIT_RE = /(\[(?:COMPANY|PERSON|PRODUCT|PLACE|OTHER|MONEY|PERCENT|NUMBER|DATE|CONTACT)_\d+\])/g;
+const TOKEN_SPLIT_RE =
+  /(\[(?:COMPANY|PERSON|PRODUCT|PLACE|OTHER|MONEY|PERCENT|NUMBER|DATE|CONTACT)_\d+\])/g;
 
 function renderAbstractedWithTokens(text: string): ReactNode[] {
   const parts = text.split(TOKEN_SPLIT_RE);
@@ -51,7 +52,7 @@ function renderAbstractedWithTokens(text: string): ReactNode[] {
       return (
         <mark
           key={`tok-${idx}`}
-          className="bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 rounded px-1 py-0.5 font-mono text-[0.82em]"
+          className="inline-block bg-bg text-mint border border-line rounded-[3px] px-5 py-3 font-mono text-label mx-3"
         >
           {part}
         </mark>
@@ -89,21 +90,21 @@ export function DiffView({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-13">
       <div
-        className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-md bg-[#162032] border border-[#223049] text-xs"
+        className="flex flex-wrap items-center justify-between gap-13 px-13 py-8 rounded-[3px] bg-surface border border-line text-label"
         data-testid="selection-redact-bar"
       >
-        <span className="text-[#8B9BB4]">
-          Tip: Select any unredacted word or phrase in the left pane to add it to the privacy map.
+        <span className="text-muted">
+          Select any unredacted word or phrase in the left pane to add it to the privacy map.
         </span>
         {selectedText ? (
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[#E0A84B]">"{selectedText}"</span>
+          <div className="flex flex-wrap items-center gap-8">
+            <span className="font-mono text-mint">"{selectedText}"</span>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value as EntityType)}
-              className="bg-[#0A0E17] border border-[#223049] rounded px-2 py-1 text-xs text-[#E6EDF3]"
+              className="bg-bg border border-line rounded-[3px] px-8 py-5 text-label font-mono text-text"
               aria-label="Entity type for selection"
             >
               <option value="COMPANY">COMPANY</option>
@@ -115,7 +116,7 @@ export function DiffView({
             <button
               type="button"
               onClick={handleAddSelection}
-              className="px-2.5 py-1 rounded bg-[#E0A84B] text-[#0A0E17] font-semibold cursor-pointer"
+              className={TOKENS.classes.btnSecondary}
               data-testid="btn-redact-selection"
             >
               Redact selection
@@ -124,50 +125,50 @@ export function DiffView({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-13">
         <div
           className={TOKENS.classes.card}
           onMouseUp={handleMouseUp}
           data-testid="diff-original-pane"
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-mono uppercase tracking-wider text-red-400">
-              🔒 Original (Kept in Local Vault Only)
+          <div className="flex items-center justify-between mb-13">
+            <span className="font-mono text-label uppercase tracking-[0.12em] text-orange">
+              ORIGINAL (LOCAL VAULT ONLY)
             </span>
-            <span className="text-xs font-mono text-[#8B9BB4]">
-              Red = removed
+            <span className="font-mono text-label text-muted">
+              Orange underline = removed
             </span>
           </div>
 
-          <div className="mb-3">
-            <div className="text-xs font-mono text-[#8B9BB4] mb-1">Objective</div>
-            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3">
+          <div className="mb-13">
+            <div className="terminal-label mb-5">OBJECTIVE</div>
+            <div className="text-body whitespace-pre-wrap break-words bg-bg border border-line rounded-[3px] p-13">
               {renderRedactedOriginal(rawObjective, objectiveSpans)}
             </div>
           </div>
 
           <div>
-            <div className="text-xs font-mono text-[#8B9BB4] mb-1">Confidential Plan</div>
-            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3 min-h-[160px]">
+            <div className="terminal-label mb-5">CONFIDENTIAL PLAN</div>
+            <div className="text-body whitespace-pre-wrap break-words bg-bg border border-line rounded-[3px] p-13 min-h-[160px]">
               {renderRedactedOriginal(rawBrief, briefSpans)}
             </div>
           </div>
         </div>
 
         <div className={TOKENS.classes.card} data-testid="diff-abstracted-pane">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-mono uppercase tracking-wider text-emerald-400">
-              ☁️ Abstracted (What Cloud Opponents See)
+          <div className="flex items-center justify-between mb-13">
+            <span className="font-mono text-label uppercase tracking-[0.12em] text-mint">
+              ABSTRACTED (CLOUD PAYLOAD VIEW)
             </span>
-            <span className="text-xs font-mono text-[#8B9BB4]">
-              Green = placeholder
+            <span className="font-mono text-label text-muted">
+              Mint chip = placeholder
             </span>
           </div>
 
-          <div className="mb-3">
-            <div className="text-xs font-mono text-[#8B9BB4] mb-1">Objective</div>
+          <div className="mb-13">
+            <div className="terminal-label mb-5">OBJECTIVE</div>
             <div
-              className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3"
+              className="text-body whitespace-pre-wrap break-words bg-bg border border-line rounded-[3px] p-13"
               data-testid="abstracted-objective-text"
             >
               {renderAbstractedWithTokens(abstractedObjective)}
@@ -175,9 +176,9 @@ export function DiffView({
           </div>
 
           <div>
-            <div className="text-xs font-mono text-[#8B9BB4] mb-1">Abstracted Plan</div>
+            <div className="terminal-label mb-5">ABSTRACTED PLAN</div>
             <div
-              className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3 min-h-[160px]"
+              className="text-body whitespace-pre-wrap break-words bg-bg border border-line rounded-[3px] p-13 min-h-[160px]"
               data-testid="abstracted-brief-text"
             >
               {renderAbstractedWithTokens(abstractedBrief)}

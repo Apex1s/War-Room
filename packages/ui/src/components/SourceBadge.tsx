@@ -1,33 +1,64 @@
 import { getProvider, type Source } from '@warroom/core';
-import { TOKENS } from '../tokens';
 
 export interface SourceBadgeProps {
   source: Source;
   latencyMs?: number;
   fallback?: boolean;
+  model?: string;
 }
 
 export function isMockProviderActive(): boolean {
   return getProvider().kind === 'mock';
 }
 
-export function SourceBadge({ source, latencyMs, fallback }: SourceBadgeProps) {
+function formatSeconds(latencyMs?: number): string | null {
+  if (latencyMs === undefined) return null;
+  return `${(latencyMs / 1000).toFixed(1)}S`;
+}
+
+export function SourceBadge({
+  source,
+  latencyMs,
+  fallback,
+  model,
+}: SourceBadgeProps) {
   if (isMockProviderActive()) {
     return (
-      <span className={TOKENS.classes.badge} data-testid="source-badge">
-        <span>🧪 Mock</span>
+      <span
+        className="inline-flex items-center gap-5 px-8 py-3 rounded-[3px] font-mono text-label uppercase border border-dashed border-line bg-surface text-muted"
+        data-testid="source-badge"
+      >
+        <span>MOCK</span>
       </span>
     );
   }
 
   const isDevice = source === 'on-device';
+  const sec = formatSeconds(latencyMs);
+
+  if (isDevice) {
+    return (
+      <span
+        className="inline-flex items-center gap-5 px-8 py-3 rounded-[3px] font-mono text-label uppercase border border-mint bg-surface text-mint"
+        data-testid="source-badge"
+      >
+        <span aria-hidden="true">●</span>
+        <span>ON-DEVICE{sec ? ` ${sec}` : ''}</span>
+        {model && <span className="text-muted">· {model}</span>}
+        {fallback && <span className="text-muted">· FALLBACK</span>}
+      </span>
+    );
+  }
+
   return (
-    <span className={TOKENS.classes.badge} data-testid="source-badge">
-      <span>{isDevice ? '🔒 On-device' : '☁️ Cloud'}</span>
-      {latencyMs !== undefined && (
-        <span className="text-[#8B9BB4]">· {latencyMs} ms</span>
-      )}
-      {fallback && <span className="text-[#E0A84B]">· fallback</span>}
+    <span
+      className="inline-flex items-center gap-5 px-8 py-3 rounded-[3px] font-mono text-label uppercase border border-line bg-surface text-text"
+      data-testid="source-badge"
+    >
+      <span aria-hidden="true">○</span>
+      <span>CLOUD{sec ? ` ${sec}` : ''}</span>
+      {model && <span className="text-muted">· {model}</span>}
+      {fallback && <span className="text-muted">· FALLBACK</span>}
     </span>
   );
 }

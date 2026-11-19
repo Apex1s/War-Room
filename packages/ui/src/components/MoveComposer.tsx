@@ -1,5 +1,6 @@
 import {
   applyMapWithSpans,
+  cleanPunctuation,
   formatGeneralsStatus,
   isDeviceReadyForOnlyOnDevice,
   parseUrlOverrides,
@@ -53,7 +54,6 @@ export function MoveComposer({
   const draftPreview = applyMapWithSpans(moveText, vaultRecord.map);
   const uniqueKnownMasked = new Set(draftPreview.spans.map((s) => s.token)).size;
 
-  // Most recent sealed move's newly masked entities (shown as chips with Undo)
   const latestRoundWithChips = [...game.rounds]
     .reverse()
     .find((r) => (r.newEntries?.length ?? 0) > 0);
@@ -81,9 +81,7 @@ export function MoveComposer({
             setLiveResult(res);
           }
         })
-        .catch(() => {
-          // Ignore aborted or transient live-coaching errors
-        })
+        .catch(() => {})
         .finally(() => {
           if (!controller.signal.aborted) {
             setLiveLoading(false);
@@ -101,26 +99,22 @@ export function MoveComposer({
 
   return (
     <div
-      className={TOKENS.classes.card + ' flex flex-col gap-3'}
+      className={TOKENS.classes.card + ' flex flex-col gap-13'}
       data-testid="move-composer"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <label
-          htmlFor="move-composer-input"
-          className="text-sm font-semibold text-[#E6EDF3]"
-        >
-          Round {roundNumber} of {game.totalRounds} — Your Strategic Move
+      <div className="flex flex-wrap items-center justify-between gap-8">
+        <label htmlFor="move-composer-input" className="terminal-label">
+          ROUND {roundNumber} OF {game.totalRounds}: YOUR STRATEGIC MOVE
         </label>
 
-        {/* Inline "N items masked" strip */}
         <span
-          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-700/50 text-xs font-mono text-emerald-300"
+          className="inline-flex items-center gap-5 px-8 py-3 rounded-[3px] border border-mint bg-bg font-mono text-label uppercase text-mint"
           data-testid="move-masked-strip"
         >
-          <span>🔒</span>
+          <span>●</span>
           <span>
             {uniqueKnownMasked}{' '}
-            {uniqueKnownMasked === 1 ? 'item' : 'items'} masked in draft
+            {uniqueKnownMasked === 1 ? 'ITEM' : 'ITEMS'} MASKED IN DRAFT
           </span>
         </span>
       </div>
@@ -128,29 +122,30 @@ export function MoveComposer({
       {/* New entities masked chips with Undo */}
       {newChips.length > 0 && latestRoundWithChips && (
         <div
-          className="flex flex-wrap items-center gap-2 p-2.5 rounded bg-[#0A0E17] border border-[#223049]"
+          className="flex flex-wrap items-center gap-8 p-13 rounded-[3px] bg-bg border border-line"
           data-testid="move-new-chips-bar"
         >
-          <span className="text-xs font-mono text-emerald-400">
-            {newChips.length} new {newChips.length === 1 ? 'item' : 'items'} masked
-            (Round {latestRoundWithChips.n}):
+          <span className="font-mono text-label uppercase text-mint">
+            {newChips.length} NEW{' '}
+            {newChips.length === 1 ? 'ITEM' : 'ITEMS'} MASKED (ROUND{' '}
+            {latestRoundWithChips.n}):
           </span>
           {newChips.map((chip) => (
             <span
               key={chip.token}
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#162032] border border-[#223049] text-xs font-mono text-[#E6EDF3]"
+              className="inline-flex items-center gap-8 px-8 py-3 rounded-[3px] bg-surface border border-line font-mono text-label text-text"
               data-testid={`move-chip-${chip.token}`}
             >
-              <span className="text-red-300 line-through">{chip.original}</span>
-              <span className="text-[#8B9BB4]">→</span>
-              <span className="text-emerald-300">{chip.token}</span>
+              <span className="text-muted line-through">{chip.original}</span>
+              <span className="text-muted">-&gt;</span>
+              <span className="text-mint">{chip.token}</span>
               {onUndoMoveChip && (
                 <button
                   type="button"
                   onClick={() =>
                     onUndoMoveChip(latestRoundWithChips.n, chip.token)
                   }
-                  className="ml-1 text-[11px] text-[#E0A84B] hover:underline cursor-pointer"
+                  className="text-label text-text underline cursor-pointer"
                   data-testid={`btn-undo-chip-${chip.token}`}
                 >
                   Undo
@@ -167,7 +162,7 @@ export function MoveComposer({
         value={moveText}
         onChange={(e) => onChangeMoveText(e.target.value)}
         disabled={busy || !isUserTurn}
-        className="w-full rounded bg-[#0A0E17] border border-[#223049] px-3.5 py-2.5 text-sm text-[#E6EDF3] font-mono focus:outline-none focus:border-[#E0A84B] disabled:opacity-60"
+        className={TOKENS.classes.input + ' font-sans'}
         placeholder={placeholder}
         data-testid="move-composer-input"
       />
@@ -175,17 +170,21 @@ export function MoveComposer({
       {/* Live On-Device Referee Coaching (`referee_live`, ONLY_ON_DEVICE) */}
       {deviceReady ? (
         <div
-          className="p-3 rounded bg-[#0A0E17] border border-[#223049] flex flex-col gap-2"
+          className="p-13 rounded-[3px] bg-bg border border-line flex flex-col gap-8"
           data-testid="referee-live-panel"
         >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-                🔒 Live Referee Coach (On-Device Only)
+          <div className="flex flex-wrap items-center justify-between gap-8">
+            <div className="flex items-center gap-8">
+              <span className="terminal-label">
+                LIVE REFEREE COACH (ON-DEVICE ONLY)
               </span>
               {liveLoading && (
-                <span className="text-xs font-mono text-[#8B9BB4] animate-pulse">
-                  · Analyzing raw draft on Gemini Nano…
+                <span className="inline-flex items-center gap-5 font-mono text-label uppercase tracking-[0.12em] text-muted">
+                  <span className="wr-live-dot" aria-hidden="true" />
+                  <span>
+                    [THINKING
+                    <span className="wr-thinking-dots" />]
+                  </span>
                 </span>
               )}
             </div>
@@ -194,75 +193,74 @@ export function MoveComposer({
                 source={liveResult.source}
                 latencyMs={liveResult.latencyMs}
                 fallback={liveResult.fallback}
+                model={liveResult.model}
               />
             )}
           </div>
 
           {liveResult ? (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-wrap items-center gap-13 font-mono text-label">
                 <span>
-                  Clarity:{' '}
-                  <strong className="text-[#E6EDF3]">
-                    {liveResult.output.clarity}/5
-                  </strong>
+                  CLARITY: <strong className="text-text">{liveResult.output.clarity}/5</strong>
                 </span>
                 <span>
-                  Risk:{' '}
+                  RISK:{' '}
                   <strong
                     className={
                       liveResult.output.risk === 'high'
-                        ? 'text-red-400 uppercase'
-                        : liveResult.output.risk === 'medium'
-                          ? 'text-amber-300 uppercase'
-                          : 'text-emerald-400 uppercase'
+                        ? 'text-orange uppercase'
+                        : 'text-text uppercase'
                     }
                   >
                     {liveResult.output.risk}
                   </strong>
                 </span>
                 {liveResult.output.tip && (
-                  <span className="text-[#E6EDF3]">
-                    Tip: {liveResult.output.tip}
+                  <span className="font-sans text-body text-text">
+                    {cleanPunctuation(liveResult.output.tip)}
                   </span>
                 )}
               </div>
 
               {liveResult.output.contradicts && (
                 <div
-                  className="p-2 rounded bg-red-950/50 border border-red-700/70 text-xs font-mono text-red-200"
+                  className="border-l-[3px] border-l-orange pl-13 py-5 text-body text-orange"
                   data-testid="referee-live-contradiction"
                 >
-                  ⚠️ Draft contradicts your earlier commitment: "
-                  {liveResult.output.contradicts}"
+                  Draft contradicts your earlier commitment: "
+                  {cleanPunctuation(liveResult.output.contradicts)}"
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-xs font-mono text-[#8B9BB4]">
+            <div className="font-mono text-label text-muted">
               {moveText.trim().length < 40
                 ? 'Type at least 40 characters for live on-device move coaching.'
-                : 'Waiting for pause in typing (800 ms debounce)…'}
+                : 'Waiting for pause in typing (800 ms debounce)...'}
             </div>
           )}
         </div>
       ) : (
         <div
-          className="text-xs font-mono text-[#8B9BB4]"
+          className="font-mono text-label text-muted"
           data-testid="referee-live-unavailable-note"
         >
-          🔒 Live coaching while typing is on-device only and hidden when Gemini
-          Nano is unavailable so unredacted drafts never leave your device.
+          Live coaching while typing is on-device only and hidden when Gemini Nano is unavailable so unredacted drafts never leave your device.
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-13">
         <div
-          className="text-xs font-mono text-[#8B9BB4]"
+          className="font-mono text-label text-muted"
           data-testid="move-composer-status"
         >
-          {game.phase.kind === 'sealing_move' &&
-            '🔒 Sealing move through on-device privacy firewall…'}
+          {game.phase.kind === 'sealing_move' && (
+            <span className="inline-flex items-center gap-5">
+              <span className="wr-live-dot" aria-hidden="true" />
+              <span>SEALING MOVE IN LOCAL PRIVACY FIREWALL...</span>
+            </span>
+          )}
           {game.phase.kind === 'generals' &&
             (() => {
               const phase = game.phase;
@@ -272,12 +270,12 @@ export function MoveComposer({
               const failed = Object.keys(
                 phase.failedGenerals ?? roundRec?.failedGenerals ?? {},
               ).length;
-              return `☁️ Generals responding in parallel (${formatGeneralsStatus(
+              return `Generals responding in parallel (${formatGeneralsStatus(
                 game.generals.length,
                 replied,
                 failed,
                 phase.pending.length,
-              )})…`;
+              )})`;
             })()}
         </div>
 
@@ -289,8 +287,8 @@ export function MoveComposer({
           data-testid="btn-submit-move"
         >
           {busy
-            ? `Running Round ${roundNumber}…`
-            : `Seal Move & Launch Round ${roundNumber} →`}
+            ? `Running round ${roundNumber}...`
+            : `Seal move and launch round ${roundNumber}`}
         </button>
       </div>
     </div>
