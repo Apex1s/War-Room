@@ -1,3 +1,4 @@
+import { ledgerStore } from '../storage/local-db';
 import type { Task } from './schemas';
 import { TASKS } from './tasks';
 
@@ -33,8 +34,35 @@ const listeners = new Set<() => void>();
 
 export function recordCall(entry: AiCallRecord): void {
   records.push(entry);
+  void ledgerStore.append(entry).catch(() => {});
   for (const listener of listeners) {
     listener();
+  }
+}
+
+export async function hydrateLedgerFromStore(): Promise<void> {
+  try {
+    const persisted = await ledgerStore.getAll();
+    const seen = new Set(
+      records.map((r) => `${r.ts}|${r.task}|${r.gameId ?? ''}|${r.inChars}`),
+    );
+    let added = false;
+    for (const item of persisted) {
+      const key = `${item.ts}|${item.task}|${item.gameId ?? ''}|${item.inChars}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        records.push(item);
+        added = true;
+      }
+    }
+    if (added) {
+      records.sort((a, b) => a.ts - b.ts);
+      for (const listener of listeners) {
+        listener();
+      }
+    }
+  } catch {
+    // Ignore IndexedDB hydration errors
   }
 }
 

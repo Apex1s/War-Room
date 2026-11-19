@@ -15,7 +15,13 @@ import {
   selectRoundPersonas,
 } from './compact';
 import { reduceGame } from './machine';
-import type { GameEvent, GameRecord, VaultRecord } from './types';
+import type {
+  GameEvent,
+  GameRecord,
+  RoundRecord,
+  VaultRecord,
+  WhatIfRecord,
+} from './types';
 
 export interface EngineCallbacks {
   onStateChange?: (game: GameRecord, vaultRecord: VaultRecord) => void;
@@ -493,6 +499,102 @@ export async function resumePendingPhaseEffect(
   }
 
   return { game: initialGame, vaultRecord: initialVault };
+}
+
+/**
+ * Offline What-If simulation (design doc §6):
+ * In replay, edits a past round's move, seals it locally, and re-runs `crowd` (5 rotating personas)
+ * and `referee_round` with `only_on_device` against the recorded General replies of that round.
+ * Stores the result in `game.whatIfs`. Works with the network off.
+ */
+export async function runWhatIfEffect(
+  initialGame: GameRecord,
+  initialVault: VaultRecord,
+  roundNumber: number,
+  rawWhatIfMove: string,
+  cb?: EngineCallbacks & { crowdSignal?: AbortSignal },
+): Promise<{
+  game: GameRecord;
+  vaultRecord: VaultRecord;
+  whatIf: WhatIfRecord;
+}> {
+  const originalRound = initialGame.rounds.find((r) => r.n === roundNumber);
+  if (!originalRound) {
+    throw new RangeError(`Round ${roundNumber} not found in game ${initialGame.id}`);
+  }
+
+  const sealedMove = await seal(rawWhatIfMove, initialVault.map, {
+    gameId: initialGame.id,
+  });
+
+  const nextVault: VaultRecord = {
+    ...initialVault,
+    map: sealedMove.map,
+  };
+  setVaultEntries(sealedMove.map, initialGame.id);
+
+  const syntheticRound: RoundRecord = {
+    ...originalRound,
+    userMove: sealedMove.abstracted,
+  };
+
+  const refInput = buildRefereeRoundInput(
+    initialGame,
+    syntheticRound,
+    nextVault.map,
+  );
+  const roundPersonas = selectRoundPersonas(initialGame.crowd, roundNumber);
+  const crowdInput = buildCrowdInput(
+    initialGame,
+    syntheticRound,
+    roundPersonas,
+    nextVault.map,
+  );
+
+  const [refRes, crowdRes] = await Promise.all([
+    run('referee_round', refInput, {
+      gameId: initialGame.id,
+      modeOverride: 'only_on_device',
+    }),
+    run('crowd', crowdInput, {
+      gameId: initialGame.id,
+      modeOverride: 'only_on_device',
+      signal: cb?.crowdSignal,
+    }),
+  ]);
+
+  const whatIf: WhatIfRecord = {
+    round: roundNumber,
+    userMove: sealedMove.abstracted,
+    crowd: crowdRes.output.reactions.map((rx) => ({
+      ...rx,
+      source: crowdRes.source,
+      latencyMs: crowdRes.latencyMs,
+      model: crowdRes.model,
+      fallback: crowdRes.fallback,
+    })),
+    referee: {
+      ...refRes.output,
+      source: refRes.source,
+      latencyMs: refRes.latencyMs,
+      model: refRes.model,
+      fallback: refRes.fallback,
+    },
+    createdAt: Date.now(),
+  };
+
+  const nextGame: GameRecord = {
+    ...initialGame,
+    whatIfs: [...initialGame.whatIfs, whatIf],
+    updatedAt: whatIf.createdAt,
+  };
+
+  await persistAndNotify(nextGame, nextVault, cb);
+  return {
+    game: nextGame,
+    vaultRecord: nextVault,
+    whatIf,
+  };
 }
 
 export async function runFinalReportEffect(

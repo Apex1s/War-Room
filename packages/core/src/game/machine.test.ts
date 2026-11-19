@@ -25,6 +25,7 @@ import {
   runPlayerMoveAndGeneralsEffect,
   runRefereeLiveEffect,
   runSealBriefEffect,
+  runWhatIfEffect,
   undoMoveMaskedEntryEffect,
 } from './engine';
 import {
@@ -974,5 +975,75 @@ describe('engine.ts parallel Generals and retry effects', () => {
     const res5 = await resumePendingPhaseEffect(reportingGame, vaultWithMove);
     expect(res5.game.phase).toEqual({ kind: 'done' });
     expect(res5.game.report).not.toBeNull();
+  });
+
+  it('runs offline What-If simulation strictly with only_on_device for crowd and referee_round against recorded General replies', async () => {
+    const provider = createMockProvider();
+    setProvider(provider);
+    setRetrySleepForTest(async () => {});
+    (globalThis as Record<string, unknown>).LanguageModel = {
+      availability: async () => 'available',
+    };
+    setDeviceStatusForTest('available', 1);
+
+    let game = createInitialGameRecord('game-whatif', 'startup', 1000);
+    game.totalRounds = 1;
+    let vaultRecord: VaultRecord = {
+      gameId: game.id,
+      rawObjective: 'Reach $1M ARR for Kestrel Labs.',
+      rawBrief: 'Kestrel Labs builds workflow auditing tools in Lyon.',
+      rawMoves: {},
+      map: [],
+    };
+
+    const sealed = await runSealBriefEffect(
+      game,
+      vaultRecord,
+      vaultRecord.rawObjective,
+      vaultRecord.rawBrief,
+    );
+    game = reduceGame(sealed.game, { type: 'REDACTION_APPROVED' });
+    vaultRecord = sealed.vaultRecord;
+
+    const moved = await runPlayerMoveAndGeneralsEffect(
+      game,
+      vaultRecord,
+      'Launch self-serve tier.',
+    );
+    const after = await runAftermathEffect(moved.game, moved.vaultRecord);
+    const readyForReport = reduceGame(after.game, { type: 'NEXT' });
+    const finished = await runFinalReportEffect(readyForReport, after.vaultRecord);
+    game = finished.game;
+    vaultRecord = finished.vaultRecord;
+    expect(game.phase).toEqual({ kind: 'done' });
+
+    // Clear provider call history before running offline What-If
+    provider.reset();
+
+    const whatIfRes = await runWhatIfEffect(
+      game,
+      vaultRecord,
+      1,
+      'Pivot Kestrel Labs to annual enterprise contracts in Lyon at $25,000/year.',
+    );
+
+    expect(whatIfRes.game.whatIfs).toHaveLength(1);
+    const branch = whatIfRes.whatIf;
+    expect(branch.round).toBe(1);
+    // Raw names and $25,000 in the what-if move are masked locally
+    expect(branch.userMove).not.toContain('Kestrel Labs');
+    expect(branch.userMove).not.toContain('$25,000');
+    expect(branch.crowd).toHaveLength(5);
+    expect(branch.crowd.every((c) => c.source === 'on-device')).toBe(true);
+    expect(branch.referee?.source).toBe('on-device');
+
+    // Every call made during What-If (redact, referee_round, crowd) used mode: 'only_on_device'
+    expect(provider.calls.length).toBeGreaterThanOrEqual(2);
+    expect(provider.calls.every((c) => c.params.mode === 'only_on_device')).toBe(
+      true,
+    );
+    expect(
+      provider.calls.some((c) => c.params.task === 'general_move'),
+    ).toBe(false);
   });
 });
