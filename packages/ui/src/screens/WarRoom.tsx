@@ -47,18 +47,7 @@ export function WarRoomScreen({
   const [activeViewRound, setActiveViewRound] = useState<number>(currentPhaseRound);
   const [showRehydrated, setShowRehydrated] = useState<boolean>(true);
   const [busy, setBusy] = useState<boolean>(false);
-
-  const defaultMoveForRound = (rNum: number): string => {
-    if (rNum === 1) return template.openingMove;
-    if (rNum === 2) {
-      return 'Lock in annual pre-paid contracts with existing design partners and ship cross-vendor integrations incumbents cannot bundle.';
-    }
-    return 'Shift acquisition to partner-led compliance templates and cap customer payback at 45 days.';
-  };
-
-  const [moveText, setMoveText] = useState<string>(() =>
-    defaultMoveForRound(currentPhaseRound),
-  );
+  const [moveText, setMoveText] = useState<string>('');
 
   const crowdAbortRef = useRef<AbortController | null>(null);
   const aftermathRunningRoundRef = useRef<number | null>(null);
@@ -132,6 +121,7 @@ export function WarRoomScreen({
           },
         },
       );
+      setMoveText('');
       onGameUpdated(res.game, res.vaultRecord);
     } finally {
       setBusy(false);
@@ -206,7 +196,7 @@ export function WarRoomScreen({
     onGameUpdated(nextGame, vaultRecord);
 
     if (nextRoundNum <= game.totalRounds) {
-      setMoveText(defaultMoveForRound(nextRoundNum));
+      setMoveText('');
       setActiveViewRound(nextRoundNum);
     }
   };
@@ -303,6 +293,7 @@ export function WarRoomScreen({
           vaultRecord={vaultRecord}
           roundNumber={currentPhaseRound}
           moveText={moveText}
+          placeholder={template.openingMove}
           onChangeMoveText={setMoveText}
           onSubmitMove={() => void handleSubmitMove()}
           onUndoMoveChip={(rNum, tok) => void handleUndoMoveChip(rNum, tok)}

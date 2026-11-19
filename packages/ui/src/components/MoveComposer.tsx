@@ -19,6 +19,7 @@ export interface MoveComposerProps {
   vaultRecord: VaultRecord;
   roundNumber: number;
   moveText: string;
+  placeholder?: string;
   onChangeMoveText: (text: string) => void;
   onSubmitMove: () => void;
   onUndoMoveChip?: (roundNumber: number, token: string) => void;
@@ -30,6 +31,7 @@ export function MoveComposer({
   vaultRecord,
   roundNumber,
   moveText,
+  placeholder = 'Launch as described in the brief.',
   onChangeMoveText,
   onSubmitMove,
   onUndoMoveChip,
@@ -165,7 +167,7 @@ export function MoveComposer({
         onChange={(e) => onChangeMoveText(e.target.value)}
         disabled={busy || !isUserTurn}
         className="w-full rounded bg-[#0A0E17] border border-[#223049] px-3.5 py-2.5 text-sm text-[#E6EDF3] font-mono focus:outline-none focus:border-[#E0A84B] disabled:opacity-60"
-        placeholder="Describe your concrete strategic move for this round…"
+        placeholder={placeholder}
         data-testid="move-composer-input"
       />
 
