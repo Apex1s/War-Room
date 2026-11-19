@@ -1,3 +1,4 @@
+import { detectCapitalisedRuns } from '../firewall/detectors';
 import type {
   ModelProvider,
   ProviderModelInstance,
@@ -130,6 +131,16 @@ function buildDefaultMockOutput(
   params: ProviderModelParams,
   userPrompt: string,
 ): unknown {
+  if (params.task === 'redact') {
+    const heuristicNames = detectCapitalisedRuns(userPrompt).map((e) => ({
+      text: e.text,
+      type: e.type as 'COMPANY' | 'PERSON' | 'PRODUCT' | 'PLACE' | 'OTHER',
+    }));
+    return {
+      entities: [...CANNED_OUTPUTS.redact.entities, ...heuristicNames].slice(0, 40),
+    };
+  }
+
   if (params.task === 'crowd' && params.schemaIds && params.schemaIds.length > 1) {
     const sampleQuotes = [
       'I would try a self-serve workflow tool if setup takes under ten minutes.',
