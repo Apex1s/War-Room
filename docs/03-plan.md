@@ -74,7 +74,7 @@ Day 1 result: cloud path, App Check and the privacy refusal all pass on the host
 ### Day 6, Sat 21 — Crowd and Referee on-device
 
 - `crowd`, `referee_round`, `referee_live` wired into the engine.
-- Measure Nano latency for ten sequential crowd calls. If the wall takes more than about 40 seconds, set `batchOnDevice` to 5 and re-test quality.
+- Crowd: 5 rotating personas per round in one batched on-device call (design doc §9 item 6). Measure the warm latency of that call and of `referee_round`; the round's aftermath must never block `NEXT`.
 - Planted-contradiction tests for both referee prompts.
 - Move sealing: known entities replaced, new entities shown as chips.
 

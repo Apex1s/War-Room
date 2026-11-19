@@ -80,9 +80,10 @@ Criteria 3 and 4 are judged largely from the text description and the video.
      headline, move, rationale, threat level (1–5) and the assumption it targets.
      Agents see only the abstracted brief + compacted history.
 3. THE CROWD (PREFER_ON_DEVICE, cloud fallback `gemini-3.5-flash-lite`)
-   - 10 lightweight personas (customers, fans, investors...) give 1–2 sentence
-     reactions to each round + a sentiment score (-2..+2). One call per persona on-device,
-     one batched call when it falls back to cloud. Never blocks the next round.
+   - 10 lightweight personas (customers, fans, investors...); each round 5 of them, rotating,
+     give 1–2 sentence reactions + a sentiment score (-2..+2). One batched call per round,
+     on-device or cloud (measured 19 Nov: one warm on-device call is ~17 s on the dev machine,
+     so per-persona calls are too slow). Never blocks the next round.
 4. THE REFEREE
    - `referee_round` (PREFER_ON_DEVICE, cloud fallback `gemini-3.5-flash-lite`): after each
      round, summary, score delta per General, contradiction detection vs earlier commitments.

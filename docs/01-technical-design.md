@@ -254,7 +254,7 @@ One JSON parameter, `routing_table`, parsed with zod. Invalid or missing falls b
     "general_move":  { "mode": "only_in_cloud",    "cloudModel": "gemini-3.5-flash-lite", "fallbackModel": "gemini-3.8-flash",      "deviceLastResort": true,  "timeoutMs": 25000 },
     "final_report":  { "mode": "only_in_cloud",    "cloudModel": "gemini-4-hydrogen",     "fallbackModel": "gemini-3.5-flash-lite", "deviceLastResort": false, "thinkingLevel": "LOW", "timeoutMs": 90000 }
   },
-  "crowd": { "personas": 10, "batchOnDevice": 1, "batchInCloud": 10 }
+  "crowd": { "personas": 10, "perRound": 5, "batchOnDevice": 5, "batchInCloud": 5 }
 }
 ```
 
@@ -502,7 +502,7 @@ Status after Day 1 in brackets.
 3. [DONE] `responseConstraint` name verified. Integer bounds accepted by the typings; still unmeasured on a real Nano. `normalize` clamps regardless.
 4. [DONE] Plain-object `responseSchema` works in the cloud (button 3 returned schema-valid JSON on the hosted URL).
 5. [PARTLY] On-device with the network off: by code reading, the on-device path makes no App Check, Auth or network call. Not yet run on real hardware.
-6. [OPEN] Nano latency for ten crowd calls.
+6. [MEASURED 19 Nov] Nano latency on the dev machine (11.8 GB, CPU path, bypass flag), one crowd persona: 204 s first call after download; 122 s warm with the old schema (Nano padded the array to 12 invented personas); with the per-call schema (`crowdDeviceSchema`, exact length, enum ids) 40 s first call after a reload and **16.7 s warm**. Output length dominates on CPU. Decisions: crowd shows 5 rotating personas per round in ONE batched call (`perRound: 5`, `batchOnDevice: 5`); every array in a device schema is exact-length where the count is known (crowd, referee scores); a background warm-up prompt runs when the device becomes ready. Expect a 5-persona call and a referee call at roughly 25–45 s each, running in the background while the player writes the next move. Measure both on Day 6.
 7. [OPEN] Nano recall on entity extraction (Day 3).
 8. [MITIGATED] `gemini-4-hydrogen` latency and free-tier capacity: 144 s on Day 1, then only 500s and timeouts on Day 2. Generals moved to flash-lite with a fallback chain (§10). Re-probe hydrogen daily.
 9. **[MEASURED 17 Nov, high] Free-tier rate limit: `gemini-3.5-flash-lite` allows 15 requests per minute per project**, shared by every visitor of the hosted app (429 `GenerateRequestsPerMinutePerProjectPerModel-FreeTier`, with a `retryDelay` in the error). A cloud-only game is about 16 calls in 3–5 minutes, so roughly three judges playing at once saturate it; on-device crowd and referee cut a game to about 7 cloud calls. Mitigations: on 429, read `retryDelay` and, if it is 20 s or less, show "Cloud is busy, retrying in N s" and retry the same model once before the fallback chain; never retry in a tight loop; keep crowd and referee on-device wherever Nano exists. Each model has its own per-model quota, so the fallback model adds headroom only when it is not saturated.
