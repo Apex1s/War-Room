@@ -558,16 +558,16 @@ export function WarRoomDebugScreen({
               {game.phase.kind === 'sealing_move' && 'Sealing move on-device…'}
               {game.phase.kind === 'generals' &&
                 (() => {
-                  const rRec = game.rounds.find(
-                    (r) => r.n === game.phase.round,
-                  );
+                  const phase = game.phase;
+                  if (phase.kind !== 'generals') return null;
+                  const rRec = game.rounds.find((r) => r.n === phase.round);
                   return `Generals responding in parallel (${formatGeneralsStatus(
                     game.generals.length,
                     rRec?.generalMoves.length ?? 0,
                     Object.keys(
-                      game.phase.failedGenerals ?? rRec?.failedGenerals ?? {},
+                      phase.failedGenerals ?? rRec?.failedGenerals ?? {},
                     ).length,
-                    game.phase.pending.length,
+                    phase.pending.length,
                   )})…`;
                 })()}
             </div>

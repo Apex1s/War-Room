@@ -265,18 +265,18 @@ export function MoveComposer({
             '🔒 Sealing move through on-device privacy firewall…'}
           {game.phase.kind === 'generals' &&
             (() => {
-              const roundRec = game.rounds.find(
-                (r) => r.n === game.phase.round,
-              );
+              const phase = game.phase;
+              if (phase.kind !== 'generals') return null;
+              const roundRec = game.rounds.find((r) => r.n === phase.round);
               const replied = roundRec?.generalMoves.length ?? 0;
               const failed = Object.keys(
-                game.phase.failedGenerals ?? roundRec?.failedGenerals ?? {},
+                phase.failedGenerals ?? roundRec?.failedGenerals ?? {},
               ).length;
               return `☁️ Generals responding in parallel (${formatGeneralsStatus(
                 game.generals.length,
                 replied,
                 failed,
-                game.phase.pending.length,
+                phase.pending.length,
               )})…`;
             })()}
         </div>
