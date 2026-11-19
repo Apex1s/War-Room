@@ -285,7 +285,7 @@ describe('reduceGame state machine transitions', () => {
       'cloud',
     );
 
-    // Two Generals succeed, one fails
+    // Two Generals succeed, one fails -> round does NOT block, transitions to aftermath with failedGenerals
     state = reduceGame(state, { type: 'GENERAL_MOVED', generalId: 'vc', result: genResult });
     state = reduceGame(state, {
       type: 'GENERAL_FAILED',
@@ -294,15 +294,15 @@ describe('reduceGame state machine transitions', () => {
     });
     state = reduceGame(state, { type: 'GENERAL_MOVED', generalId: 'market', result: genResult });
 
-    // Round is still in 'generals' phase with failedGenerals recorded (not 'failed')
     expect(state.phase).toEqual({
-      kind: 'generals',
+      kind: 'aftermath',
       round: 1,
-      pending: [],
+      referee: 'running',
+      crowd: 'running',
       failedGenerals: { copycat: 'cloud_unavailable' },
     });
 
-    // User clicks retry on the failed General card
+    // User clicks retry on the failed General card while in aftermath
     state = reduceGame(state, { type: 'RETRY_GENERAL', generalId: 'copycat' });
     expect(state.phase).toEqual({
       kind: 'generals',
@@ -310,7 +310,7 @@ describe('reduceGame state machine transitions', () => {
       pending: ['copycat'],
     });
 
-    // Retry succeeds -> moves to aftermath
+    // Retry succeeds -> moves back to aftermath with failedGenerals cleared
     state = reduceGame(state, { type: 'GENERAL_MOVED', generalId: 'copycat', result: genResult });
     expect(state.phase).toEqual({
       kind: 'aftermath',
@@ -563,25 +563,25 @@ describe('engine.ts parallel Generals and retry effects', () => {
     game = moved.game;
     vaultRecord = moved.vaultRecord;
 
-    // 2 Generals succeeded, 1 failed
-    expect(game.phase.kind).toBe('generals');
-    if (game.phase.kind === 'generals') {
-      expect(game.phase.pending).toEqual([]);
-      const failedIds = Object.keys(game.phase.failedGenerals ?? {});
-      expect(failedIds.length).toBe(1);
-
-      // Retry the failed General
-      const retried = await retrySingleGeneralEffect(game, vaultRecord, failedIds[0]!);
-      game = retried.game;
-      vaultRecord = retried.vaultRecord;
-    }
-
-    expect(game.phase).toEqual({
-      kind: 'aftermath',
-      round: 1,
-      referee: 'running',
-      crowd: 'running',
+    // 2 Generals succeeded, 1 failed -> transitions straight to aftermath without blocking
+    expect(game.phase.kind).toBe('aftermath');
+    expect(game.rounds[0]?.generalMoves).toHaveLength(2);
+    expect(game.rounds[0]?.failedGenerals).toEqual({
+      copycat: 'cloud_unavailable',
     });
+
+    // Referee and crowd run on the 2 replies that exist
+    const afterPartial = await runAftermathEffect(game, vaultRecord);
+    game = afterPartial.game;
+    expect(game.rounds[0]?.referee).not.toBeNull();
+    expect(game.rounds[0]?.crowd).toHaveLength(5);
+
+    // Optional Retry on the failed General still works from aftermath
+    const retried = await retrySingleGeneralEffect(game, vaultRecord, 'copycat');
+    game = retried.game;
+    vaultRecord = retried.vaultRecord;
+    expect(game.rounds[0]?.generalMoves).toHaveLength(3);
+    expect(game.rounds[0]?.failedGenerals).toBeUndefined();
 
     const after = await runAftermathEffect(game, vaultRecord);
     game = after.game;

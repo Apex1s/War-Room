@@ -289,6 +289,16 @@ export async function runAftermathEffect(
     await persistAndNotify(game, vaultRecord, cb);
   };
 
+  if (roundRecord.generalMoves.length === 0) {
+    if (initialGame.phase.referee === 'running') {
+      await applyEvent({ type: 'REFEREE_SKIPPED' });
+    }
+    if (initialGame.phase.crowd === 'running') {
+      await applyEvent({ type: 'CROWD_FINISHED', round });
+    }
+    return { game, vaultRecord };
+  }
+
   const shouldRunReferee = initialGame.phase.referee === 'running';
   const shouldRunCrowd = initialGame.phase.crowd === 'running';
 

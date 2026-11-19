@@ -41,6 +41,7 @@ export type Phase =
       round: number;
       referee: 'running' | 'done' | 'skipped';
       crowd: 'running' | 'done';
+      failedGenerals?: Record<string, AiErrorCode>;
     }
   | { kind: 'reporting' }
   | { kind: 'done' }
@@ -58,6 +59,7 @@ export interface RoundRecord {
   userMove: string;
   newEntries?: PlaceholderEntry[];
   generalMoves: (GeneralMoveOutput & AiMeta & { generalId: string })[];
+  failedGenerals?: Record<string, AiErrorCode>;
   crowd: (CrowdReaction & AiMeta)[];
   referee: (RefereeRoundOutput & AiMeta) | null;
 }

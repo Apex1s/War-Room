@@ -123,9 +123,15 @@ export function AgentCard({
         )}
 
         {failedCode && (
-          <div className="p-3 rounded bg-red-950/40 border border-red-800/60 flex flex-col gap-2">
-            <div className="text-xs font-mono text-red-300">
-              Failed ({failedCode})
+          <div
+            className="p-3 rounded bg-[#162032] border border-amber-600/50 flex flex-col gap-2"
+            data-testid={`general-holds-r${roundNumber}-${general.id}`}
+          >
+            <div className="text-xs font-semibold text-amber-300">
+              Holds position this round
+            </div>
+            <div className="text-[11px] font-mono text-[#8B9BB4]">
+              Cloud call exhausted retries ({failedCode}). The round continues with the other Generals.
             </div>
             <button
               type="button"

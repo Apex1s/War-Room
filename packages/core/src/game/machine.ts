@@ -194,6 +194,7 @@ export function reduceGame(
       const nextPending = pending.filter((id) => id !== event.generalId);
       const nextFailed = { ...(failedGenerals ?? {}) };
       delete nextFailed[event.generalId];
+      const hasFailed = Object.keys(nextFailed).length > 0;
 
       const moveEntry = {
         ...event.result.output,
@@ -209,17 +210,18 @@ export function reduceGame(
         return {
           ...r,
           generalMoves: [...filtered, moveEntry],
+          failedGenerals: hasFailed ? nextFailed : undefined,
         };
       });
 
-      const hasFailed = Object.keys(nextFailed).length > 0;
       const nextPhase: GameRecord['phase'] =
-        nextPending.length === 0 && !hasFailed
+        nextPending.length === 0
           ? {
               kind: 'aftermath',
               round,
               referee: 'running',
               crowd: 'running',
+              ...(hasFailed ? { failedGenerals: nextFailed } : {}),
             }
           : {
               kind: 'generals',
@@ -244,29 +246,62 @@ export function reduceGame(
         ...(failedGenerals ?? {}),
         [event.generalId]: event.code,
       };
+
+      const rounds = upsertRound(state.rounds, round, (r) => ({
+        ...r,
+        failedGenerals: nextFailed,
+      }));
+
+      const targetRound = rounds.find((r) => r.n === round);
+      const hasReplies = (targetRound?.generalMoves.length ?? 0) > 0;
+
+      // A General that exhausts retries never blocks the round once pending is empty:
+      // transition to aftermath so referee and crowd run on the replies that exist.
+      const nextPhase: GameRecord['phase'] =
+        nextPending.length === 0
+          ? {
+              kind: 'aftermath',
+              round,
+              referee: hasReplies ? 'running' : 'skipped',
+              crowd: hasReplies ? 'running' : 'done',
+              failedGenerals: nextFailed,
+            }
+          : {
+              kind: 'generals',
+              round,
+              pending: nextPending,
+              failedGenerals: nextFailed,
+            };
+
       return {
         ...state,
-        phase: {
-          kind: 'generals',
-          round,
-          pending: nextPending,
-          failedGenerals: nextFailed,
-        },
+        rounds,
+        phase: nextPhase,
         updatedAt: now,
       };
     }
 
     case 'RETRY_GENERAL': {
-      if (state.phase.kind !== 'generals') return state;
-      const { round, pending, failedGenerals } = state.phase;
+      if (state.phase.kind !== 'generals' && state.phase.kind !== 'aftermath') {
+        return state;
+      }
+      const { round, failedGenerals } = state.phase;
+      const pending = state.phase.kind === 'generals' ? state.phase.pending : [];
       const nextFailed = { ...(failedGenerals ?? {}) };
       delete nextFailed[event.generalId];
       const nextPending = pending.includes(event.generalId)
         ? pending
         : [...pending, event.generalId];
       const hasFailed = Object.keys(nextFailed).length > 0;
+
+      const rounds = upsertRound(state.rounds, round, (r) => ({
+        ...r,
+        failedGenerals: hasFailed ? nextFailed : undefined,
+      }));
+
       return {
         ...state,
+        rounds,
         phase: {
           kind: 'generals',
           round,

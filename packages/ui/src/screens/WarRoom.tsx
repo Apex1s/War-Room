@@ -129,7 +129,12 @@ export function WarRoomScreen({
   };
 
   const handleRetryGeneral = async (generalId: string) => {
-    if (busy || game.phase.kind !== 'generals') return;
+    if (
+      busy ||
+      (game.phase.kind !== 'generals' && game.phase.kind !== 'aftermath')
+    ) {
+      return;
+    }
     setBusy(true);
     try {
       const res = await retrySingleGeneralEffect(
@@ -392,10 +397,12 @@ export function WarRoomScreen({
                   game.phase.round === displayedRound.n &&
                   game.phase.pending.includes(gen.id);
                 const failedCode =
-                  game.phase.kind === 'generals' &&
+                  (game.phase.kind === 'generals' ||
+                    game.phase.kind === 'aftermath') &&
                   game.phase.round === displayedRound.n
-                    ? game.phase.failedGenerals?.[gen.id]
-                    : undefined;
+                    ? (game.phase.failedGenerals?.[gen.id] ??
+                      displayedRound.failedGenerals?.[gen.id])
+                    : displayedRound.failedGenerals?.[gen.id];
                 const scoreDelta = displayedRound.referee?.scores.find(
                   (s) => s.generalId === gen.id,
                 )?.delta;
