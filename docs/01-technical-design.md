@@ -497,7 +497,7 @@ const rc = getRemoteConfig(app);              // defaults = compiled routing tab
 
 Status after Day 1 in brackets.
 
-1. **[OPEN, blocking] The dev machine does not run Nano.** 8 GB RAM, Intel UHD 620 with 1 GB: `LanguageModel` exists in Chrome 157 but `availability()` is `'unavailable'`. Without a Nano-capable machine nothing on-device can be tested, and the demo video cannot show the core of the idea. Resolve by end of Day 2 (see 03-plan, Day 2).
+1. [RESOLVED 19 Nov] Dev machine and Nano. After a RAM upgrade to 11.8 GB (still under the official 16 GB) and `chrome://flags/#optimization-guide-on-device-model` = "Enabled BypassPerfRequirement", `availability()` is `'available'` and the spike's ONLY_ON_DEVICE call returns `inferenceSource: 'on_device'` with schema-valid JSON. First call after download: 204 s (cold). Warm latency decides crowd batching (item 6). The README must say the demo machine uses the bypass flag and that Google's official requirement is 16 GB RAM or a GPU with more than 4 GB VRAM.
 2. [OPEN] Whether a web page on stable Chrome gets the Prompt API without a flag. `LanguageModel` was defined on the hosted page with no flag in Chrome 156/157; whether it reaches `'available'` needs capable hardware.
 3. [DONE] `responseConstraint` name verified. Integer bounds accepted by the typings; still unmeasured on a real Nano. `normalize` clamps regardless.
 4. [DONE] Plain-object `responseSchema` works in the cloud (button 3 returned schema-valid JSON on the hosted URL).
