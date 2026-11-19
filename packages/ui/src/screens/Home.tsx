@@ -37,18 +37,18 @@ export function HomeScreen({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-13">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-13 items-stretch">
         {TEMPLATE_LIST.map((tpl: GameTemplate) => (
           <div
             key={tpl.id}
             onClick={() => onSelectTemplate(tpl.id)}
             className={
               TOKENS.classes.cardInteractive +
-              ' flex flex-col justify-between gap-21'
+              ' flex flex-col justify-between gap-21 h-full'
             }
             data-testid={`template-card-${tpl.id}`}
           >
-            <div>
+            <div className="flex-1">
               <div className="flex items-center justify-between gap-8 mb-8">
                 <span className="font-mono text-label uppercase tracking-[0.12em] text-mint">
                   {tpl.id === 'startup' ? 'LEAD SCENARIO' : 'SCENARIO'}
@@ -65,7 +65,7 @@ export function HomeScreen({
               </p>
             </div>
 
-            <div className="pt-13 border-t border-line">
+            <div className="mt-auto pt-13 border-t border-line">
               <div className="terminal-label mb-8">OPPOSING GENERALS</div>
               <div className="flex flex-wrap gap-8">
                 {tpl.generals.map((g) => {
