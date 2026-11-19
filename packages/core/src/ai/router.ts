@@ -172,6 +172,19 @@ function mapProviderError(
   );
 }
 
+function extractSchemaIds<K extends Task>(
+  task: K,
+  input: TaskInput[K],
+): string[] | undefined {
+  if (task === 'crowd') {
+    return (input as TaskInput['crowd']).personas.map((p) => p.id);
+  }
+  if (task === 'referee_round') {
+    return (input as TaskInput['referee_round']).replies.map((r) => r.generalId);
+  }
+  return undefined;
+}
+
 function getOrCreateModel(
   provider: ModelProvider,
   params: ProviderModelParams,
@@ -184,6 +197,7 @@ function getOrCreateModel(
     params.thinkingLevel ?? '',
     params.timeoutMs,
     hashString(params.system),
+    (params.schemaIds ?? []).join(','),
   ].join('|');
 
   let instance = modelCache.get(cacheKey);
@@ -257,6 +271,7 @@ export async function run<K extends Task>(
   }
 
   // Step 4: Get or create cached primary model instance
+  const schemaIds = extractSchemaIds(task, input);
   let activeModelInstance = getOrCreateModel(provider, {
     task,
     mode,
@@ -265,6 +280,7 @@ export async function run<K extends Task>(
     timeoutMs: route.timeoutMs,
     maxOutputTokens: route.maxOutputTokens,
     system,
+    schemaIds,
   });
 
   // Step 5: Execute streaming call and time it; retry once on fallbackModel on 429/500/503/timeout/parse-failed
@@ -297,6 +313,7 @@ export async function run<K extends Task>(
         timeoutMs: route.timeoutMs,
         maxOutputTokens: route.maxOutputTokens,
         system,
+        schemaIds,
       });
       try {
         streamRes = await activeModelInstance.generateStream(user, {

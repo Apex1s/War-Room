@@ -16,7 +16,14 @@ import type {
   StreamCallResult,
 } from './provider';
 import type { Mode } from './routing-table';
-import { cloudSchema, deviceSchema } from './schemas';
+import {
+  cloudSchema,
+  crowdCloudSchema,
+  crowdDeviceSchema,
+  deviceSchema,
+  refereeRoundCloudSchema,
+  refereeRoundDeviceSchema,
+} from './schemas';
 
 const MODE_MAP: Record<Mode, InferenceMode> = {
   only_on_device: InferenceMode.ONLY_ON_DEVICE,
@@ -24,6 +31,26 @@ const MODE_MAP: Record<Mode, InferenceMode> = {
   prefer_in_cloud: InferenceMode.PREFER_IN_CLOUD,
   only_in_cloud: InferenceMode.ONLY_IN_CLOUD,
 };
+
+function resolveCloudSchema(params: ProviderModelParams): SchemaRequest {
+  if (params.task === 'crowd' && params.schemaIds && params.schemaIds.length > 0) {
+    return crowdCloudSchema(params.schemaIds) as SchemaRequest;
+  }
+  if (params.task === 'referee_round' && params.schemaIds && params.schemaIds.length > 0) {
+    return refereeRoundCloudSchema(params.schemaIds) as SchemaRequest;
+  }
+  return cloudSchema(params.task) as SchemaRequest;
+}
+
+function resolveDeviceSchema(params: ProviderModelParams): Record<string, unknown> {
+  if (params.task === 'crowd' && params.schemaIds && params.schemaIds.length > 0) {
+    return crowdDeviceSchema(params.schemaIds);
+  }
+  if (params.task === 'referee_round' && params.schemaIds && params.schemaIds.length > 0) {
+    return refereeRoundDeviceSchema(params.schemaIds);
+  }
+  return deviceSchema(params.task);
+}
 
 export function buildFirebaseModelParams(params: ProviderModelParams): HybridParams {
   return {
@@ -33,7 +60,7 @@ export function buildFirebaseModelParams(params: ProviderModelParams): HybridPar
       systemInstruction: params.system,
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: cloudSchema(params.task) as SchemaRequest,
+        responseSchema: resolveCloudSchema(params),
         ...(params.thinkingLevel !== undefined
           ? {
               thinkingConfig: {
@@ -58,7 +85,7 @@ export function buildFirebaseModelParams(params: ProviderModelParams): HybridPar
         expectedOutputs: [{ type: 'text', languages: ['en'] }],
       },
       promptOptions: {
-        responseConstraint: deviceSchema(params.task),
+        responseConstraint: resolveDeviceSchema(params),
       },
     },
   };

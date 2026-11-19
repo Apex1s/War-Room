@@ -11,6 +11,7 @@ export interface ProviderModelParams {
   timeoutMs: number;
   maxOutputTokens?: number;
   system: string;
+  schemaIds?: string[];
 }
 
 export interface StreamCallOptions {

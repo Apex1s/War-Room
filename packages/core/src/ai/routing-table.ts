@@ -45,6 +45,7 @@ export const RoutingTableSchema = z.object({
   }),
   crowd: z.object({
     personas: z.number().int().min(1).max(12),
+    perRound: z.number().int().min(1).max(12).default(5),
     batchOnDevice: z.number().int().min(1).max(12),
     batchInCloud: z.number().int().min(1).max(12),
   }),
@@ -88,8 +89,9 @@ export const DEFAULT_ROUTING_TABLE: RoutingTable = {
   },
   crowd: {
     personas: 10,
-    batchOnDevice: 1,
-    batchInCloud: 10,
+    perRound: 5,
+    batchOnDevice: 5,
+    batchInCloud: 5,
   },
 };
 

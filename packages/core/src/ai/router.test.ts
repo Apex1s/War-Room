@@ -16,6 +16,12 @@ import {
   setRoutingTable,
   setUrlOverridesForTest,
 } from './routing-table';
+import {
+  crowdCloudSchema,
+  crowdDeviceSchema,
+  refereeRoundCloudSchema,
+  refereeRoundDeviceSchema,
+} from './schemas';
 
 const SAMPLE_CROWD_INPUT = {
   situation: 'A founder is stress-testing a startup plan.',
@@ -396,5 +402,78 @@ describe('AI Router & Routing Table', () => {
     });
 
     expect(createdCount).toBe(0);
+  });
+
+  it('wires per-call crowd and referee_round schemas into buildFirebaseModelParams and includes schemaIds in the model cache key', async () => {
+    const crowdIds = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    const crowdParams = buildFirebaseModelParams({
+      task: 'crowd',
+      mode: 'prefer_on_device',
+      cloudModel: 'gemini-3.5-flash-lite',
+      timeoutMs: 20000,
+      system: 'sys',
+      schemaIds: crowdIds,
+    });
+    expect(crowdParams.onDeviceParams?.promptOptions?.responseConstraint).toEqual(
+      crowdDeviceSchema(crowdIds),
+    );
+    expect(crowdParams.inCloudParams?.generationConfig?.responseSchema).toEqual(
+      crowdCloudSchema(crowdIds),
+    );
+
+    const generalIds = ['vc', 'copycat', 'market'];
+    const refParams = buildFirebaseModelParams({
+      task: 'referee_round',
+      mode: 'prefer_on_device',
+      cloudModel: 'gemini-3.5-flash-lite',
+      timeoutMs: 20000,
+      system: 'sys',
+      schemaIds: generalIds,
+    });
+    expect(refParams.onDeviceParams?.promptOptions?.responseConstraint).toEqual(
+      refereeRoundDeviceSchema(generalIds),
+    );
+    expect(refParams.inCloudParams?.generationConfig?.responseSchema).toEqual(
+      refereeRoundCloudSchema(generalIds),
+    );
+
+    expect(DEFAULT_ROUTING_TABLE.crowd).toEqual({
+      personas: 10,
+      perRound: 5,
+      batchOnDevice: 5,
+      batchInCloud: 5,
+    });
+
+    // Running crowd twice with identical persona IDs reuses the cached model
+    await run('crowd', SAMPLE_CROWD_INPUT);
+    await run('crowd', SAMPLE_CROWD_INPUT);
+    expect(mock.createdModels).toHaveLength(1);
+    expect(mock.createdModels[0].schemaIds).toEqual(['p1']);
+
+    // Running crowd with a different rotating persona batch creates a new cached model
+    await run('crowd', {
+      ...SAMPLE_CROWD_INPUT,
+      personas: [
+        { id: 'p2', label: 'Ops lead', outlook: 'Skeptical.' },
+        { id: 'p3', label: 'CFO', outlook: 'Watches budget.' },
+      ],
+    });
+    expect(mock.createdModels).toHaveLength(2);
+    expect(mock.createdModels[1].schemaIds).toEqual(['p2', 'p3']);
+
+    // Running referee_round passes generalIds in prompt order
+    await run('referee_round', {
+      round: 1,
+      totalRounds: 3,
+      move: 'Launch self-serve tier.',
+      replies: [
+        { generalId: 'vc', name: 'Skeptical VC', threatLevel: 3, move: 'Pass on seed.' },
+        { generalId: 'copycat', name: 'Copycat Competitor', threatLevel: 4, move: 'Bundle free.' },
+        { generalId: 'market', name: 'The Market', threatLevel: 2, move: 'Wait for renewal.' },
+      ],
+      commitments: [],
+    });
+    expect(mock.createdModels).toHaveLength(3);
+    expect(mock.createdModels[2].schemaIds).toEqual(['vc', 'copycat', 'market']);
   });
 });
