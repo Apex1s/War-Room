@@ -1150,6 +1150,20 @@ describe('engine.ts parallel Generals and retry effects', () => {
       const finalRes = await runFinalReportEffect(game, vaultRecord);
       expect(finalRes.game.phase).toEqual({ kind: 'done' });
       expect(finalRes.game.report).not.toBeNull();
+
+      // Verify magnitude legend was passed into general_move and final_report prompts
+      const genCall = provider.calls.find(
+        (c) =>
+          c.params.task === 'general_move' &&
+          c.userPrompt.includes('\n\nLegend\n- ['),
+      );
+      const reportCall = provider.calls.find(
+        (c) =>
+          c.params.task === 'final_report' &&
+          c.userPrompt.includes('\n\nLegend\n- ['),
+      );
+      expect(genCall).toBeDefined();
+      expect(reportCall).toBeDefined();
     }
   });
 

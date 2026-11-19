@@ -1,6 +1,7 @@
 import {
   applyMapWithSpans,
   buildMap,
+  computeMagnitudeHint,
   type EntityType,
   type GameRecord,
   type PlaceholderEntry,
@@ -52,6 +53,15 @@ export function FirewallReviewScreen({
     recomputeAndNotify(vaultRecord, nextMap, onUpdateMap);
   };
 
+  const handleToggleHint = (token: string) => {
+    const nextMap = vaultRecord.map.map((entry) =>
+      entry.token === token
+        ? { ...entry, hintEnabled: entry.hintEnabled === false }
+        : entry,
+    );
+    recomputeAndNotify(vaultRecord, nextMap, onUpdateMap);
+  };
+
   const handleChangeEntryType = (token: string, newType: EntityType) => {
     const existingNumbers = vaultRecord.map
       .filter((e) => e.type === newType && e.token !== token)
@@ -63,11 +73,17 @@ export function FirewallReviewScreen({
       (existingNumbers.length ? Math.max(...existingNumbers) : 0) + 1;
     const newToken = `[${newType}_${nextNum}]`;
 
-    const nextMap = vaultRecord.map.map((entry) =>
-      entry.token === token
-        ? { ...entry, type: newType, token: newToken }
-        : entry,
-    );
+    const nextMap = vaultRecord.map.map((entry) => {
+      if (entry.token !== token) return entry;
+      const nextHint = computeMagnitudeHint(entry.original, newType);
+      return {
+        ...entry,
+        type: newType,
+        token: newToken,
+        hint: nextHint,
+        hintEnabled: nextHint ? true : undefined,
+      };
+    });
     recomputeAndNotify(vaultRecord, nextMap, onUpdateMap);
   };
 
@@ -139,6 +155,7 @@ export function FirewallReviewScreen({
       <PlaceholderTable
         map={vaultRecord.map}
         onToggleEntry={handleToggleEntry}
+        onToggleHint={handleToggleHint}
         onChangeEntryType={handleChangeEntryType}
         onAddManualTerm={handleAddTerm}
       />

@@ -14,6 +14,7 @@ export * from './ai/tasks';
 export * from './firewall/chunk';
 export * from './firewall/detectors';
 export * from './firewall/firewall';
+export * from './firewall/magnitude';
 export * from './firewall/placeholders';
 export * from './firewall/sample-briefs';
 export * from './firebase/init';

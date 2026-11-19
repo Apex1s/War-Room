@@ -1,5 +1,6 @@
 import type { CrowdPersona, GeneralSpec, PromptInput, PromptRound } from '../../prompts/types';
 import { getRoutingTable } from '../ai/routing-table';
+import { buildMagnitudeLegend } from '../firewall/magnitude';
 import { applyMap, type PlaceholderEntry } from '../firewall/placeholders';
 import { computeGeneralScores } from './scoring';
 import { TEMPLATES } from './templates';
@@ -105,7 +106,7 @@ export function buildGeneralMoveInput(
   roundNumber: number,
   currentMove: string,
   vaultMap: PlaceholderEntry[],
-  legend: string[] = [],
+  legend?: string[],
 ): PromptInput['general_move'] {
   const priorRounds = game.rounds.filter((r) => r.n < roundNumber);
   const otherGenerals = game.generals
@@ -121,12 +122,14 @@ export function buildGeneralMoveInput(
     style: sanitizePromptText(general.style, vaultMap),
   };
 
+  const resolvedLegend = legend ?? buildMagnitudeLegend(vaultMap);
+
   return {
     general: sanitizedGeneral,
     otherGenerals,
     objective: sanitizePromptText(game.objective, vaultMap),
     brief: sanitizePromptText(game.brief, vaultMap),
-    legend: legend.map((l) => sanitizePromptText(l, vaultMap)),
+    legend: resolvedLegend.map((l) => sanitizePromptText(l, vaultMap)),
     history: compactHistoryForGeneral(general.id, priorRounds, vaultMap),
     round: roundNumber,
     totalRounds: game.totalRounds,
@@ -206,15 +209,16 @@ export function buildRefereeLiveInput(
 export function buildFinalReportInput(
   game: GameRecord,
   vaultMap: PlaceholderEntry[],
-  legend: string[] = [],
+  legend?: string[],
 ): PromptInput['final_report'] {
   const scores = computeGeneralScores(game.generals, game.rounds);
+  const resolvedLegend = legend ?? buildMagnitudeLegend(vaultMap);
 
   return {
     generals: game.generals,
     objective: sanitizePromptText(game.objective, vaultMap),
     brief: sanitizePromptText(game.brief, vaultMap),
-    legend: legend.map((l) => sanitizePromptText(l, vaultMap)),
+    legend: resolvedLegend.map((l) => sanitizePromptText(l, vaultMap)),
     rounds: compactHistoryFull(game.rounds, vaultMap),
     finalScores: scores.map((s) => ({ name: s.name, score: s.score })),
   };

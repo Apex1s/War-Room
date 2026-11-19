@@ -18,6 +18,7 @@ const ENTITY_TYPES: EntityType[] = [
 export interface PlaceholderTableProps {
   map: PlaceholderEntry[];
   onToggleEntry: (token: string) => void;
+  onToggleHint?: (token: string) => void;
   onChangeEntryType: (token: string, newType: EntityType) => void;
   onAddManualTerm: (text: string, type: EntityType) => void;
 }
@@ -25,6 +26,7 @@ export interface PlaceholderTableProps {
 export function PlaceholderTable({
   map,
   onToggleEntry,
+  onToggleHint,
   onChangeEntryType,
   onAddManualTerm,
 }: PlaceholderTableProps) {
@@ -97,65 +99,98 @@ export function PlaceholderTable({
               <th className="py-8 px-13">TOKEN</th>
               <th className="py-8 px-13">ORIGINAL VALUE (LOCAL ONLY)</th>
               <th className="py-8 px-13">TYPE</th>
+              <th className="py-8 px-13">MAGNITUDE HINT</th>
               <th className="py-8 px-13">DETECTED BY</th>
             </tr>
           </thead>
           <tbody>
-            {map.map((entry) => (
-              <tr
-                key={entry.token}
-                className={`border-b border-line ${
-                  entry.enabled ? 'text-text' : 'text-muted line-through'
-                }`}
-                data-testid={`placeholder-row-${entry.token}`}
-              >
-                <td className="py-8 px-13">
-                  <input
-                    type="checkbox"
-                    checked={entry.enabled}
-                    onChange={() => onToggleEntry(entry.token)}
-                    className="accent-mint cursor-pointer"
-                    aria-label={`Toggle redaction for ${entry.original}`}
-                    data-testid={`toggle-${entry.token}`}
-                  />
-                </td>
-                <td className="py-8 px-13 text-mint font-semibold">
-                  {entry.token}
-                </td>
-                <td className="py-8 px-13 font-sans">
-                  <span>{entry.original}</span>
-                  {entry.aliases.length > 0 && (
-                    <span className="ml-8 text-label text-muted">
-                      ({entry.aliases.join(', ')})
+            {map.map((entry) => {
+              const hasHint =
+                (entry.type === 'MONEY' || entry.type === 'NUMBER') &&
+                Boolean(entry.hint);
+              const hintOn = entry.hintEnabled !== false;
+              return (
+                <tr
+                  key={entry.token}
+                  className={`border-b border-line ${
+                    entry.enabled ? 'text-text' : 'text-muted line-through'
+                  }`}
+                  data-testid={`placeholder-row-${entry.token}`}
+                >
+                  <td className="py-8 px-13">
+                    <input
+                      type="checkbox"
+                      checked={entry.enabled}
+                      onChange={() => onToggleEntry(entry.token)}
+                      className="accent-mint cursor-pointer"
+                      aria-label={`Toggle redaction for ${entry.original}`}
+                      data-testid={`toggle-${entry.token}`}
+                    />
+                  </td>
+                  <td className="py-8 px-13 text-mint font-semibold">
+                    {entry.token}
+                  </td>
+                  <td className="py-8 px-13 font-sans">
+                    <span>{entry.original}</span>
+                    {entry.aliases.length > 0 && (
+                      <span className="ml-8 text-label text-muted">
+                        ({entry.aliases.join(', ')})
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-8 px-13">
+                    <select
+                      value={entry.type}
+                      onChange={(e) =>
+                        onChangeEntryType(
+                          entry.token,
+                          e.target.value as EntityType,
+                        )
+                      }
+                      className="bg-bg border border-line rounded-[3px] px-8 py-3 text-label font-mono text-text"
+                      aria-label={`Entity type for ${entry.original}`}
+                    >
+                      {ENTITY_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-8 px-13">
+                    {hasHint ? (
+                      <label className="inline-flex items-center gap-8 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hintOn}
+                          disabled={!entry.enabled || !onToggleHint}
+                          onChange={() => onToggleHint?.(entry.token)}
+                          className="accent-mint cursor-pointer"
+                          aria-label={`Share magnitude hint for ${entry.token}`}
+                          data-testid={`toggle-hint-${entry.token}`}
+                        />
+                        <span
+                          className={
+                            hintOn && entry.enabled
+                              ? 'text-text'
+                              : 'text-muted line-through'
+                          }
+                        >
+                          {entry.hint}
+                        </span>
+                      </label>
+                    ) : (
+                      <span className="text-muted">none</span>
+                    )}
+                  </td>
+                  <td className="py-8 px-13">
+                    <span className="px-8 py-3 rounded-[3px] bg-bg border border-line text-label uppercase">
+                      {entry.detectedBy}
                     </span>
-                  )}
-                </td>
-                <td className="py-8 px-13">
-                  <select
-                    value={entry.type}
-                    onChange={(e) =>
-                      onChangeEntryType(
-                        entry.token,
-                        e.target.value as EntityType,
-                      )
-                    }
-                    className="bg-bg border border-line rounded-[3px] px-8 py-3 text-label font-mono text-text"
-                    aria-label={`Entity type for ${entry.original}`}
-                  >
-                    {ENTITY_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="py-8 px-13">
-                  <span className="px-8 py-3 rounded-[3px] bg-bg border border-line text-label uppercase">
-                    {entry.detectedBy}
-                  </span>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

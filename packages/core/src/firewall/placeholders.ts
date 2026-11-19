@@ -1,4 +1,5 @@
 import type { DetectedEntity, EntityType } from './detectors';
+import { computeMagnitudeHint } from './magnitude';
 
 export interface PlaceholderEntry {
   token: string;
@@ -8,6 +9,7 @@ export interface PlaceholderEntry {
   detectedBy: 'ai' | 'regex' | 'heuristic' | 'user';
   enabled: boolean;
   hint?: string;
+  hintEnabled?: boolean;
 }
 
 export interface TextSpan {
@@ -166,6 +168,7 @@ export function buildMap(
 
     const token = `[${item.type}_${nextNum}]`;
     const aliases = deriveAliases(clean, item.type);
+    const hint = computeMagnitudeHint(clean, item.type);
     const entry: PlaceholderEntry = {
       token,
       type: item.type,
@@ -173,6 +176,7 @@ export function buildMap(
       aliases,
       detectedBy: item.detectedBy,
       enabled: true,
+      ...(hint ? { hint, hintEnabled: true } : {}),
     };
 
     map.push(entry);

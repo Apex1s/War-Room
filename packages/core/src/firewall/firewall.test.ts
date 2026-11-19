@@ -19,6 +19,7 @@ import { DEFAULT_ROUTING_TABLE, setRoutingTable, setUrlOverridesForTest } from '
 import { chunkText } from './chunk';
 import { detectCapitalisedRuns } from './detectors';
 import { seal } from './firewall';
+import { buildMagnitudeLegend, computeMagnitudeHint } from './magnitude';
 import {
   applyMap,
   buildMap,
@@ -412,5 +413,52 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
         map,
       ),
     ).toBe('Kestrel Labs, rounds 1-3, holds position.');
+  });
+
+  it('computes deterministic magnitude hints for MONEY and NUMBER entries and never includes the original value in the legend', async () => {
+    expect(computeMagnitudeHint('$240,000', 'MONEY')).toBe('between $100K and $500K');
+    expect(computeMagnitudeHint('€18.5M', 'MONEY')).toBe('between €5M and €25M');
+    expect(computeMagnitudeHint('$49', 'MONEY')).toBe('under $100');
+    expect(computeMagnitudeHint('45,000', 'NUMBER')).toBe('between 10K and 50K');
+    expect(computeMagnitudeHint('420', 'NUMBER')).toBe('between 100 and 500');
+    expect(computeMagnitudeHint('Kestrel Labs', 'COMPANY')).toBeUndefined();
+
+    setDeviceStatusForTest('unavailable', 0);
+    delete (globalThis as Record<string, unknown>).LanguageModel;
+
+    for (const brief of SAMPLE_BRIEFS) {
+      const sealed = await seal(brief.text);
+      const legend = buildMagnitudeLegend(sealed.map);
+      expect(legend.length).toBeGreaterThan(0);
+
+      // Every enabled MONEY/NUMBER entry with a hint has a legend line by default,
+      // and NO legend line ever contains any original vaulted value
+      const enabledOriginals = sealed.map
+        .filter((e) => e.enabled && e.original.trim().length >= 2)
+        .map((e) => e.original.trim());
+
+      for (const line of legend) {
+        for (const orig of enabledOriginals) {
+          const esc = orig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const re = new RegExp(`(?:^|[^a-z0-9])${esc}(?:$|[^a-z0-9])`, 'i');
+          expect(
+            re.test(line),
+            `Legend line "${line}" must never contain original value "${orig}"`,
+          ).toBe(false);
+        }
+      }
+
+      // Toggling hintEnabled = false removes that entry from the legend
+      const firstMoney = sealed.map.find((e) => e.type === 'MONEY' && e.hint);
+      if (firstMoney) {
+        const toggledMap = sealed.map.map((e) =>
+          e.token === firstMoney.token ? { ...e, hintEnabled: false } : e,
+        );
+        const reducedLegend = buildMagnitudeLegend(toggledMap);
+        expect(
+          reducedLegend.some((l) => l.startsWith(`${firstMoney.token}:`)),
+        ).toBe(false);
+      }
+    }
   });
 });
