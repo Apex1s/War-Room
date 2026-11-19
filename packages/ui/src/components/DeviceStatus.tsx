@@ -10,11 +10,12 @@ export function DeviceStatus({ onDownloadModel }: DeviceStatusProps) {
   if (status === 'available') {
     return (
       <div
-        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-mint bg-surface text-mint"
+        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-mint bg-surface text-mint whitespace-nowrap shrink-0"
         data-testid="device-status-badge"
       >
         <span className="wr-live-dot" aria-hidden="true" />
-        <span>ON-DEVICE AI READY: GEMINI NANO</span>
+        <span className="sm:hidden">ON-DEVICE AI READY</span>
+        <span className="hidden sm:inline">ON-DEVICE AI READY: GEMINI NANO</span>
       </div>
     );
   }
@@ -23,12 +24,13 @@ export function DeviceStatus({ onDownloadModel }: DeviceStatusProps) {
     const pct = Math.round(progress * 100);
     return (
       <div
-        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-mint bg-surface text-mint"
+        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-mint bg-surface text-mint whitespace-nowrap shrink-0"
         data-testid="device-status-badge"
       >
         <span className="wr-live-dot" aria-hidden="true" />
-        <span>DOWNLOADING GEMINI NANO {pct}%</span>
-        <progress value={progress} max={1} className="w-55 h-5" />
+        <span className="sm:hidden">NANO {pct}%</span>
+        <span className="hidden sm:inline">DOWNLOADING GEMINI NANO {pct}%</span>
+        <progress value={progress} max={1} className="hidden sm:inline-block w-55 h-5" />
       </div>
     );
   }
@@ -36,10 +38,11 @@ export function DeviceStatus({ onDownloadModel }: DeviceStatusProps) {
   if (status === 'downloadable') {
     return (
       <div
-        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-line bg-surface text-text"
+        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-line bg-surface text-text whitespace-nowrap shrink-0"
         data-testid="device-status-badge"
       >
-        <span>GEMINI NANO DOWNLOADABLE</span>
+        <span className="sm:hidden">NANO DOWNLOADABLE</span>
+        <span className="hidden sm:inline">GEMINI NANO DOWNLOADABLE</span>
         {onDownloadModel && (
           <button
             type="button"
@@ -55,11 +58,14 @@ export function DeviceStatus({ onDownloadModel }: DeviceStatusProps) {
 
   return (
     <div
-      className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-orange bg-surface text-orange"
+      className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-orange bg-surface text-orange whitespace-nowrap shrink-0"
       title="Chrome Gemini Nano is unavailable on this device; deterministic local redaction is active."
       data-testid="device-status-badge"
     >
-      <span>BASIC REDACTION: ON-DEVICE AI UNAVAILABLE</span>
+      <span className="sm:hidden">BASIC REDACTION</span>
+      <span className="hidden sm:inline">
+        BASIC REDACTION: ON-DEVICE AI UNAVAILABLE
+      </span>
     </div>
   );
 }

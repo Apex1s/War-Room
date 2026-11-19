@@ -66,6 +66,7 @@ export function App({ platform }: AppProps) {
   const [cloudSaveStatus, setCloudSaveStatus] = useState<string | null>(null);
   const [cloudSyncBusy, setCloudSyncBusy] = useState<boolean>(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     return subscribeAuthUserState(setAuthState);
@@ -355,43 +356,128 @@ export function App({ platform }: AppProps) {
 
   return (
     <div className="min-h-screen text-text overflow-x-hidden">
-      <header className="border-b border-line bg-surface sticky top-0 z-10">
-        <div className="max-w-[1180px] mx-auto px-13 sm:px-21 py-13 flex flex-wrap items-center justify-between gap-13">
-          <div className="flex items-center gap-13">
+      <header className="border-b border-line bg-surface sticky top-0 z-10 relative">
+        <div className="max-w-[1180px] mx-auto px-13 sm:px-21 py-13 flex items-center justify-between gap-8 sm:gap-13">
+          <div className="flex items-center gap-13 shrink-0">
             <button
               type="button"
               onClick={() => void handleResetToHome()}
-              className="text-left cursor-pointer"
+              className="text-left cursor-pointer whitespace-nowrap"
               data-testid="brand-home-button"
             >
               <span className="font-mono font-semibold text-body tracking-[0.08em] text-text">
                 WAR ROOM<span className="wr-cursor">_</span>
               </span>
-              <span className="ml-13 terminal-label">
+              <span className="hidden md:inline ml-13 terminal-label">
                 CONFIDENTIAL AI WAR-GAMING
               </span>
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-8">
+          <div className="flex items-center gap-8 shrink-0">
+            {/* Desktop action buttons (>= 640px) */}
+            <div className="hidden sm:flex flex-wrap items-center gap-8">
+              {activeGame &&
+                activeGame.phase.kind !== 'draft' &&
+                activeGame.phase.kind !== 'sealing_brief' && (
+                  <div className="flex items-center gap-8">
+                    {cloudSaveStatus && (
+                      <span
+                        className="font-mono text-label text-mint"
+                        data-testid="cloud-save-status"
+                      >
+                        {cleanPunctuation(cloudSaveStatus)}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveToCloud()}
+                      disabled={cloudSaveBusy}
+                      className={TOKENS.classes.btnSecondary}
+                      data-testid="btn-save-to-cloud"
+                    >
+                      {cloudSaveBusy
+                        ? 'Saving...'
+                        : activeGame.cloudSavedAt
+                          ? 'Saved to cloud'
+                          : 'Save to cloud'}
+                    </button>
+                  </div>
+                )}
+
+              {platform.authMode === 'anonymous+google' && (
+                <>
+                  {!authState.isAnonymous &&
+                  (authState.email || authState.displayName) ? (
+                    <span
+                      className="px-8 py-5 rounded-[3px] font-mono text-label border border-line bg-bg text-mint"
+                      data-testid="auth-user-badge"
+                    >
+                      {authState.email ?? authState.displayName}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleGoogleSignIn()}
+                      className={TOKENS.classes.btnSecondary}
+                      data-testid="btn-google-signin"
+                    >
+                      Sign in with Google
+                    </button>
+                  )}
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setEgressInspectorOpen(true)}
+                className={TOKENS.classes.btnSecondary}
+                data-testid="header-btn-egress-inspector"
+              >
+                Egress inspector
+              </button>
+            </div>
+
+            <DeviceStatus onDownloadModel={platform.onDownloadModel} />
+
+            {/* Under 640px: single Menu button right */}
+            <div className="sm:hidden">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                aria-expanded={mobileMenuOpen}
+                className="px-13 py-5 rounded-[8px] border border-line bg-bg text-text font-mono text-label hover:border-mint cursor-pointer"
+                data-testid="header-btn-mobile-menu"
+              >
+                Menu
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {mobileMenuOpen && (
+          <div
+            className="sm:hidden absolute right-13 top-full mt-5 z-30 w-64 p-13 rounded-[8px] bg-surface border border-line flex flex-col gap-8"
+            data-testid="header-mobile-menu-panel"
+          >
             {activeGame &&
               activeGame.phase.kind !== 'draft' &&
               activeGame.phase.kind !== 'sealing_brief' && (
-                <div className="flex items-center gap-8">
+                <>
                   {cloudSaveStatus && (
-                    <span
-                      className="font-mono text-label text-mint"
-                      data-testid="cloud-save-status"
-                    >
+                    <span className="font-mono text-label text-mint">
                       {cleanPunctuation(cloudSaveStatus)}
                     </span>
                   )}
                   <button
                     type="button"
-                    onClick={() => void handleSaveToCloud()}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      void handleSaveToCloud();
+                    }}
                     disabled={cloudSaveBusy}
-                    className={TOKENS.classes.btnSecondary}
-                    data-testid="btn-save-to-cloud"
+                    className={TOKENS.classes.btnSecondary + ' w-full text-left'}
+                    data-testid="mobile-menu-save-to-cloud"
                   >
                     {cloudSaveBusy
                       ? 'Saving...'
@@ -399,25 +485,25 @@ export function App({ platform }: AppProps) {
                         ? 'Saved to cloud'
                         : 'Save to cloud'}
                   </button>
-                </div>
+                </>
               )}
 
             {platform.authMode === 'anonymous+google' && (
               <>
                 {!authState.isAnonymous &&
                 (authState.email || authState.displayName) ? (
-                  <span
-                    className="px-8 py-5 rounded-[3px] font-mono text-label border border-line bg-bg text-mint"
-                    data-testid="auth-user-badge"
-                  >
+                  <span className="px-8 py-5 rounded-[3px] font-mono text-label border border-line bg-bg text-mint">
                     {authState.email ?? authState.displayName}
                   </span>
                 ) : (
                   <button
                     type="button"
-                    onClick={() => void handleGoogleSignIn()}
-                    className={TOKENS.classes.btnSecondary}
-                    data-testid="btn-google-signin"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      void handleGoogleSignIn();
+                    }}
+                    className={TOKENS.classes.btnSecondary + ' w-full text-left'}
+                    data-testid="mobile-menu-google-signin"
                   >
                     Sign in with Google
                   </button>
@@ -427,15 +513,17 @@ export function App({ platform }: AppProps) {
 
             <button
               type="button"
-              onClick={() => setEgressInspectorOpen(true)}
-              className={TOKENS.classes.btnSecondary}
-              data-testid="header-btn-egress-inspector"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setEgressInspectorOpen(true);
+              }}
+              className={TOKENS.classes.btnSecondary + ' w-full text-left'}
+              data-testid="mobile-menu-egress-inspector"
             >
               Egress inspector
             </button>
-            <DeviceStatus onDownloadModel={platform.onDownloadModel} />
           </div>
-        </div>
+        )}
       </header>
 
       <main className="max-w-[1180px] mx-auto px-13 sm:px-21 pt-21 sm:pt-55 pb-55">
