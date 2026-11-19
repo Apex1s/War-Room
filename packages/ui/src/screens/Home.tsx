@@ -1,4 +1,5 @@
 import {
+  formatPhaseStatus,
   TEMPLATE_LIST,
   type GameRecord,
   type GameTemplate,
@@ -107,7 +108,7 @@ export function HomeScreen({
               >
                 <div>
                   <div className="text-xs font-mono text-[#E0A84B]">
-                    {g.templateId.toUpperCase()} · Phase: {g.phase.kind}
+                    {g.templateId.toUpperCase()} · {formatPhaseStatus(g.phase, g.totalRounds)}
                   </div>
                   <div className="text-sm text-[#E6EDF3] mt-0.5">
                     {g.objective || 'Untitled session'}

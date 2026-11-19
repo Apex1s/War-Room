@@ -1,5 +1,6 @@
 import {
   computeGeneralScores,
+  formatPhaseStatus,
   formatPlayerVsGeneralScore,
   type GameRecord,
   type VaultRecord,
@@ -51,10 +52,10 @@ export function RoundTimeline({
             </span>
             <span className="text-xs font-mono text-[#8B9BB4]">·</span>
             <span
-              className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]"
+              className="text-xs font-mono text-[#E0A84B]"
               data-testid="game-phase-badge"
             >
-              Phase: {game.phase.kind}
+              {formatPhaseStatus(game.phase, game.totalRounds)}
             </span>
           </div>
           <h2 className="text-xl font-semibold text-[#E6EDF3] mt-1 mb-0">

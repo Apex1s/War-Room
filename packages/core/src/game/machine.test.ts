@@ -27,7 +27,11 @@ import {
   runSealBriefEffect,
   undoMoveMaskedEntryEffect,
 } from './engine';
-import { createInitialGameRecord, reduceGame } from './machine';
+import {
+  createInitialGameRecord,
+  formatPhaseStatus,
+  reduceGame,
+} from './machine';
 import {
   computeCrowdSentimentAverage,
   computeGeneralScores,
@@ -126,6 +130,9 @@ describe('reduceGame state machine transitions', () => {
     // Approve redaction -> user_turn(1)
     state = reduceGame(state, { type: 'REDACTION_APPROVED' }, 1030);
     expect(state.phase).toEqual({ kind: 'user_turn', round: 1 });
+    expect(formatPhaseStatus(state.phase, state.totalRounds)).toBe(
+      'Your move, round 1 of 3',
+    );
 
     // Play 3 rounds
     for (const round of [1, 2, 3]) {

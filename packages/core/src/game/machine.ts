@@ -1,5 +1,42 @@
 import { TEMPLATES } from './templates';
-import type { GameEvent, GameRecord, RoundRecord, TemplateId } from './types';
+import type { GameEvent, GameRecord, Phase, RoundRecord, TemplateId } from './types';
+
+/**
+ * Human-readable status string for the current game phase
+ * (e.g. `"Your move, round 1 of 3"` instead of a raw debug phase label).
+ */
+export function formatPhaseStatus(phase: Phase, totalRounds: number = 3): string {
+  switch (phase.kind) {
+    case 'draft':
+      return 'Drafting confidential brief';
+    case 'sealing_brief':
+      return 'Sealing brief on-device';
+    case 'review':
+      return 'Reviewing privacy firewall';
+    case 'user_turn':
+      return `Your move, round ${phase.round} of ${totalRounds}`;
+    case 'sealing_move':
+      return `Sealing your move, round ${phase.round} of ${totalRounds}`;
+    case 'generals':
+      return phase.pending.length > 0
+        ? `Generals responding, round ${phase.round} of ${totalRounds}`
+        : `General retry needed, round ${phase.round} of ${totalRounds}`;
+    case 'aftermath':
+      if (phase.referee === 'running') {
+        return `Referee evaluating round ${phase.round} of ${totalRounds}`;
+      }
+      if (phase.crowd === 'running') {
+        return `Round ${phase.round} of ${totalRounds} verdict ready (crowd reacting)`;
+      }
+      return `Round ${phase.round} of ${totalRounds} complete`;
+    case 'reporting':
+      return 'Writing final verdict report';
+    case 'done':
+      return 'Final report ready';
+    case 'failed':
+      return `Interrupted (${phase.code}) — ready to retry`;
+  }
+}
 
 export function createInitialGameRecord(
   id: string,
