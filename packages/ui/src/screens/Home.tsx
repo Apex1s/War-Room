@@ -1,4 +1,5 @@
 import {
+  cleanPunctuation,
   formatPhaseStatus,
   TEMPLATE_LIST,
   type GameRecord,
@@ -25,134 +26,124 @@ export function HomeScreen({
   cloudSyncStatus,
 }: HomeScreenProps) {
   return (
-    <div className="flex flex-col gap-6" data-testid="screen-home">
+    <div className="flex flex-col gap-34" data-testid="screen-home">
       <div>
-        <h2 className="text-xl font-semibold text-[#E6EDF3] m-0">
-          Select a Confidential War-Game Scenario
-        </h2>
-        <p className="text-sm text-[#8B9BB4] mt-1 mb-0">
-          The cloud does the thinking, the device keeps the secrets. Your real names and figures are sealed on-device before any round begins.
+        <div className="terminal-label mb-8">CONFIDENTIAL AI WAR-GAMING</div>
+        <h1 className="text-display font-semibold text-text m-0">
+          The cloud does the thinking, the device keeps the secrets.
+        </h1>
+        <p className="text-body text-muted mt-13 mb-0 max-w-3xl">
+          Run a multi-agent war game on your most confidential plan without your real names, figures or locations ever leaving your device.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {TEMPLATE_LIST.map((tpl: GameTemplate) => {
-          const isAvailable = tpl.id === 'startup';
-          return (
-            <div
-              key={tpl.id}
-              onClick={isAvailable ? () => onSelectTemplate(tpl.id) : undefined}
-              aria-disabled={!isAvailable}
-              className={
-                (isAvailable
-                  ? TOKENS.classes.cardInteractive
-                  : TOKENS.classes.card + ' opacity-60 cursor-not-allowed') +
-                ' flex flex-col justify-between'
-              }
-              data-testid={`template-card-${tpl.id}`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-                    {isAvailable ? 'Lead Scenario' : 'Template'}
-                  </span>
-                  {isAvailable ? (
-                    <span className="text-xs font-mono text-[#8B9BB4]">
-                      3 Rounds
-                    </span>
-                  ) : (
-                    <span
-                      className="px-2 py-0.5 rounded bg-[#162032] border border-[#223049] text-[11px] font-mono text-[#8B9BB4]"
-                      data-testid={`template-coming-soon-${tpl.id}`}
-                    >
-                      Coming soon
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-base font-semibold text-[#E6EDF3] m-0">
-                  {tpl.title}
-                </h3>
-                <p className="text-xs text-[#8B9BB4] mt-2 leading-relaxed">
-                  {tpl.situation}
-                </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-13">
+        {TEMPLATE_LIST.map((tpl: GameTemplate) => (
+          <div
+            key={tpl.id}
+            onClick={() => onSelectTemplate(tpl.id)}
+            className={
+              TOKENS.classes.cardInteractive +
+              ' flex flex-col justify-between gap-21'
+            }
+            data-testid={`template-card-${tpl.id}`}
+          >
+            <div>
+              <div className="flex items-center justify-between gap-8 mb-8">
+                <span className="font-mono text-label uppercase tracking-[0.12em] text-mint">
+                  {tpl.id === 'startup' ? 'LEAD SCENARIO' : 'SCENARIO'}
+                </span>
+                <span className="font-mono text-label text-muted">
+                  3 ROUNDS
+                </span>
               </div>
+              <h2 className="text-title font-semibold text-text m-0">
+                {cleanPunctuation(tpl.title)}
+              </h2>
+              <p className="text-body text-muted mt-8 mb-0">
+                {cleanPunctuation(tpl.situation)}
+              </p>
+            </div>
 
-              <div className="mt-4 pt-3 border-t border-[#223049]">
-                <div className="text-[11px] font-mono text-[#8B9BB4] mb-2">
-                  Opposing Generals
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {tpl.generals.map((g) => (
+            <div className="pt-13 border-t border-line">
+              <div className="terminal-label mb-8">OPPOSING GENERALS</div>
+              <div className="flex flex-wrap gap-8">
+                {tpl.generals.map((g) => {
+                  const initials = g.name
+                    .split(/\s+/)
+                    .map((w) => w[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase();
+                  return (
                     <span
                       key={g.id}
-                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0A0E17] border border-[#223049] text-xs"
+                      className="inline-flex items-center gap-5 px-8 py-3 rounded-[3px] bg-bg border border-line font-mono text-label text-text"
                     >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: g.color }}
-                      />
-                      {g.name}
+                      <span className="text-muted">[{initials}]</span>
+                      <span>{g.name}</span>
                     </span>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {(savedGames.length > 0 || onSyncCloudGames) && (
-        <div className={TOKENS.classes.card}>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h3 className="text-sm font-semibold text-[#E6EDF3] m-0">
-              Saved Sessions ({savedGames.length})
-            </h3>
+        <div className={TOKENS.classes.card + ' flex flex-col gap-13'}>
+          <div className="flex flex-wrap items-center justify-between gap-13">
+            <div className="terminal-label">
+              SAVED SESSIONS ({savedGames.length})
+            </div>
             {onSyncCloudGames && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-8">
                 {cloudSyncStatus && (
                   <span
-                    className="text-xs font-mono text-[#8B9BB4]"
+                    className="font-mono text-label text-muted"
                     data-testid="cloud-sync-status"
                   >
-                    {cloudSyncStatus}
+                    {cleanPunctuation(cloudSyncStatus)}
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={onSyncCloudGames}
                   disabled={cloudSyncBusy}
-                  className={TOKENS.classes.btnSecondary + ' text-xs py-1.5'}
+                  className={TOKENS.classes.btnSecondary}
                   data-testid="btn-load-cloud-games"
                 >
-                  {cloudSyncBusy ? '☁️ Syncing…' : '☁️ Load Cloud Saved Games'}
+                  {cloudSyncBusy ? 'Syncing...' : 'Load cloud saved games'}
                 </button>
               </div>
             )}
           </div>
           {savedGames.length === 0 ? (
-            <div className="text-xs font-mono text-[#8B9BB4]">
-              No local sessions yet. Select a template above or load your abstracted cloud sessions.
+            <div className="font-mono text-label text-muted">
+              No local sessions yet. Select a scenario above or load your abstracted cloud sessions.
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-8">
               {savedGames.map((g) => (
                 <div
                   key={g.id}
-                  className="flex flex-wrap items-center justify-between gap-3 p-3 rounded bg-[#0A0E17] border border-[#223049]"
+                  className="flex flex-wrap items-center justify-between gap-13 p-13 rounded-[3px] bg-bg border border-line"
                 >
                   <div>
-                    <div className="flex items-center gap-2 text-xs font-mono text-[#E0A84B]">
+                    <div className="flex flex-wrap items-center gap-8 font-mono text-label uppercase tracking-[0.12em] text-muted">
                       <span>
-                        {g.templateId.toUpperCase()} · {formatPhaseStatus(g.phase, g.totalRounds)}
+                        {g.templateId.toUpperCase()} ·{' '}
+                        {formatPhaseStatus(g.phase, g.totalRounds)}
                       </span>
                       {g.cloudSavedAt && (
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-700/50 text-[10px] text-emerald-300">
-                          ☁️ Cloud synced
+                        <span className="px-5 py-3 rounded-[3px] border border-mint text-mint">
+                          CLOUD SYNCED
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-[#E6EDF3] mt-0.5">
-                      {g.objective || 'Untitled session'}
+                    <div className="text-body text-text mt-3">
+                      {cleanPunctuation(g.objective || 'Untitled session')}
                     </div>
                   </div>
                   <button

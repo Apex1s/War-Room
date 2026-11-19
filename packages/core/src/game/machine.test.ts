@@ -40,6 +40,9 @@ import {
   formatPlayerVsGeneralScore,
 } from './scoring';
 import { startupTemplate } from './templates/startup';
+import { priceWarTemplate } from './templates/price-war';
+import { matchTemplate } from './templates/match';
+import { TEMPLATE_LIST } from './templates';
 import type { VaultRecord } from './types';
 
 function makeAiResult<T>(
@@ -1054,5 +1057,37 @@ describe('engine.ts parallel Generals and retry effects', () => {
     expect(
       provider.calls.some((c) => c.params.task === 'general_move'),
     ).toBe(false);
+  });
+
+  it('defines distinct three Generals and ten crowd personas for startup, price-war, and match templates', () => {
+    expect(TEMPLATE_LIST).toHaveLength(3);
+    const generalIds = new Set<string>();
+    const generalNames = new Set<string>();
+    const crowdLabels = new Set<string>();
+
+    for (const tpl of [startupTemplate, priceWarTemplate, matchTemplate]) {
+      expect(tpl.generals).toHaveLength(3);
+      expect(tpl.crowd).toHaveLength(10);
+
+      for (const g of tpl.generals) {
+        expect(generalIds.has(g.id)).toBe(false);
+        expect(generalNames.has(g.name)).toBe(false);
+        generalIds.add(g.id);
+        generalNames.add(g.name);
+        expect(g.persona.length).toBeGreaterThan(20);
+        expect(g.goal.length).toBeGreaterThan(10);
+        expect(g.hiddenInfo.length).toBeGreaterThan(10);
+      }
+
+      for (const c of tpl.crowd) {
+        expect(crowdLabels.has(c.label)).toBe(false);
+        crowdLabels.add(c.label);
+        expect(c.outlook.length).toBeGreaterThan(10);
+      }
+
+      const initial = createInitialGameRecord(`test-${tpl.id}`, tpl.id, 1000);
+      expect(initial.templateId).toBe(tpl.id);
+      expect(initial.generals.map((g) => g.id)).toEqual(tpl.generals.map((g) => g.id));
+    }
   });
 });
