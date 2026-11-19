@@ -112,6 +112,9 @@ export function createFirebaseProvider(ai: AI): ModelProvider {
             signal: opts?.signal,
             timeout: params.timeoutMs,
           });
+          // Attach a no-op rejection handler before iterating the stream so a mid-stream
+          // error does not also surface as an unhandled promise rejection on streamResult.response.
+          void streamResult.response.catch(() => {});
 
           let accumulated = '';
           for await (const chunk of streamResult.stream) {

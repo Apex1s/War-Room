@@ -1,4 +1,8 @@
-import { getDeviceState, getGlobalLanguageModel } from './device';
+import {
+  getDeviceState,
+  getGlobalLanguageModel,
+  isDeviceReadyForOnlyOnDevice,
+} from './device';
 import { parseAndValidate, repairPrompt } from './json';
 import { recordCall, type Source } from './ledger';
 import type {
@@ -60,6 +64,36 @@ let configuredProvider: ModelProvider = defaultMockProvider;
 let egressGuard: EgressGuardFn | null = null;
 const modelCache = new Map<string, ProviderModelInstance>();
 
+export type RetrySleepFn = (ms: number, signal?: AbortSignal) => Promise<void>;
+
+async function defaultRetrySleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (ms <= 0) return;
+  if (signal?.aborted) {
+    const err = new Error('The operation was aborted.');
+    err.name = 'AbortError';
+    throw err;
+  }
+  await new Promise<void>((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      const err = new Error('The operation was aborted.');
+      err.name = 'AbortError';
+      reject(err);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+let retrySleep: RetrySleepFn = defaultRetrySleep;
+
+export function setRetrySleepForTest(fn: RetrySleepFn | null): void {
+  retrySleep = fn ?? defaultRetrySleep;
+}
+
 export function clearModelCache(): void {
   modelCache.clear();
 }
@@ -96,6 +130,39 @@ function hashString(input: string): string {
 
 function mapInferenceSource(raw: 'on_device' | 'in_cloud'): Source {
   return raw === 'on_device' ? 'on-device' : 'cloud';
+}
+
+function isRateLimitError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return (
+    /\b429\b/.test(message) ||
+    message.toLowerCase().includes('rate limit') ||
+    message.toLowerCase().includes('resource_exhausted')
+  );
+}
+
+/**
+ * Extracts `retryDelay` in milliseconds from a 429 error message or details object
+ * (e.g. `"retryDelay": "12s"`, `retryDelay: 8.5s`, `retry in 15s`).
+ */
+export function parseRetryDelayMs(err: unknown): number | null {
+  const message = err instanceof Error ? err.message : String(err);
+  const details =
+    err && typeof err === 'object'
+      ? JSON.stringify(
+          (err as { errorDetails?: unknown; customData?: unknown }).errorDetails ??
+            (err as { customData?: unknown }).customData ??
+            '',
+        )
+      : '';
+  const combined = `${message} ${details}`;
+  const match =
+    /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/i.exec(combined) ??
+    /retryDelay[:=\s]+"?(\d+(?:\.\d+)?)\s*s/i.exec(combined) ??
+    /retry in (\d+(?:\.\d+)?)\s*s/i.exec(combined);
+  if (!match) return null;
+  const seconds = Number.parseFloat(match[1]!);
+  return Number.isFinite(seconds) && seconds >= 0 ? Math.round(seconds * 1000) : null;
 }
 
 function isRetryableCloudError(err: unknown, signal?: AbortSignal): boolean {
@@ -283,7 +350,12 @@ export async function run<K extends Task>(
     schemaIds,
   });
 
-  // Step 5: Execute streaming call and time it; retry once on fallbackModel on 429/500/503/timeout/parse-failed
+  // Step 5: Execute streaming call and time it.
+  // Retry policy (design doc §3):
+  // (1) On 500/503, parse-failed or timeout, retry the SAME model once after ~2 s;
+  //     on 429, wait retryDelay if <= 20 s, then retry the same model once.
+  // (2) Then fallbackModel.
+  // (3) Then Gemini Nano when deviceLastResort is true and on-device AI is available.
   const t0 = performance.now();
   let streamRes;
   let usedFallbackModel = false;
@@ -295,37 +367,109 @@ export async function run<K extends Task>(
       signal: opts?.signal,
       onText: opts?.onText,
     });
-  } catch (err) {
-    if (
-      mode !== 'only_on_device' &&
-      route.fallbackModel &&
-      route.fallbackModel !== 'none' &&
-      isRetryableCloudError(err, opts?.signal)
-    ) {
-      usedFallbackModel = true;
-      activeCloudModel = route.fallbackModel;
-      activeMode = route.deviceLastResort ? 'prefer_in_cloud' : 'only_in_cloud';
-      activeModelInstance = getOrCreateModel(provider, {
-        task,
-        mode: activeMode,
-        cloudModel: activeCloudModel,
-        thinkingLevel: undefined,
-        timeoutMs: route.timeoutMs,
-        maxOutputTokens: route.maxOutputTokens,
-        system,
-        schemaIds,
-      });
+  } catch (firstErr) {
+    if (mode === 'only_on_device' || !isRetryableCloudError(firstErr, opts?.signal)) {
+      throw mapProviderError(firstErr, task, mode, opts?.signal);
+    }
+
+    let afterSameModelErr: unknown = firstErr;
+    let sameModelSucceeded = false;
+
+    // Step (1): Same-model retry
+    if (isRateLimitError(firstErr)) {
+      const retryDelayMs = parseRetryDelayMs(firstErr);
+      // If retryDelay is present and <= 20 s (or absent, default 2 s), wait and retry same model once
+      const waitMs = retryDelayMs === null ? 2000 : retryDelayMs;
+      if (waitMs <= 20000) {
+        try {
+          await retrySleep(waitMs, opts?.signal);
+          streamRes = await activeModelInstance.generateStream(user, {
+            signal: opts?.signal,
+            onText: opts?.onText,
+          });
+          sameModelSucceeded = true;
+        } catch (retrySameErr) {
+          afterSameModelErr = retrySameErr;
+        }
+      }
+    } else {
+      // 500 / 503 / parse-failed / timeout -> wait ~2 s and retry the same model once
       try {
+        await retrySleep(2000, opts?.signal);
         streamRes = await activeModelInstance.generateStream(user, {
           signal: opts?.signal,
           onText: opts?.onText,
         });
-      } catch (retryErr) {
-        throw mapProviderError(retryErr, task, activeMode, opts?.signal);
+        sameModelSucceeded = true;
+      } catch (retrySameErr) {
+        afterSameModelErr = retrySameErr;
       }
-    } else {
-      throw mapProviderError(err, task, mode, opts?.signal);
     }
+
+    // Step (2): fallbackModel
+    if (!sameModelSucceeded) {
+      if (
+        route.fallbackModel &&
+        route.fallbackModel !== 'none' &&
+        isRetryableCloudError(afterSameModelErr, opts?.signal)
+      ) {
+        usedFallbackModel = true;
+        activeCloudModel = route.fallbackModel;
+        activeMode = route.deviceLastResort ? 'prefer_in_cloud' : 'only_in_cloud';
+        activeModelInstance = getOrCreateModel(provider, {
+          task,
+          mode: activeMode,
+          cloudModel: activeCloudModel,
+          thinkingLevel: undefined,
+          timeoutMs: route.timeoutMs,
+          maxOutputTokens: route.maxOutputTokens,
+          system,
+          schemaIds,
+        });
+        try {
+          streamRes = await activeModelInstance.generateStream(user, {
+            signal: opts?.signal,
+            onText: opts?.onText,
+          });
+        } catch (fallbackErr) {
+          // Step (3): Gemini Nano when deviceLastResort is true
+          if (
+            route.deviceLastResort &&
+            !overrides.forceCloud &&
+            isDeviceReadyForOnlyOnDevice() &&
+            isRetryableCloudError(fallbackErr, opts?.signal)
+          ) {
+            activeMode = 'only_on_device';
+            activeModelInstance = getOrCreateModel(provider, {
+              task,
+              mode: 'only_on_device',
+              cloudModel: 'none',
+              thinkingLevel: undefined,
+              timeoutMs: route.timeoutMs,
+              maxOutputTokens: route.maxOutputTokens,
+              system,
+              schemaIds,
+            });
+            try {
+              streamRes = await activeModelInstance.generateStream(user, {
+                signal: opts?.signal,
+                onText: opts?.onText,
+              });
+            } catch (nanoErr) {
+              throw mapProviderError(nanoErr, task, activeMode, opts?.signal);
+            }
+          } else {
+            throw mapProviderError(fallbackErr, task, activeMode, opts?.signal);
+          }
+        }
+      } else {
+        throw mapProviderError(afterSameModelErr, task, activeMode, opts?.signal);
+      }
+    }
+  }
+
+  if (!streamRes) {
+    throw new AiError('cloud_unavailable', task, 'No stream result produced');
   }
 
   // Step 6: Read inferenceSource, parse & validate JSON, retry once with repairPrompt on failure

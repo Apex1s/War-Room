@@ -14,9 +14,11 @@ import { createMockProvider, type MockProviderController } from './provider-mock
 import {
   AiError,
   clearModelCache,
+  parseRetryDelayMs,
   run,
   setEgressGuard,
   setProvider,
+  setRetrySleepForTest,
 } from './router';
 import {
   DEFAULT_ROUTING_TABLE,
@@ -79,6 +81,7 @@ describe('AI Router & Routing Table', () => {
     clearLedger();
     clearModelCache();
     resetDeviceWarmUpForTest();
+    setRetrySleepForTest(async () => {});
 
     (globalThis as Record<string, unknown>).LanguageModel = {
       availability: async () => 'available',
@@ -87,6 +90,7 @@ describe('AI Router & Routing Table', () => {
   });
 
   afterEach(() => {
+    setRetrySleepForTest(null);
     if (originalLanguageModel === undefined) {
       delete (globalThis as Record<string, unknown>).LanguageModel;
     } else {
@@ -309,9 +313,43 @@ describe('AI Router & Routing Table', () => {
     });
   });
 
-  it('retries once on fallbackModel with prefer_in_cloud when general_move fails with HTTP 500', async () => {
+  it('retries the same model once after ~2s on 500/503/parse-failed/timeout, then fallbackModel, then Nano when deviceLastResort', async () => {
+    const sleepLog: number[] = [];
+    setRetrySleepForTest(async (ms) => {
+      sleepLog.push(ms);
+    });
+
+    // Case 1: Same-model retry succeeds after 2s on HTTP 500
     mock.enqueueResponses([
-      new Error('AI: Error fetching from ...: [500 ] This model is currently experiencing high demand. (AI/fetch-error)'),
+      new Error('AI: Error fetching from ...: [500 ] High demand (AI/fetch-error)'),
+      {
+        text: JSON.stringify({
+          headline: 'Primary recovered on same-model retry',
+          move: 'I pass on [COMPANY_1] and back a rival.',
+          rationale: 'CAC is too high.',
+          threatLevel: 3,
+          targets: 'Low self-serve CAC assumption',
+        }),
+        inferenceSource: 'in_cloud',
+      },
+    ]);
+
+    const resSame = await run('general_move', SAMPLE_GENERAL_MOVE_INPUT);
+    expect(resSame.fallback).toBe(false);
+    expect(resSame.source).toBe('cloud');
+    expect(resSame.model).toBe('gemini-3.5-flash-lite');
+    expect(sleepLog).toEqual([2000]);
+    expect(mock.createdModels).toHaveLength(1);
+    expect(mock.calls).toHaveLength(2);
+
+    // Case 2: Primary fails twice -> fallbackModel answers
+    mock.reset();
+    clearModelCache();
+    sleepLog.length = 0;
+
+    mock.enqueueResponses([
+      new Error('AI: Error fetching from ...: [500 ] High demand (AI/fetch-error)'),
+      new Error('AI: Error fetching from ...: [503 ] Service Unavailable (AI/fetch-error)'),
       {
         text: JSON.stringify({
           headline: 'Fallback model answered',
@@ -324,13 +362,12 @@ describe('AI Router & Routing Table', () => {
       },
     ]);
 
-    const res = await run('general_move', SAMPLE_GENERAL_MOVE_INPUT);
-
-    expect(res.fallback).toBe(true);
-    expect(res.source).toBe('cloud');
-    expect(res.model).toBe('gemini-3.8-flash');
-    expect(res.output.headline).toBe('Fallback model answered');
-
+    const resFallback = await run('general_move', SAMPLE_GENERAL_MOVE_INPUT);
+    expect(resFallback.fallback).toBe(true);
+    expect(resFallback.source).toBe('cloud');
+    expect(resFallback.model).toBe('gemini-3.8-flash');
+    expect(resFallback.output.headline).toBe('Fallback model answered');
+    expect(sleepLog).toEqual([2000]);
     expect(mock.createdModels).toHaveLength(2);
     expect(mock.createdModels[0]).toMatchObject({
       task: 'general_move',
@@ -343,20 +380,66 @@ describe('AI Router & Routing Table', () => {
       cloudModel: 'gemini-3.8-flash',
       thinkingLevel: undefined,
     });
-  });
 
-  it('retries once on fallbackModel when primary model throws AI/parse-failed', async () => {
-    const parseErr = new Error('AI: Failed to parse stream (AI/parse-failed)');
-    (parseErr as { code?: string }).code = 'parse-failed';
+    // Case 3: Primary fails twice AND fallbackModel fails -> Nano answers when deviceLastResort is true
+    mock.reset();
+    clearModelCache();
+    sleepLog.length = 0;
 
     mock.enqueueResponses([
-      parseErr,
+      new Error('AI: Failed to parse stream (AI/parse-failed)'),
+      new Error('AI: Failed to parse stream (AI/parse-failed)'),
+      new Error('AbortError: Timeout has expired.'),
+      {
+        text: JSON.stringify({
+          headline: 'Nano last-resort answered',
+          move: 'I hold our position against [COMPANY_1].',
+          rationale: 'Local fallback succeeded.',
+          threatLevel: 2,
+          targets: 'Cloud availability',
+        }),
+        inferenceSource: 'on_device',
+      },
+    ]);
+
+    const resNano = await run('general_move', SAMPLE_GENERAL_MOVE_INPUT);
+    expect(resNano.fallback).toBe(true);
+    expect(resNano.source).toBe('on-device');
+    expect(resNano.model).toBe('gemini-nano');
+    expect(resNano.output.headline).toBe('Nano last-resort answered');
+    expect(mock.createdModels).toHaveLength(3);
+    expect(mock.createdModels[2]).toMatchObject({
+      task: 'general_move',
+      mode: 'only_on_device',
+    });
+  });
+
+  it('waits retryDelay <= 20s on 429 before retrying same model, and skips same-model retry if retryDelay > 20s', async () => {
+    const sleepLog: number[] = [];
+    setRetrySleepForTest(async (ms) => {
+      sleepLog.push(ms);
+    });
+
+    expect(
+      parseRetryDelayMs(
+        new Error('429 Too Many Requests [{"retryDelay":"12s"}]'),
+      ),
+    ).toBe(12000);
+    expect(
+      parseRetryDelayMs(
+        new Error('429 Too Many Requests [{"retryDelay":"45s"}]'),
+      ),
+    ).toBe(45000);
+
+    // 429 with retryDelay 12s (<= 20s) -> waits 12000ms and retries same model
+    mock.enqueueResponses([
+      new Error('429 RESOURCE_Exhausted [{"retryDelay":"12s"}]'),
       {
         text: JSON.stringify({
           reactions: [
             {
               personaId: 'p1',
-              quote: 'Recovered from mid-stream parse error.',
+              quote: 'Recovered after 12s 429 delay on same model.',
               sentiment: 1,
             },
           ],
@@ -365,11 +448,36 @@ describe('AI Router & Routing Table', () => {
       },
     ]);
 
-    const res = await run('crowd', SAMPLE_CROWD_INPUT);
+    const res12 = await run('crowd', SAMPLE_CROWD_INPUT);
+    expect(res12.model).toBe('gemini-3.5-flash-lite');
+    expect(sleepLog).toEqual([12000]);
+    expect(mock.createdModels).toHaveLength(1);
 
-    expect(res.fallback).toBe(true);
-    expect(res.source).toBe('cloud');
-    expect(res.model).toBe('gemini-3.8-flash');
+    // 429 with retryDelay 35s (> 20s) -> skips same-model retry and jumps straight to fallbackModel
+    mock.reset();
+    clearModelCache();
+    sleepLog.length = 0;
+
+    mock.enqueueResponses([
+      new Error('429 RESOURCE_Exhausted [{"retryDelay":"35s"}]'),
+      {
+        text: JSON.stringify({
+          reactions: [
+            {
+              personaId: 'p1',
+              quote: 'Answered by fallback model after 35s retryDelay.',
+              sentiment: 1,
+            },
+          ],
+        }),
+        inferenceSource: 'in_cloud',
+      },
+    ]);
+
+    const res35 = await run('crowd', SAMPLE_CROWD_INPUT);
+    expect(res35.fallback).toBe(true);
+    expect(res35.model).toBe('gemini-3.8-flash');
+    expect(sleepLog).toEqual([]);
     expect(mock.createdModels).toHaveLength(2);
     expect(mock.createdModels[1]).toMatchObject({
       task: 'crowd',

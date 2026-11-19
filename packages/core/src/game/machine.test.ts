@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { setDeviceStatusForTest } from '../ai/device';
 import { CANNED_OUTPUTS, createMockProvider } from '../ai/provider-mock';
-import { setProvider, type AiResult } from '../ai/router';
+import { setProvider, setRetrySleepForTest, type AiResult } from '../ai/router';
 import { setUrlOverridesForTest } from '../ai/routing-table';
 import type {
   CrowdOutput,
@@ -480,13 +480,15 @@ describe('engine.ts parallel Generals and retry effects', () => {
   it('runs 3 Generals in parallel and retries a failed General individually', async () => {
     const provider = createMockProvider();
     let copycatAttempts = 0;
+    setRetrySleepForTest(async () => {});
+    setDeviceStatusForTest('unavailable', 0);
 
     provider.setHandler((params) => {
       if (params.task === 'general_move') {
-        // Fail Copycat Competitor on its first run (primary + fallback = 2 attempts)
+        // Fail Copycat Competitor on its first run (primary + same-model retry + fallback = 3 attempts)
         if (params.system.includes('You are Copycat Competitor')) {
           copycatAttempts += 1;
-          if (copycatAttempts <= 2) {
+          if (copycatAttempts <= 3) {
             const err = new Error('503 Service Unavailable');
             (err as Error & { status?: number }).status = 503;
             throw err;
