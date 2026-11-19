@@ -276,6 +276,9 @@ function getOrCreateModel(
   return instance;
 }
 
+const SAME_MODEL_BACKOFF_MS = [1500, 4000, 8000] as const;
+const FALLBACK_MODEL_TIMEOUT_MS = 12000;
+
 export async function run<K extends Task>(
   task: K,
   input: TaskInput[K],
@@ -354,9 +357,10 @@ export async function run<K extends Task>(
 
   // Step 5: Execute streaming call and time it.
   // Retry policy (design doc §3):
-  // (1) On 500/503, parse-failed or timeout, retry the SAME model once after ~2 s;
-  //     on 429, wait retryDelay if <= 20 s, then retry the same model once.
-  // (2) Then fallbackModel.
+  // (1) On 500/503, parse-failed or timeout, retry the SAME model up to 3 times with
+  //     backoff of 1.5 s, 4 s and 8 s; on 429, wait retryDelay if <= 20 s, then retry
+  //     the same model once.
+  // (2) Then fallbackModel with a short 12 s timeout.
   // (3) Then Gemini Nano when deviceLastResort is true and on-device AI is available.
   const t0 = performance.now();
   let streamRes;
@@ -380,7 +384,6 @@ export async function run<K extends Task>(
     // Step (1): Same-model retry
     if (isRateLimitError(firstErr)) {
       const retryDelayMs = parseRetryDelayMs(firstErr);
-      // If retryDelay is present and <= 20 s (or absent, default 2 s), wait and retry same model once
       const waitMs = retryDelayMs === null ? 2000 : retryDelayMs;
       if (waitMs <= 20000) {
         try {
@@ -395,20 +398,26 @@ export async function run<K extends Task>(
         }
       }
     } else {
-      // 500 / 503 / parse-failed / timeout -> wait ~2 s and retry the same model once
-      try {
-        await retrySleep(2000, opts?.signal);
-        streamRes = await activeModelInstance.generateStream(user, {
-          signal: opts?.signal,
-          onText: opts?.onText,
-        });
-        sameModelSucceeded = true;
-      } catch (retrySameErr) {
-        afterSameModelErr = retrySameErr;
+      // 500 / 503 / parse-failed / timeout -> retry same model up to 3 times (1.5 s / 4 s / 8 s)
+      for (const backoffMs of SAME_MODEL_BACKOFF_MS) {
+        if (!isRetryableCloudError(afterSameModelErr, opts?.signal)) {
+          break;
+        }
+        try {
+          await retrySleep(backoffMs, opts?.signal);
+          streamRes = await activeModelInstance.generateStream(user, {
+            signal: opts?.signal,
+            onText: opts?.onText,
+          });
+          sameModelSucceeded = true;
+          break;
+        } catch (retrySameErr) {
+          afterSameModelErr = retrySameErr;
+        }
       }
     }
 
-    // Step (2): fallbackModel
+    // Step (2): fallbackModel with a 12 s timeout
     if (!sameModelSucceeded) {
       if (
         route.fallbackModel &&
@@ -423,7 +432,7 @@ export async function run<K extends Task>(
           mode: activeMode,
           cloudModel: activeCloudModel,
           thinkingLevel: undefined,
-          timeoutMs: route.timeoutMs,
+          timeoutMs: FALLBACK_MODEL_TIMEOUT_MS,
           maxOutputTokens: route.maxOutputTokens,
           system,
           schemaIds,

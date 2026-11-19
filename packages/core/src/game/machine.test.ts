@@ -507,10 +507,10 @@ describe('engine.ts parallel Generals and retry effects', () => {
 
     provider.setHandler((params) => {
       if (params.task === 'general_move') {
-        // Fail Copycat Competitor on its first run (primary + same-model retry + fallback = 3 attempts)
+        // Fail Copycat Competitor on its first run (initial + 3 same-model retries + fallback = 5 attempts)
         if (params.system.includes('You are Copycat Competitor')) {
           copycatAttempts += 1;
-          if (copycatAttempts <= 3) {
+          if (copycatAttempts <= 5) {
             const err = new Error('503 Service Unavailable');
             (err as Error & { status?: number }).status = 503;
             throw err;

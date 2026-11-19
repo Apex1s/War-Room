@@ -314,18 +314,20 @@ describe('AI Router & Routing Table', () => {
     });
   });
 
-  it('retries the same model once after ~2s on 500/503/parse-failed/timeout, then fallbackModel, then Nano when deviceLastResort', async () => {
+  it('retries the same model up to 3 times (1.5s / 4s / 8s backoff) on 500/503/parse-failed/timeout, then fallbackModel with 12s timeout, then Nano when deviceLastResort', async () => {
     const sleepLog: number[] = [];
     setRetrySleepForTest(async (ms) => {
       sleepLog.push(ms);
     });
 
-    // Case 1: Same-model retry succeeds after 2s on HTTP 500
+    // Case 1: Same-model retry succeeds on the 3rd retry (after 1.5s, 4s, 8s)
     mock.enqueueResponses([
       new Error('AI: Error fetching from ...: [500 ] High demand (AI/fetch-error)'),
+      new Error('AI: Failed to parse stream (AI/parse-failed)'),
+      new Error('AbortError: Timeout has expired.'),
       {
         text: JSON.stringify({
-          headline: 'Primary recovered on same-model retry',
+          headline: 'Primary recovered on 3rd same-model retry',
           move: 'I pass on [COMPANY_1] and back a rival.',
           rationale: 'CAC is too high.',
           threatLevel: 3,
@@ -339,11 +341,11 @@ describe('AI Router & Routing Table', () => {
     expect(resSame.fallback).toBe(false);
     expect(resSame.source).toBe('cloud');
     expect(resSame.model).toBe('gemini-3.5-flash-lite');
-    expect(sleepLog).toEqual([2000]);
+    expect(sleepLog).toEqual([1500, 4000, 8000]);
     expect(mock.createdModels).toHaveLength(1);
-    expect(mock.calls).toHaveLength(2);
+    expect(mock.calls).toHaveLength(4);
 
-    // Case 2: Primary fails twice -> fallbackModel answers
+    // Case 2: Primary fails initial + 3 retries -> fallbackModel answers with 12s timeout
     mock.reset();
     clearModelCache();
     sleepLog.length = 0;
@@ -351,6 +353,8 @@ describe('AI Router & Routing Table', () => {
     mock.enqueueResponses([
       new Error('AI: Error fetching from ...: [500 ] High demand (AI/fetch-error)'),
       new Error('AI: Error fetching from ...: [503 ] Service Unavailable (AI/fetch-error)'),
+      new Error('AI: Failed to parse stream (AI/parse-failed)'),
+      new Error('AbortError: Timeout has expired.'),
       {
         text: JSON.stringify({
           headline: 'Fallback model answered',
@@ -368,26 +372,30 @@ describe('AI Router & Routing Table', () => {
     expect(resFallback.source).toBe('cloud');
     expect(resFallback.model).toBe('gemini-3.8-flash');
     expect(resFallback.output.headline).toBe('Fallback model answered');
-    expect(sleepLog).toEqual([2000]);
+    expect(sleepLog).toEqual([1500, 4000, 8000]);
     expect(mock.createdModels).toHaveLength(2);
     expect(mock.createdModels[0]).toMatchObject({
       task: 'general_move',
       mode: 'only_in_cloud',
       cloudModel: 'gemini-3.5-flash-lite',
+      timeoutMs: 25000,
     });
     expect(mock.createdModels[1]).toMatchObject({
       task: 'general_move',
       mode: 'prefer_in_cloud',
       cloudModel: 'gemini-3.8-flash',
       thinkingLevel: undefined,
+      timeoutMs: 12000,
     });
 
-    // Case 3: Primary fails twice AND fallbackModel fails -> Nano answers when deviceLastResort is true
+    // Case 3: Primary fails initial + 3 retries AND fallbackModel fails -> Nano answers when deviceLastResort is true
     mock.reset();
     clearModelCache();
     sleepLog.length = 0;
 
     mock.enqueueResponses([
+      new Error('AI: Failed to parse stream (AI/parse-failed)'),
+      new Error('AI: Failed to parse stream (AI/parse-failed)'),
       new Error('AI: Failed to parse stream (AI/parse-failed)'),
       new Error('AI: Failed to parse stream (AI/parse-failed)'),
       new Error('AbortError: Timeout has expired.'),
@@ -408,6 +416,7 @@ describe('AI Router & Routing Table', () => {
     expect(resNano.source).toBe('on-device');
     expect(resNano.model).toBe('gemini-nano');
     expect(resNano.output.headline).toBe('Nano last-resort answered');
+    expect(sleepLog).toEqual([1500, 4000, 8000]);
     expect(mock.createdModels).toHaveLength(3);
     expect(mock.createdModels[2]).toMatchObject({
       task: 'general_move',
