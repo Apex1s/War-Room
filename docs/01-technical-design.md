@@ -559,4 +559,6 @@ Decisions:
    - `crowd`, `referee_round`: on-device first already; cloud `gemini-3.5-flash-lite` → `gemini-3.8-flash`.
    - **Not allowed:** DeepSeek, OpenRouter or any other model API. The rules and AGENTS.md require all AI through `firebase/ai`, DeepSeek's API is pay-per-token, and sending even abstracted text to a third party weakens the privacy story.
 4. **`thinkingLevel` is optional.** Omit `thinkingConfig` entirely when unset. `MINIMAL` is only valid on flash-lite.
+**Re-probe 19 Nov, evening (one VC move, non-streamed):** `gemini-4-hydrogen` LOW 0/2 (error at 18 s, timeout at 60 s), `gemini-3.8-flash` LOW 0/2 (timeouts), `gemini-3.5-flash-lite` 2/2 (2 s, 16 s). `gemini-4-neon` (released 18 Nov) requires billing on both providers, so it is excluded by the $0 rule. Generals stay on flash-lite; quality comes from context (magnitude hints in the legend) and prompts, and hydrogen is re-probed before recording the video.
+
 5. **Invented tokens:** prompts now tell the model to describe untokenised things in plain words. Code backstop: `rehydrate` only swaps tokens that were present in the prompt sent; any other `[TYPE_N]` renders as a neutral phrase ("a company") and is logged in the ledger.
