@@ -18,12 +18,4 @@ export default defineConfig({
       allow: [path.resolve(dir, '..')],
     },
   },
-  build: {
-    rollupOptions: {
-      input: {
-        main: path.resolve(dir, 'index.html'),
-        bridge: path.resolve(dir, 'appcheck-bridge.html'),
-      },
-    },
-  },
 });

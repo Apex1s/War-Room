@@ -90,4 +90,12 @@ function saveTranscriptDevPlugin(): Plugin {
 export default defineConfig({
   envDir: path.resolve(dir, '../..'),
   plugins: [tailwindcss(), saveTranscriptDevPlugin()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(dir, 'index.html'),
+        bridge: path.resolve(dir, 'appcheck-bridge.html'),
+      },
+    },
+  },
 });

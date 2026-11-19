@@ -1,6 +1,9 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
-    "public": "spike/dist",
+    "public": "apps/web/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
