@@ -26,6 +26,7 @@ import {
   setRoutingTable,
   setUrlOverridesForTest,
 } from './routing-table';
+import { applyRemoteConfigRoutingTableJson } from '../firebase/init';
 import {
   crowdCloudSchema,
   crowdDeviceSchema,
@@ -641,5 +642,28 @@ describe('AI Router & Routing Table', () => {
     expect(secondRun).toBe(false);
     expect(promptsSent).toHaveLength(1);
     expect(getLedger()).toHaveLength(0);
+  });
+
+  it('clears the router model cache and caches last good JSON when Remote Config routing_table updates', async () => {
+    await run('crowd', SAMPLE_CROWD_INPUT);
+    expect(mock.createdModels).toHaveLength(1);
+    expect(mock.createdModels[0].mode).toBe('prefer_on_device');
+
+    const flippedTable = {
+      ...DEFAULT_ROUTING_TABLE,
+      tasks: {
+        ...DEFAULT_ROUTING_TABLE.tasks,
+        crowd: {
+          ...DEFAULT_ROUTING_TABLE.tasks.crowd,
+          mode: 'only_in_cloud' as const,
+        },
+      },
+    };
+
+    await applyRemoteConfigRoutingTableJson(JSON.stringify(flippedTable));
+
+    await run('crowd', SAMPLE_CROWD_INPUT);
+    expect(mock.createdModels).toHaveLength(2);
+    expect(mock.createdModels[1].mode).toBe('only_in_cloud');
   });
 });

@@ -16,6 +16,7 @@ export * from './firewall/detectors';
 export * from './firewall/firewall';
 export * from './firewall/placeholders';
 export * from './firewall/sample-briefs';
+export * from './firebase/init';
 export * from './game/compact';
 export * from './game/engine';
 export * from './game/machine';

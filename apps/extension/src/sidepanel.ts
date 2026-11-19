@@ -1,8 +1,11 @@
 import {
+  bindFirebaseAuth,
   createFirebaseProvider,
   enableDefaultEgressGuard,
+  initFirebaseRemoteConfig,
   refreshDeviceAvailability,
   run,
+  setCloudSyncFirestore,
   setProvider,
 } from '@warroom/core';
 import { describePlatform } from '@warroom/ui';
@@ -13,7 +16,8 @@ import {
   initializeAppCheck,
   type AppCheckToken,
 } from 'firebase/app-check';
-import { getAuth, signInAnonymously } from 'firebase/auth/web-extension';
+import { getAuth } from 'firebase/auth/web-extension';
+import { getFirestore } from 'firebase/firestore';
 
 const BRIDGE_URL = 'https://war-room-hybrid.web.app/appcheck-bridge.html';
 const BRIDGE_ORIGIN = 'https://war-room-hybrid.web.app';
@@ -155,11 +159,9 @@ async function initSidePanel(): Promise<void> {
 
   const auth = getAuth(app);
   try {
-    if (!auth.currentUser) {
-      await signInAnonymously(auth);
-    }
+    const authState = await bindFirebaseAuth(auth);
     if (authEl) {
-      authEl.textContent = `Auth UID: ${auth.currentUser?.uid ?? 'signed-in'}`;
+      authEl.textContent = `Auth UID: ${authState.uid ?? 'signed-in'}`;
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -167,6 +169,9 @@ async function initSidePanel(): Promise<void> {
       authEl.textContent = `Auth error: ${msg}`;
     }
   }
+
+  setCloudSyncFirestore(getFirestore(app));
+  void initFirebaseRemoteConfig(app);
 
   const ai = getAI(app, {
     backend: new GoogleAIBackend(),

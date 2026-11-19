@@ -237,6 +237,7 @@ export const ledgerStore = {
 
 const ALWAYS_REDACT_KEY = 'alwaysRedactList';
 const ACTIVE_GAME_ID_KEY = 'activeGameId';
+const ROUTING_TABLE_JSON_KEY = 'lastGoodRoutingTableJson';
 
 /**
  * `settings` store: holds user preferences, always-redact list, and active game ID.
@@ -277,6 +278,14 @@ export const settingsStore = {
 
   async setActiveGameId(gameId: string | null): Promise<void> {
     await settingsStore.set(ACTIVE_GAME_ID_KEY, gameId);
+  },
+
+  async getLastGoodRoutingTableJson(): Promise<string | null> {
+    return (await settingsStore.get<string | null>(ROUTING_TABLE_JSON_KEY)) ?? null;
+  },
+
+  async setLastGoodRoutingTableJson(json: string): Promise<void> {
+    await settingsStore.set(ROUTING_TABLE_JSON_KEY, json);
   },
 
   async clear(): Promise<void> {

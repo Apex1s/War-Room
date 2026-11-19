@@ -1,8 +1,11 @@
 import {
+  bindFirebaseAuth,
   createFirebaseProvider,
   downloadDeviceModel,
   enableDefaultEgressGuard,
+  initFirebaseRemoteConfig,
   installNetGuard,
+  setCloudSyncFirestore,
   setProvider,
 } from '@warroom/core';
 import { App } from '@warroom/ui';
@@ -10,7 +13,8 @@ import '@warroom/ui/styles.css';
 import { getAI, GoogleAIBackend, type AI } from 'firebase/ai';
 import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -49,9 +53,10 @@ function bootstrapFirebase(): AI | null {
   }
 
   const auth = getAuth(app);
-  if (!auth.currentUser) {
-    void signInAnonymously(auth).catch(() => {});
-  }
+  void bindFirebaseAuth(auth);
+
+  setCloudSyncFirestore(getFirestore(app));
+  void initFirebaseRemoteConfig(app);
 
   const ai = getAI(app, {
     backend: new GoogleAIBackend(),
