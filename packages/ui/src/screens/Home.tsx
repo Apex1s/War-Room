@@ -29,49 +29,69 @@ export function HomeScreen({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {TEMPLATE_LIST.map((tpl: GameTemplate) => (
-          <div
-            key={tpl.id}
-            onClick={() => onSelectTemplate(tpl.id)}
-            className={TOKENS.classes.cardInteractive + ' flex flex-col justify-between'}
-            data-testid={`template-card-${tpl.id}`}
-          >
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-                  {tpl.id === 'startup' ? 'Lead Scenario' : 'Template'}
-                </span>
-                <span className="text-xs font-mono text-[#8B9BB4]">3 Rounds</span>
-              </div>
-              <h3 className="text-base font-semibold text-[#E6EDF3] m-0">
-                {tpl.title}
-              </h3>
-              <p className="text-xs text-[#8B9BB4] mt-2 leading-relaxed">
-                {tpl.situation}
-              </p>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-[#223049]">
-              <div className="text-[11px] font-mono text-[#8B9BB4] mb-2">
-                Opposing Generals
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {tpl.generals.map((g) => (
-                  <span
-                    key={g.id}
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0A0E17] border border-[#223049] text-xs"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: g.color }}
-                    />
-                    {g.name}
+        {TEMPLATE_LIST.map((tpl: GameTemplate) => {
+          const isAvailable = tpl.id === 'startup';
+          return (
+            <div
+              key={tpl.id}
+              onClick={isAvailable ? () => onSelectTemplate(tpl.id) : undefined}
+              aria-disabled={!isAvailable}
+              className={
+                (isAvailable
+                  ? TOKENS.classes.cardInteractive
+                  : TOKENS.classes.card + ' opacity-60 cursor-not-allowed') +
+                ' flex flex-col justify-between'
+              }
+              data-testid={`template-card-${tpl.id}`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
+                    {isAvailable ? 'Lead Scenario' : 'Template'}
                   </span>
-                ))}
+                  {isAvailable ? (
+                    <span className="text-xs font-mono text-[#8B9BB4]">
+                      3 Rounds
+                    </span>
+                  ) : (
+                    <span
+                      className="px-2 py-0.5 rounded bg-[#162032] border border-[#223049] text-[11px] font-mono text-[#8B9BB4]"
+                      data-testid={`template-coming-soon-${tpl.id}`}
+                    >
+                      Coming soon
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base font-semibold text-[#E6EDF3] m-0">
+                  {tpl.title}
+                </h3>
+                <p className="text-xs text-[#8B9BB4] mt-2 leading-relaxed">
+                  {tpl.situation}
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-[#223049]">
+                <div className="text-[11px] font-mono text-[#8B9BB4] mb-2">
+                  Opposing Generals
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {tpl.generals.map((g) => (
+                    <span
+                      key={g.id}
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0A0E17] border border-[#223049] text-xs"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: g.color }}
+                      />
+                      {g.name}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {savedGames.length > 0 && (
