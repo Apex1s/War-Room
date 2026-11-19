@@ -152,7 +152,7 @@ export function ReportScreen({
           className={TOKENS.classes.btnSecondary + ' text-xs'}
           data-testid="btn-back-to-rounds"
         >
-          ← Inspect Round-by-Round War Room
+          🔁 Replay Rounds & Offline What-If
         </button>
 
         <div className="flex items-center gap-2">

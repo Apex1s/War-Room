@@ -1,6 +1,7 @@
 import {
   applyMap,
   gamesStore,
+  hydrateLedgerFromStore,
   seal,
   settingsStore,
   setVaultEntries,
@@ -13,9 +14,12 @@ import {
 } from '@warroom/core';
 import { useCallback, useEffect, useState } from 'react';
 import { DeviceStatus } from './components/DeviceStatus';
+import { EgressInspector } from './components/EgressInspector';
+import { HybridStats } from './components/HybridStats';
 import { BriefScreen } from './screens/Brief';
 import { FirewallReviewScreen } from './screens/FirewallReview';
 import { HomeScreen } from './screens/Home';
+import { ReplayScreen } from './screens/Replay';
 import { ReportScreen } from './screens/Report';
 import { WarRoomScreen } from './screens/WarRoom';
 
@@ -43,10 +47,13 @@ export function App({ platform }: AppProps) {
   const [sealingProgress, setSealingProgress] = useState<number | null>(null);
   const [inspectingRoundsFromReport, setInspectingRoundsFromReport] =
     useState<boolean>(false);
+  const [egressInspectorOpen, setEgressInspectorOpen] =
+    useState<boolean>(false);
 
   const loadPersistedState = useCallback(async () => {
     setLoading(true);
     try {
+      await hydrateLedgerFromStore();
       const allGames = await gamesStore.getAll();
       setSavedGames(allGames);
 
@@ -237,7 +244,17 @@ export function App({ platform }: AppProps) {
             </button>
           </div>
 
-          <DeviceStatus onDownloadModel={platform.onDownloadModel} />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEgressInspectorOpen(true)}
+              className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3] hover:border-[#E0A84B]/60 cursor-pointer"
+              data-testid="header-btn-egress-inspector"
+            >
+              🔍 Egress Inspector
+            </button>
+            <DeviceStatus onDownloadModel={platform.onDownloadModel} />
+          </div>
         </div>
       </header>
 
@@ -270,6 +287,19 @@ export function App({ platform }: AppProps) {
               setActiveVault(nextVault);
             }}
             onBackToWarRoom={() => setInspectingRoundsFromReport(true)}
+          />
+        ) : activeGame &&
+          activeVault &&
+          activeGame.phase.kind === 'done' &&
+          inspectingRoundsFromReport ? (
+          <ReplayScreen
+            game={activeGame}
+            vaultRecord={activeVault}
+            onGameUpdated={(nextGame, nextVault) => {
+              setActiveGame(nextGame);
+              setActiveVault(nextVault);
+            }}
+            onViewReport={() => setInspectingRoundsFromReport(false)}
           />
         ) : activeGame &&
           activeVault &&
@@ -313,7 +343,29 @@ export function App({ platform }: AppProps) {
             onResumeGame={(id) => void handleResumeGame(id)}
           />
         )}
+
+        {activeGame &&
+          activeVault &&
+          activeGame.phase.kind !== 'draft' &&
+          activeGame.phase.kind !== 'sealing_brief' && (
+            <div className="mt-6">
+              <HybridStats
+                gameId={activeGame.id}
+                rawBriefChars={
+                  activeVault.rawObjective.length + activeVault.rawBrief.length
+                }
+                onOpenEgressInspector={() => setEgressInspectorOpen(true)}
+              />
+            </div>
+          )}
       </main>
+
+      <EgressInspector
+        open={egressInspectorOpen}
+        onClose={() => setEgressInspectorOpen(false)}
+        gameId={activeGame?.id}
+        vaultMap={activeVault?.map}
+      />
     </div>
   );
 }
