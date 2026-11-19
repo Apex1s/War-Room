@@ -13,8 +13,8 @@ import { gamesStore } from './local-db';
 
 /**
  * Abstracted game record persisted to Firestore under `users/{uid}/games/{gameId}`.
- * By design (docs/01-technical-design.md §5), this module imports `GameRecord` and
- * NEVER imports `VaultRecord` or the `vault` store.
+ * By design (docs/01-technical-design.md §5), this module imports `GameRecord` only
+ * and never imports the local secret store.
  */
 export type CloudGame = Omit<GameRecord, 'phase' | 'whatIfs'> & {
   ownerUid: string;
