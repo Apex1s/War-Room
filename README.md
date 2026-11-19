@@ -65,6 +65,8 @@ Everything runs on the free Spark plan. No billing account, no Cloud Functions.
 
 **Without Gemini Nano** (phones, Firefox, Safari, smaller machines) the app still works: redaction falls back to the labelled basic mode, crowd and referee run in the cloud on masked text, and live coaching and the offline what-if are hidden with an explanation.
 
+**Offline:** the web app installs a service worker on the first visit. After that it opens with the network off, and finished games can be replayed. The service worker caches only the app's own files, never AI, Firestore or sign-in traffic.
+
 **With Gemini Nano** you need desktop Chrome on Windows 10/11, macOS 13+, Linux or a Chromebook Plus, 22 GB of free disk, and either a GPU with more than 4 GB of VRAM or 16 GB of RAM with 4 cores. The model downloads once, from a button in the app. Our development laptop has 11.8 GB of RAM and uses `chrome://flags/#optimization-guide-on-device-model` set to "Enabled BypassPerfRequirement"; machines that meet Google's requirement do not need the flag.
 
 ## Run it locally

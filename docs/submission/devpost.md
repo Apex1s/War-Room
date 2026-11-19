@@ -28,7 +28,7 @@ You paste a confidential brief: a startup plan, a pricing move in a contested ma
 4. **Delivers a verdict.** A final report names the top three risks, three counter-strategies and concrete next steps, then reveals what each opponent secretly knew.
 5. **Puts your real names back, locally.** The cloud only ever saw placeholders. Your device restores the real names on screen.
 
-Finished games can be replayed, and with the network off you can change a past move and get a new crowd and referee verdict on-device.
+Finished games can be replayed, even after reopening the app with the network off, and you can change a past move and get a new crowd and referee verdict on-device.
 
 War Room ships as a web app and as a Chrome extension side panel from the same codebase. Select text on any page, right-click "Stress-test selection in War Room", and the brief is pre-filled.
 
@@ -90,4 +90,3 @@ All code was written between 16 and 30 November 2026. In order: the hybrid infer
 
 - FILL: timings from a full game on the Gemini Nano laptop (sealing, crowd, referee, total).
 - FILL: share of calls on-device and cloud calls avoided in that game, from the Hybrid telemetry panel.
-- CHECK: the "Placeholders that mean something" challenge describes magnitude hints. Keep it only if that feature has shipped; otherwise delete the bullet.
