@@ -38,6 +38,28 @@ export function formatPhaseStatus(phase: Phase, totalRounds: number = 3): string
   }
 }
 
+/**
+ * Honest status line for Generals in a round, counting replies and failures explicitly
+ * (e.g. `"2 of 3 replied, 1 failed"` — never `"3/3 complete"` when one failed).
+ */
+export function formatGeneralsStatus(
+  totalGenerals: number,
+  repliedCount: number,
+  failedCount: number,
+  pendingCount: number = Math.max(0, totalGenerals - repliedCount - failedCount),
+): string {
+  if (failedCount > 0 && pendingCount > 0) {
+    return `${repliedCount} of ${totalGenerals} replied, ${failedCount} failed, ${pendingCount} pending`;
+  }
+  if (failedCount > 0) {
+    return `${repliedCount} of ${totalGenerals} replied, ${failedCount} failed`;
+  }
+  if (pendingCount > 0) {
+    return `${repliedCount} of ${totalGenerals} replied, ${pendingCount} pending`;
+  }
+  return `${repliedCount} of ${totalGenerals} replied`;
+}
+
 export function createInitialGameRecord(
   id: string,
   templateId: TemplateId = 'startup',

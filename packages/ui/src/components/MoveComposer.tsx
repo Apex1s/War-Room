@@ -1,5 +1,6 @@
 import {
   applyMapWithSpans,
+  formatGeneralsStatus,
   isDeviceReadyForOnlyOnDevice,
   parseUrlOverrides,
   runRefereeLiveEffect,
@@ -256,11 +257,28 @@ export function MoveComposer({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-xs font-mono text-[#8B9BB4]">
+        <div
+          className="text-xs font-mono text-[#8B9BB4]"
+          data-testid="move-composer-status"
+        >
           {game.phase.kind === 'sealing_move' &&
             '🔒 Sealing move through on-device privacy firewall…'}
           {game.phase.kind === 'generals' &&
-            `☁️ 3 Generals responding in parallel (${game.generals.length - game.phase.pending.length}/${game.generals.length} complete)…`}
+            (() => {
+              const roundRec = game.rounds.find(
+                (r) => r.n === game.phase.round,
+              );
+              const replied = roundRec?.generalMoves.length ?? 0;
+              const failed = Object.keys(
+                game.phase.failedGenerals ?? roundRec?.failedGenerals ?? {},
+              ).length;
+              return `☁️ Generals responding in parallel (${formatGeneralsStatus(
+                game.generals.length,
+                replied,
+                failed,
+                game.phase.pending.length,
+              )})…`;
+            })()}
         </div>
 
         <button

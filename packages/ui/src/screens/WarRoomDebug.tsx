@@ -1,6 +1,7 @@
 import {
   createInitialGameRecord,
   dispatchAndPersist,
+  formatGeneralsStatus,
   formatPhaseStatus,
   reduceGame,
   retrySingleGeneralEffect,
@@ -556,7 +557,19 @@ export function WarRoomDebugScreen({
             <div className="text-xs font-mono text-[#8B9BB4]">
               {game.phase.kind === 'sealing_move' && 'Sealing move on-device…'}
               {game.phase.kind === 'generals' &&
-                `Generals responding in parallel (${game.generals.length - game.phase.pending.length}/${game.generals.length} done)…`}
+                (() => {
+                  const rRec = game.rounds.find(
+                    (r) => r.n === game.phase.round,
+                  );
+                  return `Generals responding in parallel (${formatGeneralsStatus(
+                    game.generals.length,
+                    rRec?.generalMoves.length ?? 0,
+                    Object.keys(
+                      game.phase.failedGenerals ?? rRec?.failedGenerals ?? {},
+                    ).length,
+                    game.phase.pending.length,
+                  )})…`;
+                })()}
             </div>
             <button
               type="button"

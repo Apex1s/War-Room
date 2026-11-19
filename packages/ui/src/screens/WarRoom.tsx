@@ -1,6 +1,7 @@
 import {
   computeGeneralScores,
   dispatchAndPersist,
+  formatGeneralsStatus,
   rehydrate,
   resumePendingPhaseEffect,
   retrySingleGeneralEffect,
@@ -348,9 +349,34 @@ export function WarRoomScreen({
           <div className={TOKENS.classes.card + ' flex flex-col gap-4'}>
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#223049] pb-3">
               <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
-                  Round {displayedRound.n} of {game.totalRounds}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#E0A84B]">
+                    Round {displayedRound.n} of {game.totalRounds}
+                  </span>
+                  <span className="text-xs font-mono text-[#8B9BB4]">·</span>
+                  <span
+                    className="text-xs font-mono text-[#8B9BB4]"
+                    data-testid={`round-${displayedRound.n}-generals-status`}
+                  >
+                    {formatGeneralsStatus(
+                      game.generals.length,
+                      displayedRound.generalMoves.length,
+                      Object.keys(
+                        (game.phase.kind === 'generals' ||
+                          game.phase.kind === 'aftermath') &&
+                          game.phase.round === displayedRound.n
+                          ? (game.phase.failedGenerals ??
+                              displayedRound.failedGenerals ??
+                              {})
+                          : (displayedRound.failedGenerals ?? {}),
+                      ).length,
+                      game.phase.kind === 'generals' &&
+                        game.phase.round === displayedRound.n
+                        ? game.phase.pending.length
+                        : 0,
+                    )}
+                  </span>
+                </div>
                 <div
                   className="text-sm font-mono text-[#E6EDF3] mt-1"
                   data-testid={`round-${displayedRound.n}-user-move`}
