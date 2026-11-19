@@ -1,12 +1,18 @@
 import {
   applyMap,
   gamesStore,
+  getAuthUserState,
   hydrateLedgerFromStore,
+  listCloudGames,
+  saveGameToCloud,
   seal,
   settingsStore,
   setVaultEntries,
+  signInWithGoogleWeb,
+  subscribeAuthUserState,
   TEMPLATES,
   vault,
+  type AuthUserState,
   type GameRecord,
   type PlaceholderEntry,
   type TemplateId,
@@ -49,6 +55,17 @@ export function App({ platform }: AppProps) {
     useState<boolean>(false);
   const [egressInspectorOpen, setEgressInspectorOpen] =
     useState<boolean>(false);
+  const [authState, setAuthState] = useState<AuthUserState>(() =>
+    getAuthUserState(),
+  );
+  const [cloudSaveBusy, setCloudSaveBusy] = useState<boolean>(false);
+  const [cloudSaveStatus, setCloudSaveStatus] = useState<string | null>(null);
+  const [cloudSyncBusy, setCloudSyncBusy] = useState<boolean>(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    return subscribeAuthUserState(setAuthState);
+  }, []);
 
   const loadPersistedState = useCallback(async () => {
     setLoading(true);
@@ -91,16 +108,94 @@ export function App({ platform }: AppProps) {
   };
 
   const handleResumeGame = async (gameId: string) => {
-    const [game, vaultRec] = await Promise.all([
+    const [game, existingVault] = await Promise.all([
       gamesStore.get(gameId),
       vault.get(gameId),
     ]);
-    if (game && vaultRec) {
+    if (game) {
+      // If a game was loaded from Firestore on another browser, its local vault does not exist
+      // because secrets never leave the original device. Create an empty local vault record so
+      // the user can inspect and replay the abstracted game on the second browser.
+      const vaultRec: VaultRecord = existingVault ?? {
+        gameId: game.id,
+        rawObjective: game.objective,
+        rawBrief: game.brief,
+        rawMoves: {},
+        map: [],
+      };
+      if (!existingVault) {
+        await vault.put(vaultRec);
+      }
       await settingsStore.setActiveGameId(game.id);
       setVaultEntries(vaultRec.map, game.id);
       setActiveGame(game);
       setActiveVault(vaultRec);
       setSelectedTemplateId(game.templateId);
+      setCloudSaveStatus(null);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogleWeb();
+    } catch (err) {
+      setCloudSaveStatus(
+        err instanceof Error ? err.message : 'Google sign-in failed',
+      );
+    }
+  };
+
+  const handleSaveToCloud = async () => {
+    if (!activeGame || cloudSaveBusy) return;
+    const uid = authState.uid;
+    if (!uid) {
+      setCloudSaveStatus('No authenticated user UID available.');
+      return;
+    }
+
+    setCloudSaveBusy(true);
+    setCloudSaveStatus('Saving abstracted game to Firestore…');
+    try {
+      const { updatedGame } = await saveGameToCloud(activeGame, uid);
+      setActiveGame(updatedGame);
+      setCloudSaveStatus('✓ Saved to cloud (abstracted only)');
+    } catch (err) {
+      setCloudSaveStatus(
+        err instanceof Error ? err.message : 'Cloud save failed',
+      );
+    } finally {
+      setCloudSaveBusy(false);
+    }
+  };
+
+  const handleSyncCloudGames = async () => {
+    if (cloudSyncBusy) return;
+    const uid = authState.uid;
+    if (!uid) {
+      setCloudSyncStatus('Waiting for anonymous/Google auth…');
+      return;
+    }
+
+    setCloudSyncBusy(true);
+    setCloudSyncStatus('Fetching from Firestore…');
+    try {
+      const cloudGames = await listCloudGames(uid);
+      for (const cg of cloudGames) {
+        await gamesStore.put(cg);
+      }
+      const allGames = await gamesStore.getAll();
+      setSavedGames(allGames);
+      setCloudSyncStatus(
+        cloudGames.length > 0
+          ? `✓ Loaded ${cloudGames.length} cloud ${cloudGames.length === 1 ? 'game' : 'games'}`
+          : 'No cloud games found for this account',
+      );
+    } catch (err) {
+      setCloudSyncStatus(
+        err instanceof Error ? err.message : 'Cloud sync failed',
+      );
+    } finally {
+      setCloudSyncBusy(false);
     }
   };
 
@@ -245,6 +340,57 @@ export function App({ platform }: AppProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {activeGame &&
+              activeGame.phase.kind !== 'draft' &&
+              activeGame.phase.kind !== 'sealing_brief' && (
+                <div className="flex items-center gap-2">
+                  {cloudSaveStatus && (
+                    <span
+                      className="text-xs font-mono text-emerald-300"
+                      data-testid="cloud-save-status"
+                    >
+                      {cloudSaveStatus}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveToCloud()}
+                    disabled={cloudSaveBusy}
+                    className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3] hover:border-[#E0A84B]/60 cursor-pointer disabled:opacity-50"
+                    data-testid="btn-save-to-cloud"
+                  >
+                    {cloudSaveBusy
+                      ? '☁️ Saving…'
+                      : activeGame.cloudSavedAt
+                        ? '☁️ Saved to cloud'
+                        : '☁️ Save to cloud'}
+                  </button>
+                </div>
+              )}
+
+            {platform.authMode === 'anonymous+google' && (
+              <>
+                {!authState.isAnonymous &&
+                (authState.email || authState.displayName) ? (
+                  <span
+                    className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-emerald-300"
+                    data-testid="auth-user-badge"
+                  >
+                    👤 {authState.email ?? authState.displayName}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void handleGoogleSignIn()}
+                    className="px-2.5 py-1 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3] hover:border-[#E0A84B]/60 cursor-pointer"
+                    data-testid="btn-google-signin"
+                  >
+                    Sign in with Google
+                  </button>
+                )}
+              </>
+            )}
+
             <button
               type="button"
               onClick={() => setEgressInspectorOpen(true)}
@@ -341,6 +487,9 @@ export function App({ platform }: AppProps) {
             savedGames={savedGames}
             onSelectTemplate={(id) => void handleSelectTemplate(id)}
             onResumeGame={(id) => void handleResumeGame(id)}
+            onSyncCloudGames={() => void handleSyncCloudGames()}
+            cloudSyncBusy={cloudSyncBusy}
+            cloudSyncStatus={cloudSyncStatus}
           />
         )}
 

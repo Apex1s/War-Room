@@ -11,12 +11,18 @@ export interface HomeScreenProps {
   savedGames: GameRecord[];
   onSelectTemplate: (templateId: TemplateId) => void;
   onResumeGame: (gameId: string) => void;
+  onSyncCloudGames?: () => void;
+  cloudSyncBusy?: boolean;
+  cloudSyncStatus?: string | null;
 }
 
 export function HomeScreen({
   savedGames,
   onSelectTemplate,
   onResumeGame,
+  onSyncCloudGames,
+  cloudSyncBusy = false,
+  cloudSyncStatus,
 }: HomeScreenProps) {
   return (
     <div className="flex flex-col gap-6" data-testid="screen-home">
@@ -95,36 +101,72 @@ export function HomeScreen({
         })}
       </div>
 
-      {savedGames.length > 0 && (
+      {(savedGames.length > 0 || onSyncCloudGames) && (
         <div className={TOKENS.classes.card}>
-          <h3 className="text-sm font-semibold text-[#E6EDF3] m-0 mb-3">
-            Saved Local Sessions ({savedGames.length})
-          </h3>
-          <div className="flex flex-col gap-2">
-            {savedGames.map((g) => (
-              <div
-                key={g.id}
-                className="flex flex-wrap items-center justify-between gap-3 p-3 rounded bg-[#0A0E17] border border-[#223049]"
-              >
-                <div>
-                  <div className="text-xs font-mono text-[#E0A84B]">
-                    {g.templateId.toUpperCase()} · {formatPhaseStatus(g.phase, g.totalRounds)}
-                  </div>
-                  <div className="text-sm text-[#E6EDF3] mt-0.5">
-                    {g.objective || 'Untitled session'}
-                  </div>
-                </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h3 className="text-sm font-semibold text-[#E6EDF3] m-0">
+              Saved Sessions ({savedGames.length})
+            </h3>
+            {onSyncCloudGames && (
+              <div className="flex items-center gap-2">
+                {cloudSyncStatus && (
+                  <span
+                    className="text-xs font-mono text-[#8B9BB4]"
+                    data-testid="cloud-sync-status"
+                  >
+                    {cloudSyncStatus}
+                  </span>
+                )}
                 <button
                   type="button"
-                  onClick={() => onResumeGame(g.id)}
-                  className={TOKENS.classes.btnSecondary}
-                  data-testid={`btn-resume-${g.id}`}
+                  onClick={onSyncCloudGames}
+                  disabled={cloudSyncBusy}
+                  className={TOKENS.classes.btnSecondary + ' text-xs py-1.5'}
+                  data-testid="btn-load-cloud-games"
                 >
-                  Resume
+                  {cloudSyncBusy ? '☁️ Syncing…' : '☁️ Load Cloud Saved Games'}
                 </button>
               </div>
-            ))}
+            )}
           </div>
+          {savedGames.length === 0 ? (
+            <div className="text-xs font-mono text-[#8B9BB4]">
+              No local sessions yet. Select a template above or load your abstracted cloud sessions.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {savedGames.map((g) => (
+                <div
+                  key={g.id}
+                  className="flex flex-wrap items-center justify-between gap-3 p-3 rounded bg-[#0A0E17] border border-[#223049]"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-mono text-[#E0A84B]">
+                      <span>
+                        {g.templateId.toUpperCase()} · {formatPhaseStatus(g.phase, g.totalRounds)}
+                      </span>
+                      {g.cloudSavedAt && (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-700/50 text-[10px] text-emerald-300">
+                          ☁️ Cloud synced
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-[#E6EDF3] mt-0.5">
+                      {g.objective || 'Untitled session'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onResumeGame(g.id)}
+                    className={TOKENS.classes.btnSecondary}
+                    data-testid={`btn-resume-${g.id}`}
+                  >
+                    Resume
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
