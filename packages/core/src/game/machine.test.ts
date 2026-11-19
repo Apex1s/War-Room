@@ -1152,4 +1152,198 @@ describe('engine.ts parallel Generals and retry effects', () => {
       expect(finalRes.game.report).not.toBeNull();
     }
   });
+
+  it('survives Day 12 failure drills: mid-round network loss, invalid JSON twice on a General, and 429 rate limits across three back-to-back games', async () => {
+    const provider = createMockProvider();
+    setProvider(provider);
+    const sleepLog: number[] = [];
+    setRetrySleepForTest(async (ms) => {
+      sleepLog.push(ms);
+    });
+    // Start with device unavailable so cloud failures surface cleanly
+    setDeviceStatusForTest('unavailable', 0);
+    delete (globalThis as Record<string, unknown>).LanguageModel;
+
+    // Drill 1: Mid-round network drop (503 / fetch error) on all Generals during Round 1, then network recovers on Retry
+    let networkDown = true;
+    provider.setHandler((params) => {
+      if (params.task === 'general_move' && networkDown) {
+        throw new Error('AI: Error fetching from vertex: [503 ] Network disconnected (AI/fetch-error)');
+      }
+      return {
+        text: JSON.stringify(CANNED_OUTPUTS[params.task]),
+        inferenceSource: 'in_cloud',
+      };
+    });
+
+    let drillGame = createInitialGameRecord('drill-net', 'startup', 1000);
+    drillGame.totalRounds = 1;
+    let drillVault: VaultRecord = {
+      gameId: drillGame.id,
+      rawObjective: '',
+      rawBrief: '',
+      rawMoves: {},
+      map: [],
+    };
+    const sealed1 = await runSealBriefEffect(
+      drillGame,
+      drillVault,
+      startupTemplate.demoObjective,
+      startupTemplate.demoBrief,
+    );
+    drillGame = reduceGame(sealed1.game, { type: 'REDACTION_APPROVED' });
+    drillVault = sealed1.vaultRecord;
+
+    const failedMove = await runPlayerMoveAndGeneralsEffect(
+      drillGame,
+      drillVault,
+      'Launch self-serve tier.',
+    );
+    drillGame = failedMove.game;
+    drillVault = failedMove.vaultRecord;
+    // All 3 Generals exhausted retries while network was down -> cards hold position with cloud_unavailable
+    expect(drillGame.phase.kind).toBe('aftermath');
+    expect(drillGame.rounds[0]?.generalMoves).toHaveLength(0);
+    expect(Object.keys(drillGame.rounds[0]?.failedGenerals ?? {})).toHaveLength(3);
+
+    // Network comes back -> user retries each General and completes aftermath
+    networkDown = false;
+    for (const gen of drillGame.generals) {
+      const retried = await retrySingleGeneralEffect(drillGame, drillVault, gen.id);
+      drillGame = retried.game;
+      drillVault = retried.vaultRecord;
+    }
+    expect(drillGame.rounds[0]?.generalMoves).toHaveLength(3);
+    expect(drillGame.rounds[0]?.failedGenerals).toBeUndefined();
+
+    // Drill 2: One General returns invalid JSON twice (initial + repair retry -> invalid_json),
+    // round continues without blocking on the other 2 Generals
+    provider.setHandler((params) => {
+      if (
+        params.task === 'general_move' &&
+        params.system.includes('You are Copycat Competitor')
+      ) {
+        return {
+          text: '{"broken_json": true',
+          inferenceSource: 'in_cloud',
+        };
+      }
+      if (params.task === 'referee_round' && params.schemaIds) {
+        return {
+          text: JSON.stringify({
+            ...CANNED_OUTPUTS.referee_round,
+            scores: params.schemaIds.map((gid) => ({ generalId: gid, delta: 1 })),
+          }),
+          inferenceSource: 'in_cloud',
+        };
+      }
+      if (params.task === 'crowd' && params.schemaIds) {
+        return {
+          text: JSON.stringify({
+            reactions: params.schemaIds.map((pid) => ({
+              personaId: pid,
+              quote: 'Reaction under partial General failure.',
+              sentiment: 1,
+            })),
+          }),
+          inferenceSource: 'in_cloud',
+        };
+      }
+      return {
+        text: JSON.stringify(CANNED_OUTPUTS[params.task]),
+        inferenceSource: 'in_cloud',
+      };
+    });
+
+    let jsonDrillGame = createInitialGameRecord('drill-json', 'startup', 2000);
+    jsonDrillGame.totalRounds = 1;
+    let jsonDrillVault: VaultRecord = {
+      gameId: jsonDrillGame.id,
+      rawObjective: 'Win market',
+      rawBrief: 'Kestrel Labs in Casablanca.',
+      rawMoves: {},
+      map: [],
+    };
+    const sealed2 = await runSealBriefEffect(
+      jsonDrillGame,
+      jsonDrillVault,
+      jsonDrillVault.rawObjective,
+      jsonDrillVault.rawBrief,
+    );
+    jsonDrillGame = reduceGame(sealed2.game, { type: 'REDACTION_APPROVED' });
+    jsonDrillVault = sealed2.vaultRecord;
+
+    const r1Json = await runPlayerMoveAndGeneralsEffect(
+      jsonDrillGame,
+      jsonDrillVault,
+      'Ship self-serve tier.',
+    );
+    expect(r1Json.game.rounds[0]?.generalMoves).toHaveLength(2);
+    expect(r1Json.game.rounds[0]?.failedGenerals).toEqual({
+      copycat: 'invalid_json',
+    });
+    const afterJson = await runAftermathEffect(r1Json.game, r1Json.vaultRecord);
+    expect(afterJson.game.rounds[0]?.referee?.scores).toHaveLength(2);
+    expect(afterJson.game.rounds[0]?.crowd).toHaveLength(5);
+
+    // Drill 3: Hit 429 rate limits while running three games back to back (startup, price-war, match)
+    sleepLog.length = 0;
+    let callCounter = 0;
+    provider.setHandler((params) => {
+      callCounter += 1;
+      // Every 4th call throws a 429 with retryDelay 5s (<= 20s) to exercise rate-limit recovery mid-game
+      if (callCounter % 4 === 0) {
+        throw new Error('429 Too Many Requests [{"retryDelay":"5s"}]');
+      }
+      if (params.task === 'referee_round' && params.schemaIds) {
+        return {
+          text: JSON.stringify({
+            ...CANNED_OUTPUTS.referee_round,
+            scores: params.schemaIds.map((gid) => ({ generalId: gid, delta: 1 })),
+          }),
+          inferenceSource: 'in_cloud',
+        };
+      }
+      if (params.task === 'crowd' && params.schemaIds) {
+        return {
+          text: JSON.stringify({
+            reactions: params.schemaIds.map((pid) => ({
+              personaId: pid,
+              quote: 'Recovered from rate limit.',
+              sentiment: 1,
+            })),
+          }),
+          inferenceSource: 'in_cloud',
+        };
+      }
+      return {
+        text: JSON.stringify(CANNED_OUTPUTS[params.task]),
+        inferenceSource: 'in_cloud',
+      };
+    });
+
+    for (const tpl of [startupTemplate, priceWarTemplate, matchTemplate]) {
+      let g = createInitialGameRecord(`back-to-back-${tpl.id}`, tpl.id, 3000);
+      g.totalRounds = 1;
+      let v: VaultRecord = {
+        gameId: g.id,
+        rawObjective: '',
+        rawBrief: '',
+        rawMoves: {},
+        map: [],
+      };
+      const s = await runSealBriefEffect(g, v, tpl.demoObjective, tpl.demoBrief);
+      g = reduceGame(s.game, { type: 'REDACTION_APPROVED' });
+      v = s.vaultRecord;
+
+      const m = await runPlayerMoveAndGeneralsEffect(g, v, tpl.openingMove);
+      const a = await runAftermathEffect(m.game, m.vaultRecord);
+      const next = reduceGame(a.game, { type: 'NEXT' });
+      const rep = await runFinalReportEffect(next, a.vaultRecord);
+
+      expect(rep.game.phase).toEqual({ kind: 'done' });
+      expect(rep.game.report).not.toBeNull();
+    }
+    expect(sleepLog.filter((ms) => ms === 5000).length).toBeGreaterThanOrEqual(3);
+  });
 });
