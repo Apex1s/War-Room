@@ -18,6 +18,7 @@ import {
 } from './compact';
 import {
   clearRefereeLiveCache,
+  resumePendingPhaseEffect,
   retrySingleGeneralEffect,
   runAftermathEffect,
   runFinalReportEffect,
@@ -846,5 +847,112 @@ describe('engine.ts parallel Generals and retry effects', () => {
     expect(
       undone.game.rounds[0]?.newEntries?.some((e) => e.token === moneyChip!.token),
     ).toBe(false);
+  });
+
+  it('resumes pending work or marks failed with Retry after reload for sealing_move, generals, aftermath, and reporting', async () => {
+    const provider = createMockProvider();
+    setProvider(provider);
+    setRetrySleepForTest(async () => {});
+    setDeviceStatusForTest('unavailable', 0);
+
+    const baseGame = createInitialGameRecord('game-resume', 'startup', 1000);
+    const baseVault: VaultRecord = {
+      gameId: baseGame.id,
+      rawObjective: 'Reach 1,000 teams',
+      rawBrief: 'Kestrel Labs builds PulseAudit.',
+      rawMoves: {},
+      map: [],
+    };
+
+    // 1. sealing_move without saved rawMove -> marks failed targeting user_turn(1) so Retry works
+    const stuckSealingNoMove = {
+      ...baseGame,
+      phase: { kind: 'sealing_move' as const, round: 1 },
+    };
+    const res1 = await resumePendingPhaseEffect(stuckSealingNoMove, baseVault);
+    expect(res1.game.phase).toEqual({
+      kind: 'failed',
+      at: { kind: 'user_turn', round: 1 },
+      code: 'aborted',
+    });
+    expect(reduceGame(res1.game, { type: 'RETRY' }).phase).toEqual({
+      kind: 'user_turn',
+      round: 1,
+    });
+
+    // 2. sealing_move WITH saved rawMove -> seals and runs all 3 Generals to aftermath
+    const vaultWithMove: VaultRecord = {
+      ...baseVault,
+      rawMoves: { 1: 'Launch self-serve tier' },
+    };
+    const res2 = await resumePendingPhaseEffect(stuckSealingNoMove, vaultWithMove);
+    expect(res2.game.phase).toEqual({
+      kind: 'aftermath',
+      round: 1,
+      referee: 'running',
+      crowd: 'running',
+    });
+    expect(res2.game.rounds[0]?.generalMoves).toHaveLength(3);
+
+    // 3. generals with 1 pending General -> runs only the 1 pending General
+    provider.reset();
+    const partialGeneralsGame = {
+      ...res2.game,
+      rounds: [
+        {
+          ...res2.game.rounds[0]!,
+          generalMoves: res2.game.rounds[0]!.generalMoves.filter(
+            (m) => m.generalId !== 'market',
+          ),
+        },
+      ],
+      phase: {
+        kind: 'generals' as const,
+        round: 1,
+        pending: ['market'],
+      },
+    };
+    const res3 = await resumePendingPhaseEffect(partialGeneralsGame, vaultWithMove);
+    expect(res3.game.phase).toEqual({
+      kind: 'aftermath',
+      round: 1,
+      referee: 'running',
+      crowd: 'running',
+    });
+    expect(
+      provider.calls.filter((c) => c.params.task === 'general_move'),
+    ).toHaveLength(1);
+
+    // 4. aftermath where referee is already done and only crowd is running -> runs only crowd
+    provider.reset();
+    const partialAftermathGame = {
+      ...res3.game,
+      phase: {
+        kind: 'aftermath' as const,
+        round: 1,
+        referee: 'done' as const,
+        crowd: 'running' as const,
+      },
+    };
+    const res4 = await resumePendingPhaseEffect(partialAftermathGame, vaultWithMove);
+    expect(res4.game.phase).toEqual({
+      kind: 'aftermath',
+      round: 1,
+      referee: 'done',
+      crowd: 'done',
+    });
+    expect(
+      provider.calls.filter((c) => c.params.task === 'referee_round'),
+    ).toHaveLength(0);
+    expect(provider.calls.filter((c) => c.params.task === 'crowd')).toHaveLength(1);
+
+    // 5. reporting -> runs final_report to done
+    const reportingGame = {
+      ...res4.game,
+      phase: { kind: 'reporting' as const },
+    };
+    const res5 = await resumePendingPhaseEffect(reportingGame, vaultWithMove);
+    expect(res5.game.phase).toEqual({ kind: 'done' });
+    expect(res5.game.report).not.toBeNull();
   });
 });

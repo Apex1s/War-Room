@@ -2,6 +2,7 @@ import {
   computeGeneralScores,
   dispatchAndPersist,
   rehydrate,
+  resumePendingPhaseEffect,
   retrySingleGeneralEffect,
   runAftermathEffect,
   runPlayerMoveAndGeneralsEffect,
@@ -61,10 +62,35 @@ export function WarRoomScreen({
 
   const crowdAbortRef = useRef<AbortController | null>(null);
   const aftermathRunningRoundRef = useRef<number | null>(null);
+  const resumeInFlightRef = useRef<boolean>(false);
 
   useEffect(() => {
     setActiveViewRound(currentPhaseRound);
   }, [currentPhaseRound]);
+
+  // Resume interrupted sealing_move or generals work on mount/reload so no card spins with nothing in flight.
+  useEffect(() => {
+    if (busy || resumeInFlightRef.current) return;
+    const needsResume =
+      game.phase.kind === 'sealing_move' ||
+      (game.phase.kind === 'generals' && game.phase.pending.length > 0);
+    if (!needsResume) return;
+
+    resumeInFlightRef.current = true;
+    setBusy(true);
+    void resumePendingPhaseEffect(game, vaultRecord, {
+      onStateChange: (nextGame, nextVault) => {
+        onGameUpdated(nextGame, nextVault);
+      },
+    })
+      .then((res) => {
+        onGameUpdated(res.game, res.vaultRecord);
+      })
+      .finally(() => {
+        resumeInFlightRef.current = false;
+        setBusy(false);
+      });
+  }, [game, vaultRecord, busy, onGameUpdated]);
 
   // If the page reloads while already in aftermath with referee/crowd still marked 'running',
   // kick off runAftermathEffect once for that round.
@@ -141,6 +167,22 @@ export function WarRoomScreen({
       },
     );
     onGameUpdated(res.game, res.vaultRecord);
+  };
+
+  const handleRetryFailedPhase = async () => {
+    if (busy || game.phase.kind !== 'failed') return;
+    setBusy(true);
+    try {
+      const restored = await dispatchAndPersist(
+        game,
+        vaultRecord,
+        { type: 'RETRY' },
+        { onStateChange: onGameUpdated },
+      );
+      onGameUpdated(restored, vaultRecord);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleNextRound = async () => {
@@ -225,6 +267,32 @@ export function WarRoomScreen({
           </div>
         </div>
       </div>
+
+      {/* Failed Phase Banner with Retry Button */}
+      {game.phase.kind === 'failed' && (
+        <div
+          className="p-4 rounded-lg border border-red-700/70 bg-red-950/40 flex flex-wrap items-center justify-between gap-3"
+          data-testid="war-room-failed-banner"
+        >
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-mono uppercase tracking-wider text-red-400">
+              Interrupted / Failed ({game.phase.code})
+            </span>
+            <span className="text-xs font-mono text-[#E6EDF3]">
+              The previous operation did not complete. Click Retry to resume from the last checkpoint.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleRetryFailedPhase()}
+            disabled={busy}
+            className={TOKENS.classes.btnPrimary}
+            data-testid="btn-retry-failed-phase"
+          >
+            ↻ Retry
+          </button>
+        </div>
+      )}
 
       {/* Move Composer (shown when in user_turn, sealing_move, or generals for current round) */}
       {(game.phase.kind === 'user_turn' ||

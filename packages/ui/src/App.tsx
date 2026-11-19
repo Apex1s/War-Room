@@ -57,10 +57,14 @@ export function App({ platform }: AppProps) {
           vault.get(activeId),
         ]);
         if (game && vaultRec) {
-          setVaultEntries(vaultRec.map, game.id);
-          setActiveGame(game);
+          const recoveredGame: GameRecord =
+            game.phase.kind === 'sealing_brief'
+              ? { ...game, phase: { kind: 'draft' } }
+              : game;
+          setVaultEntries(vaultRec.map, recoveredGame.id);
+          setActiveGame(recoveredGame);
           setActiveVault(vaultRec);
-          setSelectedTemplateId(game.templateId);
+          setSelectedTemplateId(recoveredGame.templateId);
         }
       }
     } finally {

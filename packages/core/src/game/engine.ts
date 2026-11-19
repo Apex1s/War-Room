@@ -283,41 +283,48 @@ export async function runAftermathEffect(
     await persistAndNotify(game, vaultRecord, cb);
   };
 
-  const refereePromise = (async () => {
-    const refInput = buildRefereeRoundInput(game, roundRecord, vaultRecord.map);
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const res = await run('referee_round', refInput, { gameId: game.id });
-        await applyEvent({ type: 'REFEREE_RULED', result: res, round });
-        return;
-      } catch {
-        if (attempt === 2) {
-          await applyEvent({ type: 'REFEREE_SKIPPED' });
-        }
-      }
-    }
-  })();
+  const shouldRunReferee = initialGame.phase.referee === 'running';
+  const shouldRunCrowd = initialGame.phase.crowd === 'running';
 
-  const crowdPromise = (async () => {
-    const roundPersonas = selectRoundPersonas(game.crowd, roundRecord.n);
-    const crowdInput = buildCrowdInput(
-      game,
-      roundRecord,
-      roundPersonas,
-      vaultRecord.map,
-    );
-    try {
-      const res = await run('crowd', crowdInput, {
-        gameId: game.id,
-        signal: cb?.crowdSignal,
-      });
-      await applyEvent({ type: 'CROWD_REACTED', result: res, round });
-    } catch {
-      // Crowd failure or abort does not block the round
-    } finally {
-      await applyEvent({ type: 'CROWD_FINISHED', round });
-    }
-  })();
+  const refereePromise = shouldRunReferee
+    ? (async () => {
+        const refInput = buildRefereeRoundInput(game, roundRecord, vaultRecord.map);
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const res = await run('referee_round', refInput, { gameId: game.id });
+            await applyEvent({ type: 'REFEREE_RULED', result: res, round });
+            return;
+          } catch {
+            if (attempt === 2) {
+              await applyEvent({ type: 'REFEREE_SKIPPED' });
+            }
+          }
+        }
+      })()
+    : Promise.resolve();
+
+  const crowdPromise = shouldRunCrowd
+    ? (async () => {
+        const roundPersonas = selectRoundPersonas(game.crowd, roundRecord.n);
+        const crowdInput = buildCrowdInput(
+          game,
+          roundRecord,
+          roundPersonas,
+          vaultRecord.map,
+        );
+        try {
+          const res = await run('crowd', crowdInput, {
+            gameId: game.id,
+            signal: cb?.crowdSignal,
+          });
+          await applyEvent({ type: 'CROWD_REACTED', result: res, round });
+        } catch {
+          // Crowd failure or abort does not block the round
+        } finally {
+          await applyEvent({ type: 'CROWD_FINISHED', round });
+        }
+      })()
+    : Promise.resolve();
 
   await Promise.all([refereePromise, crowdPromise]);
   return { game, vaultRecord };
@@ -399,6 +406,93 @@ export async function undoMoveMaskedEntryEffect(
 
   await persistAndNotify(nextGame, nextVault, cb);
   return { game: nextGame, vaultRecord: nextVault };
+}
+
+/**
+ * Resumes interrupted work after a page reload so no card is left spinning with nothing in flight:
+ * - `sealing_move`: if `vaultRecord.rawMoves[round]` exists, finishes sealing and runs Generals;
+ *   otherwise transitions to `failed` (targeting `user_turn(round)`) with a Retry button.
+ * - `generals`: if `pending.length > 0`, runs all still-pending Generals in parallel.
+ * - `aftermath`: if `referee === 'running'` or `crowd === 'running'`, runs the pending aftermath tasks.
+ * - `reporting`: runs `runFinalReportEffect`.
+ */
+export async function resumePendingPhaseEffect(
+  initialGame: GameRecord,
+  initialVault: VaultRecord,
+  cb?: EngineCallbacks & { crowdSignal?: AbortSignal },
+): Promise<{ game: GameRecord; vaultRecord: VaultRecord }> {
+  const phase = initialGame.phase;
+
+  if (phase.kind === 'sealing_move') {
+    const roundNumber = phase.round;
+    const savedRawMove = initialVault.rawMoves[roundNumber];
+    if (!savedRawMove) {
+      const failedGame: GameRecord = {
+        ...initialGame,
+        phase: {
+          kind: 'failed',
+          at: { kind: 'user_turn', round: roundNumber },
+          code: 'aborted',
+        },
+        updatedAt: Date.now(),
+      };
+      await persistAndNotify(failedGame, initialVault, cb);
+      return { game: failedGame, vaultRecord: initialVault };
+    }
+
+    try {
+      const existingTokens = new Set(initialVault.map.map((e) => e.token));
+      const sealedMove = await seal(savedRawMove, initialVault.map, {
+        gameId: initialGame.id,
+      });
+      const newEntries = sealedMove.map.filter((e) => !existingTokens.has(e.token));
+      const nextVault: VaultRecord = {
+        ...initialVault,
+        map: sealedMove.map,
+      };
+      setVaultEntries(sealedMove.map, initialGame.id);
+
+      const gameAfterSeal = await dispatchAndPersist(
+        initialGame,
+        nextVault,
+        {
+          type: 'MOVE_SEALED',
+          abstracted: sealedMove.abstracted,
+          newEntries,
+        },
+        cb,
+      );
+      return runPendingGeneralsInParallel(gameAfterSeal, nextVault, cb);
+    } catch (err) {
+      const failedGame = await dispatchAndPersist(
+        initialGame,
+        initialVault,
+        { type: 'FAILED', code: toAiErrorCode(err) },
+        cb,
+      );
+      return { game: failedGame, vaultRecord: initialVault };
+    }
+  }
+
+  if (phase.kind === 'generals') {
+    if (phase.pending.length > 0) {
+      return runPendingGeneralsInParallel(initialGame, initialVault, cb);
+    }
+    return { game: initialGame, vaultRecord: initialVault };
+  }
+
+  if (phase.kind === 'aftermath') {
+    if (phase.referee === 'running' || phase.crowd === 'running') {
+      return runAftermathEffect(initialGame, initialVault, cb);
+    }
+    return { game: initialGame, vaultRecord: initialVault };
+  }
+
+  if (phase.kind === 'reporting') {
+    return runFinalReportEffect(initialGame, initialVault, cb);
+  }
+
+  return { game: initialGame, vaultRecord: initialVault };
 }
 
 export async function runFinalReportEffect(
