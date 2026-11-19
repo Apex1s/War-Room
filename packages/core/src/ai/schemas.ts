@@ -177,3 +177,25 @@ export function crowdDeviceSchema(personaIds: string[]): Record<string, unknown>
 export function crowdCloudSchema(personaIds: string[]): unknown {
   return toGeminiSchema(crowdDeviceSchema(personaIds));
 }
+
+/**
+ * referee_round schema for one specific round: exactly one score per General, generalId
+ * restricted to those ids (pass them in the order the prompt lists the replies). Same reason
+ * as `crowdDeviceSchema`: unconstrained arrays let Nano pad the output, which costs seconds.
+ */
+export function refereeRoundDeviceSchema(generalIds: string[]): Record<string, unknown> {
+  if (generalIds.length === 0) throw new RangeError('refereeRoundDeviceSchema needs at least one general id');
+  const schema = structuredClone(deviceSchema('referee_round')) as {
+    properties: { scores: { minItems?: number; maxItems?: number; items: { properties: { generalId: Record<string, unknown> } } } };
+  };
+  const scores = schema.properties.scores;
+  scores.minItems = generalIds.length;
+  scores.maxItems = generalIds.length;
+  scores.items.properties.generalId = { type: 'string', enum: [...generalIds] };
+  return schema as unknown as Record<string, unknown>;
+}
+
+/** Cloud counterpart of `refereeRoundDeviceSchema`. */
+export function refereeRoundCloudSchema(generalIds: string[]): unknown {
+  return toGeminiSchema(refereeRoundDeviceSchema(generalIds));
+}
