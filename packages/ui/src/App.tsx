@@ -16,7 +16,8 @@ import { DeviceStatus } from './components/DeviceStatus';
 import { BriefScreen } from './screens/Brief';
 import { FirewallReviewScreen } from './screens/FirewallReview';
 import { HomeScreen } from './screens/Home';
-import { WarRoomDebugScreen } from './screens/WarRoomDebug';
+import { ReportScreen } from './screens/Report';
+import { WarRoomScreen } from './screens/WarRoom';
 
 export interface PlatformInfo {
   kind: 'web' | 'extension';
@@ -40,6 +41,8 @@ export function App({ platform }: AppProps) {
   const [activeGame, setActiveGame] = useState<GameRecord | null>(null);
   const [activeVault, setActiveVault] = useState<VaultRecord | null>(null);
   const [sealingProgress, setSealingProgress] = useState<number | null>(null);
+  const [inspectingRoundsFromReport, setInspectingRoundsFromReport] =
+    useState<boolean>(false);
 
   const loadPersistedState = useCallback(async () => {
     setLoading(true);
@@ -251,15 +254,33 @@ export function App({ platform }: AppProps) {
           />
         ) : activeGame &&
           activeVault &&
-          activeGame.phase.kind !== 'draft' &&
-          activeGame.phase.kind !== 'sealing_brief' &&
-          activeGame.phase.kind !== 'review' ? (
-          <WarRoomDebugScreen
+          (activeGame.phase.kind === 'reporting' ||
+            (activeGame.phase.kind === 'failed' &&
+              activeGame.phase.at.kind === 'reporting') ||
+            (activeGame.phase.kind === 'done' && !inspectingRoundsFromReport)) ? (
+          <ReportScreen
             game={activeGame}
             vaultRecord={activeVault}
             onGameUpdated={(nextGame, nextVault) => {
               setActiveGame(nextGame);
               setActiveVault(nextVault);
+            }}
+            onBackToWarRoom={() => setInspectingRoundsFromReport(true)}
+          />
+        ) : activeGame &&
+          activeVault &&
+          activeGame.phase.kind !== 'draft' &&
+          activeGame.phase.kind !== 'sealing_brief' &&
+          activeGame.phase.kind !== 'review' ? (
+          <WarRoomScreen
+            game={activeGame}
+            vaultRecord={activeVault}
+            onGameUpdated={(nextGame, nextVault) => {
+              setActiveGame(nextGame);
+              setActiveVault(nextVault);
+              if (nextGame.phase.kind === 'reporting') {
+                setInspectingRoundsFromReport(false);
+              }
             }}
             onBackToReview={() => {
               const backToReview: GameRecord = {
@@ -270,6 +291,7 @@ export function App({ platform }: AppProps) {
               setActiveGame(backToReview);
               void gamesStore.put(backToReview);
             }}
+            onOpenReport={() => setInspectingRoundsFromReport(false)}
           />
         ) : selectedTemplateId ? (
           <BriefScreen
