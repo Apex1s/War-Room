@@ -1,4 +1,5 @@
 import {
+  formatPlayerVsGeneralScore,
   rehydrate,
   type GeneralSpec,
   type PlaceholderEntry,
@@ -93,7 +94,7 @@ export function RefereePanel({
             </span>
             {referee.scores.map((s) => {
               const gen = generals.find((g) => g.id === s.generalId);
-              const sign = s.delta > 0 ? `+${s.delta}` : `${s.delta}`;
+              const genName = gen?.name ?? s.generalId;
               return (
                 <span
                   key={s.generalId}
@@ -104,7 +105,6 @@ export function RefereePanel({
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: gen?.color ?? '#E0A84B' }}
                   />
-                  <span>{gen?.name ?? s.generalId}:</span>
                   <span
                     className={
                       s.delta > 0
@@ -114,7 +114,7 @@ export function RefereePanel({
                           : 'text-[#8B9BB4]'
                     }
                   >
-                    {sign}
+                    {formatPlayerVsGeneralScore(genName, s.delta)}
                   </span>
                 </span>
               );

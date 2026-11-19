@@ -54,3 +54,26 @@ export function computeCrowdSentimentAverage(
   const total = crowd.reduce((sum, c) => sum + c.sentiment, 0);
   return Math.round((total / crowd.length) * 10) / 10;
 }
+
+export function formatSignedScore(value: number): string {
+  if (value > 0) return `+${value}`;
+  if (value < 0) return `−${Math.abs(value)}`;
+  return '0';
+}
+
+export function describeScoreStanding(value: number): string {
+  if (value > 0) return 'you lead';
+  if (value < 0) return 'they lead';
+  return 'even';
+}
+
+/**
+ * Formats a player-perspective score label, e.g.:
+ * `"You vs Copycat Competitor: −3 (they lead)"`
+ */
+export function formatPlayerVsGeneralScore(
+  generalName: string,
+  score: number,
+): string {
+  return `You vs ${generalName}: ${formatSignedScore(score)} (${describeScoreStanding(score)})`;
+}

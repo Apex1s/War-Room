@@ -28,7 +28,11 @@ import {
   undoMoveMaskedEntryEffect,
 } from './engine';
 import { createInitialGameRecord, reduceGame } from './machine';
-import { computeCrowdSentimentAverage, computeGeneralScores } from './scoring';
+import {
+  computeCrowdSentimentAverage,
+  computeGeneralScores,
+  formatPlayerVsGeneralScore,
+} from './scoring';
 import { startupTemplate } from './templates/startup';
 import type { VaultRecord } from './types';
 
@@ -474,6 +478,15 @@ describe('compact.ts and scoring.ts', () => {
     expect(scores.find((s) => s.generalId === 'vc')?.score).toBe(2);
     expect(scores.find((s) => s.generalId === 'vc')?.latestThreatLevel).toBe(4);
     expect(computeCrowdSentimentAverage(state.rounds[0]!.crowd)).toBe(0.5);
+    expect(formatPlayerVsGeneralScore('Copycat Competitor', -3)).toBe(
+      'You vs Copycat Competitor: −3 (they lead)',
+    );
+    expect(formatPlayerVsGeneralScore('Skeptical VC', 2)).toBe(
+      'You vs Skeptical VC: +2 (you lead)',
+    );
+    expect(formatPlayerVsGeneralScore('The Market', 0)).toBe(
+      'You vs The Market: 0 (even)',
+    );
   });
 });
 

@@ -1,5 +1,6 @@
 import {
   computeGeneralScores,
+  formatPlayerVsGeneralScore,
   type GameRecord,
   type VaultRecord,
 } from '@warroom/core';
@@ -139,7 +140,6 @@ export function RoundTimeline({
         <div className="flex flex-wrap items-center gap-2">
           {scores.map((s) => {
             const gen = game.generals.find((g) => g.id === s.generalId);
-            const sign = s.score > 0 ? `+${s.score}` : `${s.score}`;
             return (
               <span
                 key={s.generalId}
@@ -150,7 +150,6 @@ export function RoundTimeline({
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: gen?.color ?? '#E0A84B' }}
                 />
-                <span className="text-[#8B9BB4]">{s.name}:</span>
                 <span
                   className={
                     s.score > 0
@@ -160,7 +159,7 @@ export function RoundTimeline({
                         : 'text-[#E6EDF3]'
                   }
                 >
-                  {sign}
+                  {formatPlayerVsGeneralScore(s.name, s.score)}
                 </span>
               </span>
             );

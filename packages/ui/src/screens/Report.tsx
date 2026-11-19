@@ -1,6 +1,7 @@
 import {
   computeGeneralScores,
   dispatchAndPersist,
+  formatPlayerVsGeneralScore,
   rehydrate,
   runFinalReportEffect,
   type GameRecord,
@@ -330,7 +331,6 @@ export function ReportScreen({
           {game.generals.map((gen) => {
             const scoreEntry = scores.find((s) => s.generalId === gen.id);
             const score = scoreEntry?.score ?? 0;
-            const sign = score > 0 ? `+${score}` : `${score}`;
             return (
               <div
                 key={gen.id}
@@ -339,23 +339,20 @@ export function ReportScreen({
                 data-testid={`hidden-info-card-${gen.id}`}
               >
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-col gap-1">
                     <span className="text-sm font-bold text-[#E6EDF3]">
                       {gen.name}
                     </span>
-                    <span className="text-xs font-mono text-[#8B9BB4]">
-                      Final score:{' '}
-                      <strong
-                        className={
-                          score > 0
-                            ? 'text-emerald-400'
-                            : score < 0
-                              ? 'text-red-400'
-                              : 'text-[#E6EDF3]'
-                        }
-                      >
-                        {sign}
-                      </strong>
+                    <span
+                      className={`text-xs font-mono font-semibold ${
+                        score > 0
+                          ? 'text-emerald-400'
+                          : score < 0
+                            ? 'text-red-400'
+                            : 'text-[#8B9BB4]'
+                      }`}
+                    >
+                      {formatPlayerVsGeneralScore(gen.name, score)}
                     </span>
                   </div>
                   <div className="text-xs text-[#8B9BB4]">{gen.goal}</div>

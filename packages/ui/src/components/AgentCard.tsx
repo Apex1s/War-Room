@@ -1,4 +1,7 @@
 import {
+  describeScoreStanding,
+  formatPlayerVsGeneralScore,
+  formatSignedScore,
   rehydrate,
   type AiErrorCode,
   type GeneralMoveOutput,
@@ -90,21 +93,21 @@ export function AgentCard({
             {scoreDelta !== undefined && (
               <span
                 className="text-[11px] font-mono text-[#8B9BB4]"
-                title="Player exchange score delta from the Referee"
+                title={formatPlayerVsGeneralScore(general.name, cumulativeScore)}
               >
-                Round:{' '}
+                You vs {general.name}:{' '}
                 <span
                   className={
-                    scoreDelta > 0
+                    cumulativeScore > 0
                       ? 'text-emerald-400'
-                      : scoreDelta < 0
+                      : cumulativeScore < 0
                         ? 'text-red-400'
                         : 'text-[#E6EDF3]'
                   }
                 >
-                  {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta}
+                  {formatSignedScore(cumulativeScore)} ({describeScoreStanding(cumulativeScore)})
                 </span>{' '}
-                (Total {cumulativeScore > 0 ? `+${cumulativeScore}` : cumulativeScore})
+                · R{roundNumber} {formatSignedScore(scoreDelta)}
               </span>
             )}
           </div>
