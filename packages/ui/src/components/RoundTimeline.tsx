@@ -47,8 +47,12 @@ export function RoundTimeline({
       <div className="flex flex-wrap items-center justify-between gap-13">
         <div>
           <div className="flex flex-wrap items-center gap-8">
-            <span className="px-8 py-3 rounded-[3px] border border-mint bg-bg font-mono text-label uppercase tracking-[0.12em] text-mint whitespace-nowrap">
-              VAULT SEALED ({maskedCount} SECRETS KEPT ON-DEVICE)
+            <span className="px-8 py-3 rounded-[3px] border border-mint bg-bg font-mono text-label uppercase tracking-[0.12em] text-mint">
+              <span className="whitespace-nowrap">VAULT SEALED</span>{' '}
+              <span className="whitespace-nowrap">
+                ({maskedCount} SECRETS{' '}
+                <span className="whitespace-nowrap">ON-DEVICE)</span>
+              </span>
             </span>
             <span
               className="px-8 py-3 rounded-[3px] border border-line bg-bg terminal-label whitespace-nowrap"

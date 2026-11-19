@@ -14,7 +14,7 @@ export function DeviceStatus({ onDownloadModel }: DeviceStatusProps) {
         data-testid="device-status-badge"
       >
         <span className="wr-live-dot" aria-hidden="true" />
-        <span className="sm:hidden">ON-DEVICE AI READY</span>
+        <span className="sm:hidden">ON-DEVICE AI</span>
         <span className="hidden sm:inline">ON-DEVICE AI READY: GEMINI NANO</span>
       </div>
     );
@@ -38,16 +38,16 @@ export function DeviceStatus({ onDownloadModel }: DeviceStatusProps) {
   if (status === 'downloadable') {
     return (
       <div
-        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-line bg-surface text-text whitespace-nowrap shrink-0"
+        className="inline-flex items-center gap-8 px-8 py-5 rounded-[3px] font-mono text-label uppercase border border-orange bg-surface text-orange sm:border-line sm:text-text whitespace-nowrap shrink-0"
         data-testid="device-status-badge"
       >
-        <span className="sm:hidden">NANO DOWNLOADABLE</span>
+        <span className="sm:hidden">BASIC REDACTION</span>
         <span className="hidden sm:inline">GEMINI NANO DOWNLOADABLE</span>
         {onDownloadModel && (
           <button
             type="button"
             onClick={() => void triggerDownload()}
-            className="px-8 py-3 rounded-[3px] bg-mint text-bg font-mono font-semibold text-label hover:bg-mint/90 cursor-pointer"
+            className="hidden sm:inline-block px-8 py-3 rounded-[3px] bg-mint text-bg font-mono font-semibold text-label hover:bg-mint/90 cursor-pointer"
           >
             Download model
           </button>
