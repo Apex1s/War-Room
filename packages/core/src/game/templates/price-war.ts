@@ -7,13 +7,13 @@ export const priceWarTemplate: GameTemplate = {
   situation:
     'An operator is preparing a pricing or bundling move in a contested B2B market and stress-testing how rivals and buyers will retaliate.',
   objectivePlaceholder:
-    'e.g. Defend 22% gross margin in Madrid and Barcelona while growing net revenue 30%',
+    'e.g. Defend 22% gross margin in Valencia and Bilbao while growing net revenue 30%',
   briefPlaceholder:
     'Paste your pricing plan: current contract values, proposed discount or bundle, key accounts, competitor pricing and margin floor...',
   demoObjective:
-    'Defend 22% gross margin for Veridian Pay in Madrid and Barcelona while growing net revenue 30%',
+    'Defend 22% gross margin for Solis Ledger in Valencia and Bilbao while growing net revenue 30%',
   demoBrief:
-    'Veridian Pay processes €18.5M in cross-border invoices for 420 exporters in Madrid and Barcelona. Rival Finova Corp just cut FX spreads by 35% after raising $12M from Northstar Ventures. CEO Elena Rostova proposes bundling free treasury accounts via Project Mercury at €290 per month on 2027-01-15 (contact: elena@veridianpay.eu, https://veridianpay.eu) to retain anchor client Iberia Freight while holding a 22% margin floor.',
+    'Solis Ledger processes €18.5M in cross-border invoices for 420 exporters in Valencia and Bilbao. Rival Kora Billing just cut FX spreads by 35% after raising $12M from Redcrest Ventures. CEO Clara Mendoza proposes bundling free treasury accounts via Project Halcyon at €290 per month on 2027-01-15 (contact: clara@solisledger.example, https://solisledger.example) to retain anchor client Cantabria Freight while holding a 22% margin floor.',
   openingMove: 'Announce the new pricing structure as described in the brief.',
   generals: [
     {
