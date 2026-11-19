@@ -7,7 +7,7 @@ import {
   type VaultRecord,
 } from '@warroom/core';
 import { useEffect, useRef, useState } from 'react';
-import { SourceBadge } from '../components/SourceBadge';
+import { isMockProviderActive, SourceBadge } from '../components/SourceBadge';
 import { TOKENS } from '../tokens';
 
 export interface ReportScreenProps {
@@ -195,9 +195,11 @@ export function ReportScreen({
               latencyMs={report.latencyMs}
               fallback={report.fallback}
             />
-            <span className="text-xs font-mono text-[#8B9BB4]">
-              {report.model}
-            </span>
+            {!isMockProviderActive() && (
+              <span className="text-xs font-mono text-[#8B9BB4]">
+                {report.model}
+              </span>
+            )}
           </div>
         </div>
 

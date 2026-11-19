@@ -10,7 +10,7 @@ import {
   type VaultRecord,
 } from '@warroom/core';
 import { useState } from 'react';
-import { SourceBadge } from '../components/SourceBadge';
+import { isMockProviderActive, SourceBadge } from '../components/SourceBadge';
 import { TOKENS } from '../tokens';
 
 export interface TranscriptDocument {
@@ -687,9 +687,11 @@ export function WarRoomDebugScreen({
                           latencyMs={reply.latencyMs}
                           fallback={reply.fallback}
                         />
-                        <span className="text-[11px] font-mono text-[#8B9BB4]">
-                          {reply.model}
-                        </span>
+                        {!isMockProviderActive() && (
+                          <span className="text-[11px] font-mono text-[#8B9BB4]">
+                            {reply.model}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

@@ -6,7 +6,7 @@ import {
   type PlaceholderEntry,
   type RoundRecord,
 } from '@warroom/core';
-import { SourceBadge } from './SourceBadge';
+import { isMockProviderActive, SourceBadge } from './SourceBadge';
 import { TOKENS } from '../tokens';
 
 export interface AgentCardProps {
@@ -171,9 +171,11 @@ export function AgentCard({
             latencyMs={reply.latencyMs}
             fallback={reply.fallback}
           />
-          <span className="text-[11px] font-mono text-[#8B9BB4] truncate">
-            {reply.model}
-          </span>
+          {!isMockProviderActive() && (
+            <span className="text-[11px] font-mono text-[#8B9BB4] truncate">
+              {reply.model}
+            </span>
+          )}
         </div>
       )}
     </div>

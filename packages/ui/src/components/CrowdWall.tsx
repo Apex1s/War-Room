@@ -110,9 +110,12 @@ export function CrowdWall({
                   </p>
                 </div>
 
-                <div className="pt-1.5 border-t border-[#223049]/60 flex items-center justify-between text-[10px] font-mono text-[#8B9BB4]">
-                  <span>{rx.source === 'on-device' ? '🔒 Nano' : '☁️ Cloud'}</span>
-                  <span>{rx.latencyMs} ms</span>
+                <div className="pt-1.5 border-t border-[#223049]/60 flex items-center justify-between">
+                  <SourceBadge
+                    source={rx.source}
+                    latencyMs={rx.latencyMs}
+                    fallback={rx.fallback}
+                  />
                 </div>
               </div>
             );
