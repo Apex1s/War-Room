@@ -1,8 +1,29 @@
 import type { CrowdPersona, GeneralSpec, PromptInput, PromptRound } from '../../prompts/types';
+import { getRoutingTable } from '../ai/routing-table';
 import { applyMap, type PlaceholderEntry } from '../firewall/placeholders';
 import { computeGeneralScores } from './scoring';
 import { TEMPLATES } from './templates';
 import type { GameRecord, RoundRecord } from './types';
+
+/**
+ * Selects the rotating slice of crowd personas for a given 1-based round number.
+ * Default routing table uses 5 rotating personas per round out of 10 total:
+ * Round 1 -> personas 1..5, Round 2 -> personas 6..10, Round 3 -> personas 1..5.
+ */
+export function selectRoundPersonas(
+  allPersonas: CrowdPersona[],
+  round: number,
+  perRound: number = getRoutingTable().crowd.perRound,
+): CrowdPersona[] {
+  if (allPersonas.length === 0) return [];
+  const count = Math.max(1, Math.min(perRound, allPersonas.length));
+  const start = ((Math.max(1, round) - 1) * count) % allPersonas.length;
+  const selected: CrowdPersona[] = [];
+  for (let i = 0; i < count; i++) {
+    selected.push(allPersonas[(start + i) % allPersonas.length]!);
+  }
+  return selected;
+}
 
 /**
  * Pass every string placed into an AI prompt through `applyMap(text, vaultMap)`
@@ -152,6 +173,33 @@ export function buildRefereeRoundInput(
       move: sanitizePromptText(m.move, vaultMap),
     })),
     commitments: game.commitments.map((c) => sanitizePromptText(c, vaultMap)),
+  };
+}
+
+/**
+ * Builds input for `referee_live` (ONLY_ON_DEVICE).
+ * `draft` is raw text while the player types; `commitments` and `threats` are abstracted.
+ */
+export function buildRefereeLiveInput(
+  game: GameRecord,
+  rawDraft: string,
+): PromptInput['referee_live'] {
+  const generalNames = new Map(game.generals.map((g) => [g.id, g.name]));
+  const lastRoundWithMoves = [...game.rounds]
+    .reverse()
+    .find((r) => r.generalMoves.length > 0);
+
+  const threats = lastRoundWithMoves
+    ? lastRoundWithMoves.generalMoves.map((m) => ({
+        name: generalNames.get(m.generalId) ?? m.generalId,
+        headline: m.headline,
+      }))
+    : [];
+
+  return {
+    draft: rawDraft,
+    commitments: [...game.commitments],
+    threats,
   };
 }
 

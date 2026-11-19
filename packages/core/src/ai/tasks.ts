@@ -150,7 +150,7 @@ export const TASKS: { [K in Task]: TaskSpec<K> } = {
       return {
         summary: out.summary.trim(),
         scores,
-        contradiction: out.contradiction.trim(),
+        contradiction: input.commitments.length > 0 ? out.contradiction.trim() : '',
         commitments,
       };
     },

@@ -1,5 +1,8 @@
+import { isDeviceReadyForOnlyOnDevice } from '../ai/device';
 import { setVaultEntries } from '../ai/egress-guard';
-import { AiError, run, type AiErrorCode } from '../ai/router';
+import { AiError, run, type AiErrorCode, type AiResult } from '../ai/router';
+import { parseUrlOverrides } from '../ai/routing-table';
+import type { RefereeLiveOutput } from '../ai/schemas';
 import { seal } from '../firewall/firewall';
 import { applyMap } from '../firewall/placeholders';
 import { gamesStore, settingsStore, vault } from '../storage/local-db';
@@ -7,7 +10,9 @@ import {
   buildCrowdInput,
   buildFinalReportInput,
   buildGeneralMoveInput,
+  buildRefereeLiveInput,
   buildRefereeRoundInput,
+  selectRoundPersonas,
 } from './compact';
 import { reduceGame } from './machine';
 import type { GameEvent, GameRecord, VaultRecord } from './types';
@@ -283,7 +288,7 @@ export async function runAftermathEffect(
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const res = await run('referee_round', refInput, { gameId: game.id });
-        await applyEvent({ type: 'REFEREE_RULED', result: res });
+        await applyEvent({ type: 'REFEREE_RULED', result: res, round });
         return;
       } catch {
         if (attempt === 2) {
@@ -294,10 +299,11 @@ export async function runAftermathEffect(
   })();
 
   const crowdPromise = (async () => {
+    const roundPersonas = selectRoundPersonas(game.crowd, roundRecord.n);
     const crowdInput = buildCrowdInput(
       game,
       roundRecord,
-      game.crowd,
+      roundPersonas,
       vaultRecord.map,
     );
     try {
@@ -305,16 +311,94 @@ export async function runAftermathEffect(
         gameId: game.id,
         signal: cb?.crowdSignal,
       });
-      await applyEvent({ type: 'CROWD_REACTED', result: res });
+      await applyEvent({ type: 'CROWD_REACTED', result: res, round });
     } catch {
       // Crowd failure or abort does not block the round
     } finally {
-      await applyEvent({ type: 'CROWD_FINISHED' });
+      await applyEvent({ type: 'CROWD_FINISHED', round });
     }
   })();
 
   await Promise.all([refereePromise, crowdPromise]);
   return { game, vaultRecord };
+}
+
+const refereeLiveCache = new Map<string, AiResult<RefereeLiveOutput>>();
+
+export function clearRefereeLiveCache(): void {
+  refereeLiveCache.clear();
+}
+
+/**
+ * Live on-device coaching (`referee_live`, ONLY_ON_DEVICE) while the player types a move.
+ * - Requires at least 40 characters (design doc §6).
+ * - Hidden / returns null when on-device AI is unavailable.
+ * - Caches results by `(gameId, commitments, trimmedDraft)` so repeated checks on the same draft cost zero calls.
+ */
+export async function runRefereeLiveEffect(
+  game: GameRecord,
+  rawDraft: string,
+  opts?: { signal?: AbortSignal },
+): Promise<AiResult<RefereeLiveOutput> | null> {
+  const trimmed = rawDraft.trim();
+  if (trimmed.length < 40) return null;
+  if (!isDeviceReadyForOnlyOnDevice() || parseUrlOverrides().forceCloud) {
+    return null;
+  }
+
+  const cacheKey = `${game.id}|${game.commitments.join(';')}|${trimmed}`;
+  const cached = refereeLiveCache.get(cacheKey);
+  if (cached) return cached;
+
+  const input = buildRefereeLiveInput(game, trimmed);
+  const result = await run('referee_live', input, {
+    gameId: game.id,
+    signal: opts?.signal,
+  });
+  refereeLiveCache.set(cacheKey, result);
+  return result;
+}
+
+/**
+ * Undoes a newly masked entity chip from a player's round move:
+ * disables the placeholder entry in `vaultRecord.map`, updates `roundRecord.userMove`
+ * from `vaultRecord.rawMoves[roundNumber]`, and removes the chip from `roundRecord.newEntries`.
+ */
+export async function undoMoveMaskedEntryEffect(
+  initialGame: GameRecord,
+  initialVault: VaultRecord,
+  roundNumber: number,
+  token: string,
+  cb?: EngineCallbacks,
+): Promise<{ game: GameRecord; vaultRecord: VaultRecord }> {
+  const nextMap = initialVault.map.map((entry) =>
+    entry.token === token ? { ...entry, enabled: false } : entry,
+  );
+  const rawMove = initialVault.rawMoves[roundNumber];
+  const nextVault: VaultRecord = {
+    ...initialVault,
+    map: nextMap,
+  };
+
+  setVaultEntries(nextMap, initialGame.id);
+
+  const nextRounds = initialGame.rounds.map((r) => {
+    if (r.n !== roundNumber) return r;
+    return {
+      ...r,
+      userMove: rawMove !== undefined ? applyMap(rawMove, nextMap) : r.userMove,
+      newEntries: (r.newEntries ?? []).filter((e) => e.token !== token),
+    };
+  });
+
+  const nextGame: GameRecord = {
+    ...initialGame,
+    rounds: nextRounds,
+    updatedAt: Date.now(),
+  };
+
+  await persistAndNotify(nextGame, nextVault, cb);
+  return { game: nextGame, vaultRecord: nextVault };
 }
 
 export async function runFinalReportEffect(

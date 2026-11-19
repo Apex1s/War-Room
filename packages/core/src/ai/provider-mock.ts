@@ -126,6 +126,43 @@ export interface MockProviderController extends ModelProvider {
   reset(): void;
 }
 
+function buildDefaultMockOutput(
+  params: ProviderModelParams,
+  userPrompt: string,
+): unknown {
+  if (params.task === 'crowd' && params.schemaIds && params.schemaIds.length > 1) {
+    const sampleQuotes = [
+      'I would try a self-serve workflow tool if setup takes under ten minutes.',
+      'Unless it plugs into our existing stack on day one, my team will ignore it.',
+      'Transparent per-seat pricing beats sitting through three discovery calls.',
+      'If our incumbent bundles an 80% clone for free, procurement will freeze new spend.',
+      'A 14-day trial is enough for us to verify whether the audit alerts are real.',
+    ];
+    const sampleSentiments = [1, -1, 2, -2, 1];
+    return {
+      reactions: params.schemaIds.map((personaId, idx) => ({
+        personaId,
+        quote: sampleQuotes[idx % sampleQuotes.length]!,
+        sentiment: sampleSentiments[idx % sampleSentiments.length]!,
+      })),
+    };
+  }
+
+  if (params.task === 'referee_round' && params.schemaIds && params.schemaIds.length > 0) {
+    const base = CANNED_OUTPUTS.referee_round;
+    const defaultDeltas = [0, -1, 1, 0];
+    return {
+      ...base,
+      scores: params.schemaIds.map((generalId, idx) => ({
+        generalId,
+        delta: defaultDeltas[idx % defaultDeltas.length]!,
+      })),
+    };
+  }
+
+  void userPrompt;
+  return CANNED_OUTPUTS[params.task];
+}
 function defaultInferenceSource(mode: ProviderModelParams['mode']): RawInferenceSource {
   return mode === 'only_on_device' || mode === 'prefer_on_device'
     ? 'on_device'
@@ -203,7 +240,7 @@ export function createMockProvider(): MockProviderController {
             return next;
           }
 
-          const canned = CANNED_OUTPUTS[params.task];
+          const canned = buildDefaultMockOutput(params, userPrompt);
           const text = JSON.stringify(canned);
           opts?.onText?.(text);
           return {

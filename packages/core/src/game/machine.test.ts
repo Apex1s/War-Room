@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { setDeviceStatusForTest } from '../ai/device';
 import { CANNED_OUTPUTS, createMockProvider } from '../ai/provider-mock';
 import { setProvider, type AiResult } from '../ai/router';
+import { setUrlOverridesForTest } from '../ai/routing-table';
 import type {
   CrowdOutput,
   FinalReportOutput,
@@ -9,13 +11,20 @@ import type {
   Task,
 } from '../ai/schemas';
 import type { PlaceholderEntry } from '../firewall/placeholders';
-import { buildGeneralMoveInput, sanitizePromptText } from './compact';
 import {
+  buildGeneralMoveInput,
+  sanitizePromptText,
+  selectRoundPersonas,
+} from './compact';
+import {
+  clearRefereeLiveCache,
   retrySingleGeneralEffect,
   runAftermathEffect,
   runFinalReportEffect,
   runPlayerMoveAndGeneralsEffect,
+  runRefereeLiveEffect,
   runSealBriefEffect,
+  undoMoveMaskedEntryEffect,
 } from './engine';
 import { createInitialGameRecord, reduceGame } from './machine';
 import { computeCrowdSentimentAverage, computeGeneralScores } from './scoring';
@@ -566,5 +575,274 @@ describe('engine.ts parallel Generals and retry effects', () => {
     game = reported.game;
     expect(game.phase).toEqual({ kind: 'done' });
     expect(game.report?.verdict).toBe('holds_with_changes');
+  });
+
+  it('batches 5 rotating crowd personas per round in one on-device call and allows NEXT while crowd is still running', async () => {
+    const r1 = selectRoundPersonas(startupTemplate.crowd, 1, 5);
+    const r2 = selectRoundPersonas(startupTemplate.crowd, 2, 5);
+    const r3 = selectRoundPersonas(startupTemplate.crowd, 3, 5);
+
+    expect(r1.map((p) => p.id)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
+    expect(r2.map((p) => p.id)).toEqual(['p6', 'p7', 'p8', 'p9', 'p10']);
+    expect(r3.map((p) => p.id)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
+
+    const provider = createMockProvider();
+    setProvider(provider);
+    (globalThis as Record<string, unknown>).LanguageModel = {
+      availability: async () => 'available',
+    };
+    setDeviceStatusForTest('available', 1);
+
+    let game = createInitialGameRecord('game-crowd-rot', 'startup', 1000);
+    let vaultRecord: VaultRecord = {
+      gameId: game.id,
+      rawObjective: 'Reach $1M ARR',
+      rawBrief: 'Kestrel Labs builds PulseAudit in Lyon.',
+      rawMoves: {},
+      map: [],
+    };
+    game = reduceGame(game, {
+      type: 'BRIEF_SUBMITTED',
+      objective: vaultRecord.rawObjective,
+      brief: vaultRecord.rawBrief,
+      templateId: 'startup',
+    });
+    game = reduceGame(game, {
+      type: 'BRIEF_SEALED',
+      result: { abstracted: vaultRecord.rawBrief, map: [], spans: [], method: 'basic' },
+      abstractedObjective: vaultRecord.rawObjective,
+      abstractedBrief: vaultRecord.rawBrief,
+    });
+    game = reduceGame(game, { type: 'REDACTION_APPROVED' });
+
+    // Round 1 moves + aftermath
+    const r1Moved = await runPlayerMoveAndGeneralsEffect(game, vaultRecord, 'Launch self-serve');
+    game = r1Moved.game;
+    vaultRecord = r1Moved.vaultRecord;
+
+    // Verify NEXT works in reducer as soon as referee is done even while crowd === 'running'
+    const midAftermath = reduceGame(game, {
+      type: 'REFEREE_RULED',
+      result: makeAiResult('referee_round', CANNED_OUTPUTS.referee_round, 'on-device'),
+    });
+    expect(midAftermath.phase).toEqual({
+      kind: 'aftermath',
+      round: 1,
+      referee: 'done',
+      crowd: 'running',
+    });
+    const advancedWhileCrowdRunning = reduceGame(midAftermath, { type: 'NEXT' });
+    expect(advancedWhileCrowdRunning.phase).toEqual({ kind: 'user_turn', round: 2 });
+
+    // Full aftermath run verifies 1 batched crowd call of 5 rotating personas per round
+    const r1After = await runAftermathEffect(game, vaultRecord);
+    game = r1After.game;
+    expect(game.rounds[0]?.crowd.map((c) => c.personaId)).toEqual([
+      'p1',
+      'p2',
+      'p3',
+      'p4',
+      'p5',
+    ]);
+    expect(game.rounds[0]?.crowd.every((c) => c.source === 'on-device')).toBe(true);
+    expect(game.rounds[0]?.referee?.source).toBe('on-device');
+
+    game = reduceGame(game, { type: 'NEXT' });
+    const r2Moved = await runPlayerMoveAndGeneralsEffect(game, vaultRecord, 'Expand enterprise');
+    const r2After = await runAftermathEffect(r2Moved.game, r2Moved.vaultRecord);
+    expect(r2After.game.rounds[1]?.crowd.map((c) => c.personaId)).toEqual([
+      'p6',
+      'p7',
+      'p8',
+      'p9',
+      'p10',
+    ]);
+
+    const crowdCalls = provider.calls.filter((c) => c.params.task === 'crowd');
+    expect(crowdCalls).toHaveLength(2);
+    expect(crowdCalls[0]?.params.schemaIds).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
+    expect(crowdCalls[1]?.params.schemaIds).toEqual(['p6', 'p7', 'p8', 'p9', 'p10']);
+  });
+
+  it('detects planted contradictions in both referee_round and referee_live against recorded commitments', async () => {
+    const provider = createMockProvider();
+    setProvider(provider);
+    setUrlOverridesForTest(null);
+    clearRefereeLiveCache();
+    (globalThis as Record<string, unknown>).LanguageModel = {
+      availability: async () => 'available',
+    };
+    setDeviceStatusForTest('available', 1);
+
+    provider.setHandler((params, userPrompt) => {
+      if (params.task === 'referee_round') {
+        const hasNoPriceCutCommitment = userPrompt.includes('No price cuts before Q3');
+        const cutsPriceInMove = userPrompt.toLowerCase().includes('cut prices by');
+        return {
+          text: JSON.stringify({
+            summary: 'Round evaluated by on-device referee.',
+            scores: [
+              { generalId: 'vc', delta: cutsPriceInMove ? -2 : 1 },
+              { generalId: 'copycat', delta: 0 },
+              { generalId: 'market', delta: 1 },
+            ],
+            contradiction:
+              hasNoPriceCutCommitment && cutsPriceInMove
+                ? 'Player promised "No price cuts before Q3" in Round 1 but cut prices by 40% in Q1.'
+                : 'Spurious contradiction when no commitments exist',
+            commitments: hasNoPriceCutCommitment ? [] : ['No price cuts before Q3'],
+          }),
+          inferenceSource: 'on_device',
+        };
+      }
+      if (params.task === 'referee_live') {
+        const breaksPricePromise = userPrompt.toLowerCase().includes('cut prices by 40%');
+        return {
+          text: JSON.stringify({
+            clarity: 4,
+            risk: breaksPricePromise ? 'high' : 'low',
+            tip: 'Specify how margin holds after the change.',
+            contradicts: breaksPricePromise
+              ? 'No price cuts before Q3'
+              : 'Invented non-existent commitment',
+          }),
+          inferenceSource: 'on_device',
+        };
+      }
+      return {
+        text: JSON.stringify(CANNED_OUTPUTS[params.task]),
+        inferenceSource: 'in_cloud',
+      };
+    });
+
+    let game = createInitialGameRecord('game-contradiction', 'startup', 1000);
+    let vaultRecord: VaultRecord = {
+      gameId: game.id,
+      rawObjective: 'Reach 1,000 teams',
+      rawBrief: 'Kestrel Labs builds PulseAudit.',
+      rawMoves: {},
+      map: [],
+    };
+    game = reduceGame(game, {
+      type: 'BRIEF_SUBMITTED',
+      objective: vaultRecord.rawObjective,
+      brief: vaultRecord.rawBrief,
+      templateId: 'startup',
+    });
+    game = reduceGame(game, {
+      type: 'BRIEF_SEALED',
+      result: { abstracted: vaultRecord.rawBrief, map: [], spans: [], method: 'basic' },
+      abstractedObjective: vaultRecord.rawObjective,
+      abstractedBrief: vaultRecord.rawBrief,
+    });
+    game = reduceGame(game, { type: 'REDACTION_APPROVED' });
+
+    // Round 1: no earlier commitments exist yet, so any stray contradiction from Nano is normalized to ""
+    // and the new commitment "No price cuts before Q3" is recorded.
+    const r1Moved = await runPlayerMoveAndGeneralsEffect(
+      game,
+      vaultRecord,
+      'Hold self-serve price firm with no price cuts before Q3.',
+    );
+    const r1After = await runAftermathEffect(r1Moved.game, r1Moved.vaultRecord);
+    game = r1After.game;
+    vaultRecord = r1After.vaultRecord;
+
+    expect(game.rounds[0]?.referee?.contradiction).toBe('');
+    expect(game.commitments).toEqual(['No price cuts before Q3']);
+
+    // Advance to Round 2
+    game = reduceGame(game, { type: 'NEXT' });
+
+    // Live referee coaching on a compliant draft drops hallucinated contradicts that don't match game.commitments
+    const compliantLive = await runRefereeLiveEffect(
+      game,
+      'Expand annual pre-paid team plans and ship automated SOC2 audit connectors for design partners.',
+    );
+    expect(compliantLive?.source).toBe('on-device');
+    expect(compliantLive?.output.contradicts).toBe('');
+
+    // Live referee coaching on a draft with a planted contradiction flags the exact recorded commitment
+    const contradictingDraft =
+      'We will cut prices by 40% immediately in Q1 across all self-serve tiers to undercut Copycat.';
+    const contradictingLive = await runRefereeLiveEffect(game, contradictingDraft);
+    expect(contradictingLive?.source).toBe('on-device');
+    expect(contradictingLive?.output.risk).toBe('high');
+    expect(contradictingLive?.output.contradicts).toBe('No price cuts before Q3');
+
+    // Submitting the contradicting move in Round 2 causes referee_round to flag the contradiction
+    const r2Moved = await runPlayerMoveAndGeneralsEffect(
+      game,
+      vaultRecord,
+      contradictingDraft,
+    );
+    const r2After = await runAftermathEffect(r2Moved.game, r2Moved.vaultRecord);
+    expect(r2After.game.rounds[1]?.referee?.contradiction).toContain(
+      'No price cuts before Q3',
+    );
+    expect(r2After.game.rounds[1]?.referee?.scores.find((s) => s.generalId === 'vc')?.delta).toBe(
+      -2,
+    );
+  });
+
+  it('replaces known entities in moves, records new entities as chips, and supports undoing a chip', async () => {
+    const provider = createMockProvider();
+    setProvider(provider);
+    // Use deterministic redaction so entity extraction is exact and fast
+    setDeviceStatusForTest('unavailable', 0);
+
+    let game = createInitialGameRecord('game-move-chips', 'startup', 1000);
+    let vaultRecord: VaultRecord = {
+      gameId: game.id,
+      rawObjective: '',
+      rawBrief: '',
+      rawMoves: {},
+      map: [],
+    };
+
+    const sealed = await runSealBriefEffect(
+      game,
+      vaultRecord,
+      'Reach 500 customers for Kestrel Labs.',
+      'We build workflow auditing tools for Kestrel Labs.',
+    );
+    game = reduceGame(sealed.game, { type: 'REDACTION_APPROVED' });
+    vaultRecord = sealed.vaultRecord;
+
+    const kestrelEntry = vaultRecord.map.find((e) => e.original === 'Kestrel Labs');
+    expect(kestrelEntry).toBeDefined();
+
+    // Player move mentions known "Kestrel Labs" plus new entities "Zenith Corp" and "$75,000"
+    const moved = await runPlayerMoveAndGeneralsEffect(
+      game,
+      vaultRecord,
+      'Kestrel Labs signs Zenith Corp for $75,000 annual contract.',
+    );
+    game = moved.game;
+    vaultRecord = moved.vaultRecord;
+
+    const round1 = game.rounds[0]!;
+    // Known entity Kestrel Labs was replaced with its existing token and NOT listed in newEntries
+    expect(round1.userMove).toContain(kestrelEntry!.token);
+    expect(round1.newEntries?.some((e) => e.token === kestrelEntry!.token)).toBe(false);
+    // New entities were masked and recorded in round1.newEntries (for chips)
+    const newTokens = (round1.newEntries ?? []).map((e) => e.token);
+    expect(newTokens.length).toBeGreaterThanOrEqual(2);
+    const moneyChip = round1.newEntries?.find((e) => e.original === '$75,000');
+    expect(moneyChip).toBeDefined();
+    expect(round1.userMove).toContain(moneyChip!.token);
+
+    // Undo the $75,000 chip -> restores "$75,000" in userMove and removes the chip
+    const undone = await undoMoveMaskedEntryEffect(
+      game,
+      vaultRecord,
+      1,
+      moneyChip!.token,
+    );
+    expect(undone.game.rounds[0]?.userMove).toContain('$75,000');
+    expect(undone.game.rounds[0]?.userMove).toContain(kestrelEntry!.token);
+    expect(
+      undone.game.rounds[0]?.newEntries?.some((e) => e.token === moneyChip!.token),
+    ).toBe(false);
   });
 });

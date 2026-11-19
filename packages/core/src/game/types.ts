@@ -56,6 +56,7 @@ export interface AiMeta {
 export interface RoundRecord {
   n: number;
   userMove: string;
+  newEntries?: PlaceholderEntry[];
   generalMoves: (GeneralMoveOutput & AiMeta & { generalId: string })[];
   crowd: (CrowdReaction & AiMeta)[];
   referee: (RefereeRoundOutput & AiMeta) | null;
@@ -108,9 +109,9 @@ export type GameEvent =
   | { type: 'GENERAL_MOVED'; generalId: string; result: AiResult<GeneralMoveOutput> }
   | { type: 'GENERAL_FAILED'; generalId: string; code: AiErrorCode }
   | { type: 'RETRY_GENERAL'; generalId: string }
-  | { type: 'CROWD_REACTED'; result: AiResult<CrowdOutput> }
-  | { type: 'CROWD_FINISHED' }
-  | { type: 'REFEREE_RULED'; result: AiResult<RefereeRoundOutput> }
+  | { type: 'CROWD_REACTED'; result: AiResult<CrowdOutput>; round?: number }
+  | { type: 'CROWD_FINISHED'; round?: number }
+  | { type: 'REFEREE_RULED'; result: AiResult<RefereeRoundOutput>; round?: number }
   | { type: 'REFEREE_SKIPPED' }
   | { type: 'NEXT' }
   | { type: 'REPORT_READY'; result: AiResult<FinalReportOutput> }

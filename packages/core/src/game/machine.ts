@@ -138,6 +138,7 @@ export function reduceGame(
       const rounds = upsertRound(state.rounds, round, (r) => ({
         ...r,
         userMove: event.abstracted,
+        newEntries: event.newEntries,
         generalMoves: [],
         crowd: [],
         referee: null,
@@ -240,8 +241,11 @@ export function reduceGame(
     }
 
     case 'CROWD_REACTED': {
-      if (state.phase.kind !== 'aftermath') return state;
-      const { round } = state.phase;
+      const targetRound =
+        event.round ??
+        (state.phase.kind === 'aftermath' ? state.phase.round : undefined);
+      if (targetRound === undefined) return state;
+
       const newReactions = event.result.output.reactions.map((rx) => ({
         ...rx,
         source: event.result.source,
@@ -250,7 +254,7 @@ export function reduceGame(
         fallback: event.result.fallback,
       }));
 
-      const rounds = upsertRound(state.rounds, round, (r) => {
+      const rounds = upsertRound(state.rounds, targetRound, (r) => {
         const existingIds = new Set(newReactions.map((nr) => nr.personaId));
         const kept = r.crowd.filter((c) => !existingIds.has(c.personaId));
         return {
@@ -268,6 +272,9 @@ export function reduceGame(
 
     case 'CROWD_FINISHED': {
       if (state.phase.kind !== 'aftermath') return state;
+      if (event.round !== undefined && state.phase.round !== event.round) {
+        return state;
+      }
       return {
         ...state,
         phase: {
