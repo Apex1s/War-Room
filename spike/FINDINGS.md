@@ -194,3 +194,20 @@ Tested on 17 Nov 2026 in `apps/extension` (`manifest_version: 3`, fixed extensio
    - `requestBridgeToken()` exchanged a valid reCAPTCHA Enterprise App Check JWT (`eyJraWQiOiJBNzFLSHciLCJ0…`) in `2,121 ms` with **no debug token set**.
    - `run('crowd', …)` via `@warroom/core` succeeded end-to-end (`source: 'cloud'`, `model: 'gemini-3.5-flash-lite'`, `latencyMs: 2239`, `fallback: true`, `repaired: false`).
    - **Decision:** Use **Plan A (Hosted Bridge Iframe + `CustomProvider`)** as the primary extension App Check mechanism (so unpacked extension builds work out of the box for judges without registering a debug token), with `?planB=1` (`VITE_APPCHECK_DEBUG_TOKEN`) kept as an optional local dev override.
+
+---
+
+## 5. Warm on-device crowd latency
+
+Measured on 19 Nov 2026 on the hosted spike (`https://war-room-hybrid.web.app`) in desktop Chrome with Gemini Nano available (dev machine upgraded to `11.8 GB` RAM, `chrome://flags/#optimization-guide-on-device-model` = `Enabled BypassPerfRequirement`), using Spike Button 1 (`ONLY_ON_DEVICE (crowd)`) with the per-call constrained schema `crowdDeviceSchema(['p1'])` (`minItems: 1`, `maxItems: 1`, `personaId` enum `['p1']`, and prompt instruction capped at 25 words per reaction):
+
+| Run | Mode | `inferenceSource` | Latency (ms) | Reactions Returned | Schema-Valid |
+|---|---|---|---:|---:|:---:|
+| Run 1 (first call after reload) | `ONLY_ON_DEVICE` | `on_device` | 39,791 | 1 | yes |
+| Run 2 (warm) | `ONLY_ON_DEVICE` | `on_device` | 16,749 | 1 | yes |
+
+- **Comparison with unconstrained schema:** Before `crowdDeviceSchema`, the first call after model download took `204 s` (cold) and a warm call for 1 requested persona took `122 s` because Gemini Nano padded `reactions` up to the generic `maxItems: 12` with invented personas. Constraining array length and `personaId` enum cut warm single-persona latency from `122 s` to `16.7 s` (7.3× faster).
+- **Decisions from measurement:**
+  1. Use per-call exact-length schemas (`crowdDeviceSchema` / `crowdCloudSchema` and `refereeRoundDeviceSchema` / `refereeRoundCloudSchema`) in `provider-firebase.ts`, with the target IDs included in the router's model cache key.
+  2. Run the crowd as **5 rotating personas per round in one batched call** (`perRound: 5`, `batchOnDevice: 5`, `batchInCloud: 5`), rather than 10 separate on-device calls.
+  3. Fire a tiny background `ONLY_ON_DEVICE` warm-up prompt when device status becomes `'available'` (not recorded in the ledger) so the player's first real on-device call does not pay the cold-start cost.
