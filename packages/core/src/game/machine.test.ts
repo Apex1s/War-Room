@@ -1088,6 +1088,68 @@ describe('engine.ts parallel Generals and retry effects', () => {
       const initial = createInitialGameRecord(`test-${tpl.id}`, tpl.id, 1000);
       expect(initial.templateId).toBe(tpl.id);
       expect(initial.generals.map((g) => g.id)).toEqual(tpl.generals.map((g) => g.id));
+      expect(tpl.demoObjective.length).toBeGreaterThan(20);
+      expect(tpl.demoBrief.length).toBeGreaterThan(200);
+    }
+  });
+
+  it('plays a full 3-round mock game to final report on startup, price-war, and match templates', async () => {
+    const provider = createMockProvider();
+    setProvider(provider);
+    setRetrySleepForTest(async () => {});
+    (globalThis as Record<string, unknown>).LanguageModel = {
+      availability: async () => 'available',
+    };
+    setDeviceStatusForTest('available', 1);
+
+    for (const tpl of [startupTemplate, priceWarTemplate, matchTemplate]) {
+      let game = createInitialGameRecord(`full-${tpl.id}`, tpl.id, 1000);
+      let vaultRecord: VaultRecord = {
+        gameId: game.id,
+        rawObjective: '',
+        rawBrief: '',
+        rawMoves: {},
+        map: [],
+      };
+
+      const sealed = await runSealBriefEffect(
+        game,
+        vaultRecord,
+        tpl.demoObjective,
+        tpl.demoBrief,
+      );
+      game = reduceGame(sealed.game, { type: 'REDACTION_APPROVED' });
+      vaultRecord = sealed.vaultRecord;
+      expect(vaultRecord.map.length).toBeGreaterThanOrEqual(8);
+
+      for (const round of [1, 2, 3]) {
+        expect(game.phase).toEqual({ kind: 'user_turn', round });
+        const moved = await runPlayerMoveAndGeneralsEffect(
+          game,
+          vaultRecord,
+          `${tpl.openingMove} (Round ${round})`,
+        );
+        const after = await runAftermathEffect(moved.game, moved.vaultRecord);
+        game = after.game;
+        vaultRecord = after.vaultRecord;
+
+        expect(game.rounds[round - 1]?.generalMoves).toHaveLength(3);
+        expect(
+          game.rounds[round - 1]?.generalMoves.map((m) => m.generalId),
+        ).toEqual(tpl.generals.map((g) => g.id));
+        expect(game.rounds[round - 1]?.crowd).toHaveLength(5);
+        expect(game.rounds[round - 1]?.referee?.scores).toHaveLength(3);
+        expect(
+          game.rounds[round - 1]?.referee?.scores.map((s) => s.generalId),
+        ).toEqual(tpl.generals.map((g) => g.id));
+
+        game = reduceGame(game, { type: 'NEXT' });
+      }
+
+      expect(game.phase).toEqual({ kind: 'reporting' });
+      const finalRes = await runFinalReportEffect(game, vaultRecord);
+      expect(finalRes.game.phase).toEqual({ kind: 'done' });
+      expect(finalRes.game.report).not.toBeNull();
     }
   });
 });

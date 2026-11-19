@@ -133,6 +133,8 @@ const STOP_WORDS = new Set([
   'double', 'decline', 'offer', 'guarantee', 'integrate', 'structure', 'cross-sell',
   'open', 'capture', 'replace', 'hire', 'position', 'run', 'switch', 'scale', 'provide',
   'dominate', 'lock', 'shift', 'build', 'ship', 'cut', 'use', 'make', 'take', 'give',
+  'announce', 'start', 'defend', 'win', 'head', 'coach', 'press', 'trigger', 'hold', 'test',
+  'expand', 'reduce', 'launch', 'pivot', 'commit', 'commits', 'bypass', 'exploit',
 ]);
 
 const COMPANY_HINTS =

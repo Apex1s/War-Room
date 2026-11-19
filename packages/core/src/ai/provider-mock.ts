@@ -132,12 +132,16 @@ function buildDefaultMockOutput(
   userPrompt: string,
 ): unknown {
   if (params.task === 'redact') {
+    const lowerPrompt = userPrompt.toLowerCase();
+    const matchedCanned = CANNED_OUTPUTS.redact.entities.filter((e) =>
+      lowerPrompt.includes(e.text.toLowerCase()),
+    );
     const heuristicNames = detectCapitalisedRuns(userPrompt).map((e) => ({
       text: e.text,
       type: e.type as 'COMPANY' | 'PERSON' | 'PRODUCT' | 'PLACE' | 'OTHER',
     }));
     return {
-      entities: [...CANNED_OUTPUTS.redact.entities, ...heuristicNames].slice(0, 40),
+      entities: [...matchedCanned, ...heuristicNames].slice(0, 40),
     };
   }
 
