@@ -48,7 +48,7 @@ export function HybridStats({
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <div
           className="p-3 rounded bg-[#0A0E17] border border-[#223049]"
           data-testid="stat-on-device-share"

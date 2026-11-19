@@ -141,14 +141,14 @@ export function DiffView({
 
           <div className="mb-3">
             <div className="text-xs font-mono text-[#8B9BB4] mb-1">Objective</div>
-            <div className="text-sm leading-relaxed whitespace-pre-wrap bg-[#0A0E17] border border-[#223049] rounded p-3">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3">
               {renderRedactedOriginal(rawObjective, objectiveSpans)}
             </div>
           </div>
 
           <div>
             <div className="text-xs font-mono text-[#8B9BB4] mb-1">Confidential Plan</div>
-            <div className="text-sm leading-relaxed whitespace-pre-wrap bg-[#0A0E17] border border-[#223049] rounded p-3 min-h-[160px]">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3 min-h-[160px]">
               {renderRedactedOriginal(rawBrief, briefSpans)}
             </div>
           </div>
@@ -167,7 +167,7 @@ export function DiffView({
           <div className="mb-3">
             <div className="text-xs font-mono text-[#8B9BB4] mb-1">Objective</div>
             <div
-              className="text-sm leading-relaxed whitespace-pre-wrap bg-[#0A0E17] border border-[#223049] rounded p-3"
+              className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3"
               data-testid="abstracted-objective-text"
             >
               {renderAbstractedWithTokens(abstractedObjective)}
@@ -177,7 +177,7 @@ export function DiffView({
           <div>
             <div className="text-xs font-mono text-[#8B9BB4] mb-1">Abstracted Plan</div>
             <div
-              className="text-sm leading-relaxed whitespace-pre-wrap bg-[#0A0E17] border border-[#223049] rounded p-3 min-h-[160px]"
+              className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#0A0E17] border border-[#223049] rounded p-3 min-h-[160px]"
               data-testid="abstracted-brief-text"
             >
               {renderAbstractedWithTokens(abstractedBrief)}

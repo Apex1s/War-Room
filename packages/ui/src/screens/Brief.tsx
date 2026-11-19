@@ -1,5 +1,5 @@
 import { SAMPLE_BRIEFS, type GameTemplate } from '@warroom/core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TOKENS } from '../tokens';
 
 export interface BriefScreenProps {
@@ -21,6 +21,18 @@ export function BriefScreen({
 }: BriefScreenProps) {
   const [objective, setObjective] = useState(initialObjective);
   const [brief, setBrief] = useState(initialBrief);
+
+  useEffect(() => {
+    if (initialObjective) {
+      setObjective(initialObjective);
+    }
+  }, [initialObjective]);
+
+  useEffect(() => {
+    if (initialBrief) {
+      setBrief(initialBrief);
+    }
+  }, [initialBrief]);
 
   const isSealing = sealingProgress !== null;
 

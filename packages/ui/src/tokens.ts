@@ -11,9 +11,9 @@ export const TOKENS = {
     safe: '#22C55E',
   },
   classes: {
-    card: 'bg-[#111826] border border-[#223049] rounded-lg p-5 shadow-sm',
+    card: 'bg-[#111826] border border-[#223049] rounded-lg p-3.5 sm:p-5 shadow-sm min-w-0',
     cardInteractive:
-      'bg-[#111826] border border-[#223049] hover:border-[#E0A84B]/70 rounded-lg p-5 transition-colors cursor-pointer',
+      'bg-[#111826] border border-[#223049] hover:border-[#E0A84B]/70 rounded-lg p-3.5 sm:p-5 transition-colors cursor-pointer min-w-0',
     badge:
       'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono border border-[#223049] bg-[#162032] text-[#E6EDF3]',
     btnPrimary:

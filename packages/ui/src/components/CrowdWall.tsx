@@ -78,7 +78,7 @@ export function CrowdWall({
       </div>
 
       {reactions.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {reactions.map((rx) => {
             const persona = personaMap.get(rx.personaId);
             const sign = rx.sentiment > 0 ? `+${rx.sentiment}` : `${rx.sentiment}`;
@@ -122,7 +122,7 @@ export function CrowdWall({
           })}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {rotatingPersonas.map((p) => (
             <div
               key={p.id}

@@ -51,13 +51,13 @@ export function PlaceholderTable({
           </p>
         </div>
 
-        <form onSubmit={handleAdd} className="flex items-center gap-2">
+        <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <input
             type="text"
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             placeholder="Add term to mask…"
-            className="rounded bg-[#0A0E17] border border-[#223049] px-2.5 py-1.5 text-xs text-[#E6EDF3] focus:outline-none focus:border-[#E0A84B]"
+            className="flex-1 min-w-[130px] rounded bg-[#0A0E17] border border-[#223049] px-2.5 py-1.5 text-xs text-[#E6EDF3] focus:outline-none focus:border-[#E0A84B]"
             data-testid="input-manual-redact"
           />
           <select

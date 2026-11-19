@@ -34,6 +34,7 @@ export interface PlatformInfo {
   authMode: 'anonymous+google' | 'anonymous';
   onDownloadModel?: () => Promise<unknown>;
   initialBrief?: () => Promise<string | null>;
+  subscribeInitialBrief?: (onBrief: (text: string) => void) => () => void;
 }
 
 export function describePlatform(platform: PlatformInfo): string {
@@ -51,6 +52,7 @@ export function App({ platform }: AppProps) {
   const [activeGame, setActiveGame] = useState<GameRecord | null>(null);
   const [activeVault, setActiveVault] = useState<VaultRecord | null>(null);
   const [sealingProgress, setSealingProgress] = useState<number | null>(null);
+  const [prefilledBrief, setPrefilledBrief] = useState<string | null>(null);
   const [inspectingRoundsFromReport, setInspectingRoundsFromReport] =
     useState<boolean>(false);
   const [egressInspectorOpen, setEgressInspectorOpen] =
@@ -67,12 +69,34 @@ export function App({ platform }: AppProps) {
     return subscribeAuthUserState(setAuthState);
   }, []);
 
+  const applyExternalBriefSelection = useCallback(async (selectionText: string) => {
+    const trimmed = selectionText.trim();
+    if (!trimmed) return;
+    await settingsStore.setActiveGameId(null);
+    setActiveGame(null);
+    setActiveVault(null);
+    setPrefilledBrief(trimmed);
+    setSelectedTemplateId('startup');
+  }, []);
+
   const loadPersistedState = useCallback(async () => {
     setLoading(true);
     try {
       await hydrateLedgerFromStore();
       const allGames = await gamesStore.getAll();
       setSavedGames(allGames);
+
+      if (platform.initialBrief) {
+        try {
+          const fromSelection = await platform.initialBrief();
+          if (fromSelection && fromSelection.trim().length > 0) {
+            await applyExternalBriefSelection(fromSelection);
+            return;
+          }
+        } catch {
+          // Ignore initialBrief error
+        }
+      }
 
       const activeId = await settingsStore.getActiveGameId();
       if (activeId) {
@@ -94,16 +118,24 @@ export function App({ platform }: AppProps) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [platform, applyExternalBriefSelection]);
 
   useEffect(() => {
     void loadPersistedState();
   }, [loadPersistedState]);
 
+  useEffect(() => {
+    if (!platform.subscribeInitialBrief) return;
+    return platform.subscribeInitialBrief((selectionText) => {
+      void applyExternalBriefSelection(selectionText);
+    });
+  }, [platform, applyExternalBriefSelection]);
+
   const handleSelectTemplate = async (templateId: TemplateId) => {
     await settingsStore.setActiveGameId(null);
     setActiveGame(null);
     setActiveVault(null);
+    setPrefilledBrief(null);
     setSelectedTemplateId(templateId);
   };
 
@@ -320,9 +352,9 @@ export function App({ platform }: AppProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0E17] text-[#E6EDF3]">
+    <div className="min-h-screen bg-[#0A0E17] text-[#E6EDF3] overflow-x-hidden">
       <header className="border-b border-[#223049] bg-[#111826]/90 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -404,7 +436,7 @@ export function App({ platform }: AppProps) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {loading ? (
           <div className="text-sm font-mono text-[#8B9BB4]">
             Loading local vault…
@@ -477,7 +509,7 @@ export function App({ platform }: AppProps) {
           <BriefScreen
             template={TEMPLATES[selectedTemplateId]}
             initialObjective={activeVault?.rawObjective ?? ''}
-            initialBrief={activeVault?.rawBrief ?? ''}
+            initialBrief={prefilledBrief ?? activeVault?.rawBrief ?? ''}
             sealingProgress={sealingProgress}
             onBack={() => void handleResetToHome()}
             onSubmitBrief={(obj, brf) => void handleSubmitBrief(obj, brf)}
