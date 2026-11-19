@@ -154,3 +154,26 @@ export function toGeminiSchema(node: unknown): unknown {
 export function cloudSchema(task: Task): unknown {
   return toGeminiSchema(deviceSchema(task));
 }
+
+/**
+ * Crowd schema for one specific call: exactly one reaction per requested persona, and
+ * personaId restricted to those ids. Without this, Gemini Nano filled the list up to the
+ * generic maximum of 12 with invented personas, and on a CPU every extra token costs time
+ * (one requested persona took 122 s warm on the dev machine). Pass the ids in prompt order.
+ */
+export function crowdDeviceSchema(personaIds: string[]): Record<string, unknown> {
+  if (personaIds.length === 0) throw new RangeError('crowdDeviceSchema needs at least one persona id');
+  const schema = structuredClone(deviceSchema('crowd')) as {
+    properties: { reactions: { minItems?: number; maxItems?: number; items: { properties: { personaId: Record<string, unknown> } } } };
+  };
+  const reactions = schema.properties.reactions;
+  reactions.minItems = personaIds.length;
+  reactions.maxItems = personaIds.length;
+  reactions.items.properties.personaId = { type: 'string', enum: [...personaIds] };
+  return schema as unknown as Record<string, unknown>;
+}
+
+/** Cloud counterpart of `crowdDeviceSchema`, for the batched cloud fallback. */
+export function crowdCloudSchema(personaIds: string[]): unknown {
+  return toGeminiSchema(crowdDeviceSchema(personaIds));
+}

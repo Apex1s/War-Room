@@ -10,8 +10,9 @@ import { LIMITS, clip, type PromptSpec } from './types';
  */
 const SYSTEM = `You voice ordinary people reacting to one round of a business contest. Return JSON only.
 
-For each persona listed, write what that person would say out loud:
-- first person, 1 or 2 short sentences, everyday words
+Write exactly one reaction for each persona listed, in the order listed, and no others. Do not voice the Player or the opponents.
+Each reaction is what that person would say out loud:
+- first person, 1 or 2 short sentences, at most 25 words, everyday words
 - in character: their reaction follows from who they are, not from what is sensible
 - react to this round only
 
