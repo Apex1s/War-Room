@@ -12,7 +12,7 @@ import {
   type SchemaRequest,
 } from 'firebase/ai';
 import { PROMPTS, type PromptInput } from '../../packages/core/prompts';
-import { cloudSchema, deviceSchema, OUTPUT_SCHEMAS } from '../../packages/core/src/ai/schemas';
+import { cloudSchema, crowdCloudSchema, crowdDeviceSchema, OUTPUT_SCHEMAS } from '../../packages/core/src/ai/schemas';
 
 interface ChromeLanguageModel {
   availability(options?: LanguageModelCreateCoreOptions): Promise<string>;
@@ -313,7 +313,7 @@ async function runButton1OnlyOnDevice(): Promise<void> {
         expectedOutputs: [{ type: 'text', languages: ['en'] }],
       },
       promptOptions: {
-        responseConstraint: deviceSchema('crowd'),
+        responseConstraint: crowdDeviceSchema(CROWD_INPUT.personas.map((p) => p.id)),
       },
     },
   });
@@ -340,7 +340,7 @@ async function runButton2PreferOnDevice(): Promise<void> {
       systemInstruction: system,
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: cloudSchema('crowd') as SchemaRequest,
+        responseSchema: crowdCloudSchema(CROWD_INPUT.personas.map((p) => p.id)) as SchemaRequest,
       },
     },
     onDeviceParams: {
@@ -350,7 +350,7 @@ async function runButton2PreferOnDevice(): Promise<void> {
         expectedOutputs: [{ type: 'text', languages: ['en'] }],
       },
       promptOptions: {
-        responseConstraint: deviceSchema('crowd'),
+        responseConstraint: crowdDeviceSchema(CROWD_INPUT.personas.map((p) => p.id)),
       },
     },
   });
