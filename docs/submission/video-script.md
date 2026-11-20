@@ -52,7 +52,7 @@ Rules from the hackathon: 3 minutes or less, public on YouTube, in English. Crit
 **Screen:** Hybrid telemetry panel: share of calls on-device, cloud calls avoided. Switch to the Firebase console tab, edit `routing_table`, set crowd to `only_in_cloud`, publish. Back in the app, play a quick round: crowd badges now say CLOUD.
 
 **Voice:**
-> FILL: real share, for example "Half of this game ran on my laptop." Those are cloud calls I didn't pay for and data that never left.
+> Two thirds of this game ran on my laptop. Those are cloud calls I didn't pay for, and data that never left.
 > The routing lives in Remote Config. One change in the console, and the crowd moves to the cloud, live. The raw-text tasks can't move. That lock is in the code.
 
 ## 2:40 to 2:55. Offline and everywhere

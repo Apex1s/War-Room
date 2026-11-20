@@ -46,7 +46,8 @@ Every AI output carries a badge saying where it actually ran (read from `respons
 | `gemini-3.5-flash-lite`, one General move | 2 to 10 s |
 | Free-tier rate limit | 15 requests per minute per project on flash-lite, shared by all visitors |
 | Cloud reliability at peak | about half of flash-lite calls failed at random on 19 Nov, so the router retries with backoff, then a second model, then Gemini Nano |
-| A full game with Gemini Nano available | FILL: cloud calls and timings from the owner's test game |
+| A full 3-round game with Gemini Nano (20 Nov) | 26 AI calls, **17 on-device (65%)**, 9 in the cloud (8 General moves and the final report). 23,700 characters of prompts stayed on the laptop. Median latency 18.5 s on-device, 7.6 s in the cloud |
+| Per task in that game | live coaching 13 to 23 s, referee 29 to 33 s, crowd (5 personas, one call) 88 to 93 s in the background, Generals 5 to 21 s, final report 15.4 s on `gemini-4-hydrogen` |
 
 ## Firebase products used
 

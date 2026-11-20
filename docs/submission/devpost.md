@@ -1,6 +1,6 @@
 # Devpost submission text (draft)
 
-Paste each section into the matching Devpost field. Lines starting with FILL need a number from the owner's test game before submitting. Keep the wording free of em and en dashes.
+Paste each section into the matching Devpost field. Lines starting with FILL still need to be completed before submitting. Keep the wording free of em and en dashes.
 
 ---
 
@@ -60,7 +60,8 @@ Stack: TypeScript, React, Tailwind CSS, Vite, a pnpm monorepo (core engine, shar
 ## Accomplishments that we're proud of
 
 - A privacy design you can verify: the Egress inspector shows the exact text of every cloud call, and none of them ever contains a real name.
-- A game that keeps going when the cloud does not.
+- **Two thirds of a real game never touched the cloud.** In a full three-round game on an ordinary 12 GB laptop (below Google's official spec, using Chrome's performance-check bypass flag), 17 of 26 AI calls (65%) ran on Gemini Nano: the firewall, live coaching, every crowd reaction and every referee verdict. Only the 8 opponent moves and the final report went to the cloud, and none of them contained a real name.
+- A game that keeps going when the cloud does not: in that same game one opponent hit a busy free tier, held its position for a round, and the game carried on.
 - One codebase that runs as a web app, a phone-friendly site and a Chrome side panel.
 - The "What your opponents knew" reveal at the end, which turns a report into a story.
 
@@ -86,7 +87,6 @@ All code was written between 16 and 30 November 2026. In order: the hybrid infer
 - Code: https://github.com/Apex1s/War-Room (Apache-2.0)
 - Video: FILL: YouTube link
 
-## Numbers to fill before submitting
+## Still to fill before submitting
 
-- FILL: timings from a full game on the Gemini Nano laptop (sealing, crowd, referee, total).
-- FILL: share of calls on-device and cloud calls avoided in that game, from the Hybrid telemetry panel.
+- FILL: the YouTube link above.
