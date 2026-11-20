@@ -68,7 +68,16 @@ function ensureBridgeIframe(): Promise<HTMLIFrameElement> {
   bridgeReadyPromise = new Promise<HTMLIFrameElement>((resolve, reject) => {
     const iframe = document.createElement('iframe');
     iframe.src = BRIDGE_URL;
-    iframe.style.display = 'none';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.tabIndex = -1;
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-9999px';
+    iframe.style.top = '0';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    iframe.style.pointerEvents = 'none';
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== BRIDGE_ORIGIN) return;
       const data = event.data as { type?: string } | null;
