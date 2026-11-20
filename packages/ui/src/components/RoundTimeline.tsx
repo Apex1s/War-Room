@@ -95,9 +95,17 @@ export function RoundTimeline({
           {Array.from({ length: game.totalRounds }, (_, i) => i + 1).map(
             (rNum) => {
               const roundRec = game.rounds.find((r) => r.n === rNum);
-              const hasAllGenerals =
+              const settledGenerals =
+                roundRec !== undefined
+                  ? roundRec.generalMoves.length +
+                    Object.keys(roundRec.failedGenerals ?? {}).length
+                  : 0;
+              const isRoundComplete =
                 roundRec !== undefined &&
-                roundRec.generalMoves.length === game.generals.length;
+                (settledGenerals >= game.generals.length ||
+                  rNum < currentPhaseRound ||
+                  game.phase.kind === 'reporting' ||
+                  game.phase.kind === 'done');
               const isCurrentPhase =
                 currentPhaseRound === rNum &&
                 game.phase.kind !== 'reporting' &&
@@ -112,7 +120,7 @@ export function RoundTimeline({
                   className={`px-13 py-5 rounded-[3px] font-mono text-label uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
                     isSelected
                       ? 'border-mint bg-bg text-mint font-semibold'
-                      : hasAllGenerals
+                      : isRoundComplete
                         ? 'border-line bg-bg text-text hover:border-mint'
                         : isCurrentPhase
                           ? 'border-line bg-surface text-text'
@@ -121,7 +129,7 @@ export function RoundTimeline({
                   data-testid={`round-pill-${rNum}`}
                 >
                   ROUND {rNum} OF {game.totalRounds}{' '}
-                  {hasAllGenerals ? '[DONE]' : isCurrentPhase ? '●' : ''}
+                  {isRoundComplete ? '[DONE]' : isCurrentPhase ? '●' : ''}
                 </button>
               );
             },
