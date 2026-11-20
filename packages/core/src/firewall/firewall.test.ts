@@ -166,6 +166,17 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
     expect(rendered).not.toContain(']');
   });
 
+  it('leaves ordinary bracketed words from the player untouched', () => {
+    const map = buildMap(
+      [],
+      [{ text: 'Kestrel Labs', type: 'COMPANY', detectedBy: 'ai' }],
+    );
+    const move = 'Ship [COMPANY_1] v2 [beta] to [some pilots] first.';
+    expect(rehydrate(move, map, '[COMPANY_1]')).toBe(
+      'Ship Kestrel Labs v2 [beta] to [some pilots] first.',
+    );
+  });
+
   it('blocks a planted leak in egress-guard both directly and through router.run', async () => {
     const map = buildMap(
       [],

@@ -395,7 +395,9 @@ export function rehydrate(
   });
 
   // Neutralise any remaining bracketed text (e.g. [COMP_1], [BIG INCOMPETITOR], [FOO])
-  const swapped = afterKnown.replace(/\[([^\[\]\n]{1,80})\]/g, (fullMatch, inner: string) => {
+  // Only placeholder-shaped text (capitals, digits, underscores, spaces) is treated as an
+  // invented token; ordinary brackets the player writes, such as "[beta]", are left alone.
+  const swapped = afterKnown.replace(/\[([A-Z][A-Z0-9_ ]{0,60})\]/g, (fullMatch, inner: string) => {
     const normalized = normalizeToken(fullMatch);
     if (allowedSet !== null && allowedSet.has(normalized)) {
       const entry = byToken.get(normalized);
