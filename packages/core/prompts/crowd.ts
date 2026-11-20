@@ -21,6 +21,7 @@ sentiment is how the persona feels about the Player's move:
 
 People disagree. Do not make every reaction positive.
 Names in square brackets such as [COMPANY_1] are placeholders. Keep them exactly as written.
+Never make up your own square brackets. For a company with no placeholder, say "my current vendor" or "the big player".
 Use each personaId exactly as given.`;
 
 export const crowdPrompt: PromptSpec<'crowd'> = {
