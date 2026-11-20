@@ -119,24 +119,9 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        runtimeCaching: [
-          {
-            urlPattern:
-              /^https:\/\/(?:firebasevertexai|firestore|firebaseinstallations|firebaseremoteconfig|identitytoolkit|securetoken|content-firebaseappcheck)\.googleapis\.com\/.*/i,
-            handler: 'NetworkOnly',
-            method: 'GET',
-          },
-          {
-            urlPattern:
-              /^https:\/\/(?:firebasevertexai|firestore|firebaseinstallations|firebaseremoteconfig|identitytoolkit|securetoken|content-firebaseappcheck)\.googleapis\.com\/.*/i,
-            handler: 'NetworkOnly',
-            method: 'POST',
-          },
-          {
-            urlPattern: /^https:\/\/www\.google\.com\/recaptcha\/.*/i,
-            handler: 'NetworkOnly',
-          },
-        ],
+        // Do not intercept Firebase AI Logic, App Check, or reCAPTCHA requests in Workbox
+        // (not even NetworkOnly), so streaming and attestation go directly through the browser.
+        runtimeCaching: [],
       },
     }),
   ],
