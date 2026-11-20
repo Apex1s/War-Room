@@ -69,10 +69,6 @@ function ensureBridgeIframe(): Promise<HTMLIFrameElement> {
     const iframe = document.createElement('iframe');
     iframe.src = BRIDGE_URL;
     iframe.style.display = 'none';
-    const timeoutId = setTimeout(() => {
-      reject(new Error('App Check bridge iframe load timed out'));
-    }, 10000);
-
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== BRIDGE_ORIGIN) return;
       const data = event.data as { type?: string } | null;
@@ -83,11 +79,15 @@ function ensureBridgeIframe(): Promise<HTMLIFrameElement> {
       }
     };
 
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener('message', onMessage);
+      iframe.remove();
+      bridgeIframe = null;
+      bridgeReadyPromise = null;
+      reject(new Error('App Check bridge iframe load timed out'));
+    }, 10000);
+
     window.addEventListener('message', onMessage);
-    iframe.addEventListener('load', () => {
-      clearTimeout(timeoutId);
-      resolve(iframe);
-    });
     document.body.appendChild(iframe);
     bridgeIframe = iframe;
   });
