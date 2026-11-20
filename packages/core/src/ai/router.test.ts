@@ -27,6 +27,7 @@ import {
   setUrlOverridesForTest,
 } from './routing-table';
 import { applyRemoteConfigRoutingTableJson } from '../firebase/init';
+import { truncateHeadline } from './tasks';
 import {
   crowdCloudSchema,
   crowdDeviceSchema,
@@ -674,5 +675,23 @@ describe('AI Router & Routing Table', () => {
     await run('crowd', SAMPLE_CROWD_INPUT);
     expect(mock.createdModels).toHaveLength(2);
     expect(mock.createdModels[1].mode).toBe('only_in_cloud');
+  });
+
+  it('truncates general_move headlines at the last space before 140 chars with ellipsis only when cut', () => {
+    const shortHeadline = 'Pass on seed round and back a vertical rival with lower CAC';
+    expect(truncateHeadline(shortHeadline)).toBe(shortHeadline);
+
+    const exact140 = 'a'.repeat(140);
+    expect(truncateHeadline(exact140)).toBe(exact140);
+
+    const longHeadline =
+      'Bundle a free workflow auditing tier into our flagship enterprise suite to starve the challenger of mid-market conversions across enterprise customers';
+    const truncated = truncateHeadline(longHeadline);
+    expect(truncated.endsWith('...')).toBe(true);
+    expect(truncated.length).toBeLessThanOrEqual(143);
+    // Must not cut mid-word ("enterprise su...")
+    expect(truncated).toBe(
+      'Bundle a free workflow auditing tier into our flagship enterprise suite to starve the challenger of mid-market conversions across...',
+    );
   });
 });

@@ -23,6 +23,15 @@ function clampInt(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.round(val)));
 }
 
+export function truncateHeadline(raw: string, maxLen = 140): string {
+  const text = raw.trim().replace(/\s+/g, ' ');
+  if (text.length <= maxLen) return text;
+  const slice = text.slice(0, maxLen);
+  const lastSpace = slice.lastIndexOf(' ');
+  const cut = lastSpace > 0 ? slice.slice(0, lastSpace) : slice;
+  return `${cut.replace(/[,;:\-]+$/, '').trimEnd()}...`;
+}
+
 const SEVERITY_ORDER: Record<'high' | 'medium' | 'low', number> = {
   high: 0,
   medium: 1,
@@ -163,7 +172,7 @@ export const TASKS: { [K in Task]: TaskSpec<K> } = {
     schema: OUTPUT_SCHEMAS.general_move,
     maxInputChars: 24000,
     normalize: (out) => ({
-      headline: out.headline.trim().slice(0, 120),
+      headline: truncateHeadline(out.headline, 140),
       move: out.move.trim(),
       rationale: out.rationale.trim(),
       threatLevel: clampInt(out.threatLevel, 1, 5),
