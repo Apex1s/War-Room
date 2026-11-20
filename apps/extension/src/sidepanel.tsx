@@ -61,6 +61,14 @@ interface ChromeGlobal {
 
 let bridgeIframe: HTMLIFrameElement | null = null;
 let bridgeReadyPromise: Promise<HTMLIFrameElement> | null = null;
+let bridgeRequestChain: Promise<void> = Promise.resolve();
+
+const BRIDGE_SERIAL_GAP_MS = 250;
+const BRIDGE_RETRY_DELAY_MS = 1_200;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function ensureBridgeIframe(): Promise<HTMLIFrameElement> {
   if (bridgeReadyPromise) return bridgeReadyPromise;
@@ -104,7 +112,7 @@ function ensureBridgeIframe(): Promise<HTMLIFrameElement> {
   return bridgeReadyPromise;
 }
 
-export async function requestBridgeToken(): Promise<AppCheckToken> {
+async function requestSingleBridgeToken(): Promise<AppCheckToken> {
   const iframe = await ensureBridgeIframe();
   const targetWindow = iframe.contentWindow;
   if (!targetWindow) {
@@ -153,6 +161,24 @@ export async function requestBridgeToken(): Promise<AppCheckToken> {
       BRIDGE_ORIGIN,
     );
   });
+}
+
+export function requestBridgeToken(): Promise<AppCheckToken> {
+  const task = bridgeRequestChain.then(async () => {
+    try {
+      return await requestSingleBridgeToken();
+    } catch {
+      await sleep(BRIDGE_RETRY_DELAY_MS);
+      return await requestSingleBridgeToken();
+    }
+  });
+
+  bridgeRequestChain = task.then(
+    () => sleep(BRIDGE_SERIAL_GAP_MS),
+    () => sleep(BRIDGE_SERIAL_GAP_MS),
+  );
+
+  return task;
 }
 
 async function consumeInitialBrief(): Promise<string | null> {
