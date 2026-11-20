@@ -27,6 +27,21 @@ function overlaps(a: RawSpan, b: RawSpan): boolean {
   return a.start < b.end && b.start < a.end;
 }
 
+export function isContactLikeEntity(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (/^https?:\/\/\S+$/i.test(trimmed)) return true;
+  if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed)) return true;
+  if (
+    /^(?:\+\d{1,3}[\s.-]?)?(?:\(\d{2,4}\)[\s.-]?|\d{2,4}[\s.-])\d{3,4}[\s.-]\d{3,4}$/.test(
+      trimmed,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Deterministic regex detectors for MONEY, PERCENT, NUMBER, DATE and CONTACT (email, URL, phone).
  */

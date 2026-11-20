@@ -478,4 +478,34 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
       }
     }
   });
+
+  it('drops email, URL, and phone entities returned by Nano so regex types them as CONTACT', async () => {
+    const text =
+      'Kestrel Labs contact: amine@kestrellabs.io, https://kestrellabs.io, +212 612-345-678.';
+    mock.setHandler(async () => ({
+      text: JSON.stringify({
+        entities: [
+          { text: 'Kestrel Labs', type: 'COMPANY' },
+          { text: 'amine@kestrellabs.io', type: 'OTHER' },
+          { text: 'https://kestrellabs.io', type: 'OTHER' },
+          { text: '+212 612-345-678', type: 'OTHER' },
+        ],
+      }),
+      inferenceSource: 'on_device',
+    }));
+
+    const result = await seal(text);
+    expect(result.method).toBe('on-device-ai');
+
+    const emailEntry = result.map.find((e) => e.original === 'amine@kestrellabs.io');
+    const urlEntry = result.map.find((e) => e.original === 'https://kestrellabs.io');
+    const phoneEntry = result.map.find((e) => e.original === '+212 612-345-678');
+
+    expect(emailEntry?.type).toBe('CONTACT');
+    expect(emailEntry?.detectedBy).toBe('regex');
+    expect(urlEntry?.type).toBe('CONTACT');
+    expect(urlEntry?.detectedBy).toBe('regex');
+    expect(phoneEntry?.type).toBe('CONTACT');
+    expect(phoneEntry?.detectedBy).toBe('regex');
+  });
 });

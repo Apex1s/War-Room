@@ -7,6 +7,7 @@ import { chunkText } from './chunk';
 import {
   detectCapitalisedRuns,
   detectRegexEntities,
+  isContactLikeEntity,
   type DetectedEntity,
 } from './detectors';
 import {
@@ -90,23 +91,25 @@ export async function seal(
       opts?.onProgress?.(1);
     }
 
-    // 3. Filter names so only substrings that actually exist in `text` survive
+    // 3. Filter names so only substrings that actually exist in `text` survive,
+    // and drop any email/URL/phone entity returned by Nano so regex types it as CONTACT.
     const verifiedNames: DetectedEntity[] = [];
     for (const n of names) {
       const matched = findExactOrCaseInsensitiveSubstring(text, n.text);
-      if (matched) {
-        verifiedNames.push({
-          text: matched,
-          type: n.type,
-          detectedBy: n.detectedBy,
-        });
-      }
+      if (!matched) continue;
+      if (n.detectedBy === 'ai' && isContactLikeEntity(matched)) continue;
+      verifiedNames.push({
+        text: matched,
+        type: n.type,
+        detectedBy: n.detectedBy,
+      });
     }
 
     // 4 & 5. Merge existingMap with values, verifiedNames and customAlwaysRedact in order of appearance
+    // Put deterministic regex `values` before `verifiedNames` so CONTACT/MONEY/DATE always win on ties.
     const map = buildMap(
       existingMap,
-      [...verifiedNames, ...values],
+      [...values, ...verifiedNames],
       opts?.customAlwaysRedact ?? [],
       text,
     );
