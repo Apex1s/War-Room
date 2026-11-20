@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./prompts": "./prompts/index.ts",
+    "./polyfills": "./src/polyfills.ts",
     "./ai/*": "./src/ai/*.ts"
   },
   "scripts": {

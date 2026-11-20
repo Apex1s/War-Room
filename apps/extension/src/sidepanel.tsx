@@ -1,3 +1,5 @@
+// Must run before Firebase: adds AbortSignal.any for older Safari.
+import '@warroom/core/polyfills';
 import {
   bindFirebaseAuth,
   createFirebaseProvider,
