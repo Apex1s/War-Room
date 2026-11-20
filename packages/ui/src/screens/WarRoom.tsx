@@ -183,7 +183,7 @@ export function WarRoomScreen({
   };
 
   const handleNextRound = async () => {
-    if (game.phase.kind !== 'aftermath' || game.phase.referee === 'running') {
+    if (!canAdvanceAftermath || game.phase.kind !== 'aftermath') {
       return;
     }
 
@@ -223,7 +223,8 @@ export function WarRoomScreen({
     game.phase.round === displayedRound.n;
 
   const canAdvanceAftermath =
-    game.phase.kind === 'aftermath' && game.phase.referee !== 'running';
+    game.phase.kind === 'aftermath' &&
+    (game.phase.referee !== 'running' || displayedRound?.referee != null);
 
   return (
     <div className="flex flex-col gap-21" data-testid="screen-war-room">
@@ -318,11 +319,13 @@ export function WarRoomScreen({
                   ROUND {game.phase.round} OF {game.totalRounds} AFTERMATH
                 </span>
                 <span className="font-mono text-label text-text">
-                  {game.phase.referee === 'running'
+                  {!canAdvanceAftermath
                     ? 'Waiting for Referee verdict before advancing...'
                     : game.phase.crowd === 'running'
                       ? 'Referee done. Crowd is reacting in background; you can advance now.'
-                      : 'Referee and Crowd complete.'}
+                      : game.phase.referee === 'skipped'
+                        ? 'Referee skipped after retry. Ready to advance.'
+                        : 'Referee and Crowd complete. Ready to advance.'}
                 </span>
               </div>
 
