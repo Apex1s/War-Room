@@ -331,14 +331,23 @@ export function cleanPunctuation(text: string): string {
     .replace(/[ \t]*[\u2013\u2014]+[ \t]*/g, ', ');
 }
 
+const COMPANY_LIKE_BRACKET_RE =
+  /\b(?:COMP|COMPANY|COMPETITOR|INCOMPETITOR|INCUMBENT|RIVAL|VENDOR|CORP|FIRM|STARTUP|ORG)\b|COMP(?:ANY|ETITOR)?_\d+|INCOMPETITOR/i;
+
+function neutraliseUnknownBracketed(inner: string): string {
+  return COMPANY_LIKE_BRACKET_RE.test(inner) ? 'a competitor' : 'someone';
+}
+
 /**
  * Swap `[TYPE_N]` (or unbracketed `TYPE_N`) placeholders back to real names at render time,
- * and pass the result through `cleanPunctuation`.
+ * neutralise any remaining unknown `[...]` bracketed tokens, and pass through `cleanPunctuation`.
  *
  * Security / anti-hallucination rule:
  * - Only swaps tokens that were present in `sentTokens` (when provided) AND exist in `map`.
  * - Any other `[TYPE_N]` (such as an invented `[COMPANY_2]`) renders as a neutral phrase
  *   ("a company", "a person", "an amount", etc.) and is logged.
+ * - Any other bracketed text not in `sentTokens` (e.g. `[COMP_1]`, `[BIG INCOMPETITOR]`)
+ *   renders as "a competitor" when company-like, or "someone" otherwise, and is logged.
  */
 export function rehydrate(
   text: string,
@@ -363,7 +372,7 @@ export function rehydrate(
   }
 
   const re = new RegExp(TOKEN_PATTERN.source, 'g');
-  const swapped = text.replace(re, (_fullMatch, rawType: string, rawNum: string) => {
+  const afterKnown = text.replace(re, (_fullMatch, rawType: string, rawNum: string) => {
     const type = rawType as EntityType;
     const canonicalToken = `[${type}_${rawNum}]`;
     const entry = byToken.get(canonicalToken);
@@ -379,6 +388,22 @@ export function rehydrate(
     const neutral = NEUTRAL_PHRASES[type] ?? 'an entity';
     inventedTokenLogs.push({
       token: canonicalToken,
+      replacement: neutral,
+      ts: Date.now(),
+    });
+    return neutral;
+  });
+
+  // Neutralise any remaining bracketed text (e.g. [COMP_1], [BIG INCOMPETITOR], [FOO])
+  const swapped = afterKnown.replace(/\[([^\[\]\n]{1,80})\]/g, (fullMatch, inner: string) => {
+    const normalized = normalizeToken(fullMatch);
+    if (allowedSet !== null && allowedSet.has(normalized)) {
+      const entry = byToken.get(normalized);
+      if (entry) return entry.original;
+    }
+    const neutral = neutraliseUnknownBracketed(inner);
+    inventedTokenLogs.push({
+      token: fullMatch,
       replacement: neutral,
       ts: Date.now(),
     });

@@ -149,6 +149,23 @@ describe('Privacy Firewall, Placeholders, Egress Guard & Network Guard', () => {
     ]);
   });
 
+  it('neutralises arbitrary invented bracketed text such as [COMP_1] and [BIG INCOMPETITOR]', () => {
+    const map = buildMap(
+      [],
+      [{ text: 'Kestrel Labs', type: 'COMPANY', detectedBy: 'ai' }],
+    );
+
+    const crowdReply =
+      '[COMP_1] will undercut [COMPANY_1], and [BIG INCOMPETITOR] already owns the market while [SOME_EXEC] watches.';
+    const rendered = rehydrate(crowdReply, map, '[COMPANY_1]');
+
+    expect(rendered).toBe(
+      'a competitor will undercut Kestrel Labs, and a competitor already owns the market while someone watches.',
+    );
+    expect(rendered).not.toContain('[');
+    expect(rendered).not.toContain(']');
+  });
+
   it('blocks a planted leak in egress-guard both directly and through router.run', async () => {
     const map = buildMap(
       [],
