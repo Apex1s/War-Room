@@ -158,7 +158,9 @@ export function CrowdWall({
               <span className="font-mono text-label text-muted">
                 {crowdStatus === 'running'
                   ? '[THINKING...]'
-                  : cleanPunctuation(p.outlook)}
+                  : crowdStatus === 'done'
+                    ? 'Crowd unavailable this round'
+                    : cleanPunctuation(p.outlook)}
               </span>
             </div>
           ))}

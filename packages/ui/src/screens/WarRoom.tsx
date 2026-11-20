@@ -489,7 +489,12 @@ export function WarRoomScreen({
                   isAftermathForDisplayedRound &&
                   game.phase.kind === 'aftermath'
                     ? game.phase.crowd
-                    : 'done'
+                    : (game.phase.kind === 'generals' ||
+                          game.phase.kind === 'sealing_move' ||
+                          game.phase.kind === 'user_turn') &&
+                        game.phase.round === displayedRound.n
+                      ? 'idle'
+                      : 'done'
                 }
                 vaultMap={vaultRecord.map}
                 showRehydrated={showRehydrated}
