@@ -1406,4 +1406,126 @@ describe('engine.ts parallel Generals and retry effects', () => {
     }
     expect(formatRoundGeneralsStatus(state, state.rounds[0])).toBe('3 of 3 replied');
   });
+
+  it('waits for all Generals to resolve before running referee_round and re-runs referee_round to replace the verdict after a held General succeeds on retry', async () => {
+    setRetrySleepForTest(async () => {});
+    let failCopycat = true;
+    const refereeCalls: string[][] = [];
+
+    const provider = createMockProvider();
+    provider.setHandler((params) => {
+      if (params.task === 'general_move' && failCopycat && params.system.includes('You are Copycat Competitor')) {
+        throw new Error('Network unreachable');
+      }
+      if (params.task === 'referee_round' && params.schemaIds) {
+        refereeCalls.push([...params.schemaIds]);
+        return {
+          text: JSON.stringify({
+            summary: `Scored ${params.schemaIds.length} Generals: ${params.schemaIds.join(', ')}.`,
+            scores: params.schemaIds.map((gid) => ({
+              generalId: gid,
+              delta: params.schemaIds!.length === 3 ? 1 : -1,
+            })),
+            contradiction: '',
+            commitments: [],
+          }),
+          inferenceSource: 'in_cloud',
+        };
+      }
+      if (params.task === 'crowd' && params.schemaIds) {
+        return {
+          text: JSON.stringify({
+            reactions: params.schemaIds.map((pid) => ({
+              personaId: pid,
+              quote: 'Crowd reaction.',
+              sentiment: 0,
+            })),
+          }),
+          inferenceSource: 'in_cloud',
+        };
+      }
+      return {
+        text: JSON.stringify(CANNED_OUTPUTS[params.task]),
+        inferenceSource: 'in_cloud',
+      };
+    });
+    setProvider(provider);
+
+    let game = createInitialGameRecord('referee-after-retry', 'startup', 5000);
+    let vault: VaultRecord = {
+      gameId: game.id,
+      rawObjective: '',
+      rawBrief: '',
+      rawMoves: {},
+      map: [],
+    };
+    const sealed = await runSealBriefEffect(
+      game,
+      vault,
+      startupTemplate.demoObjective,
+      startupTemplate.demoBrief,
+    );
+    game = reduceGame(sealed.game, { type: 'REDACTION_APPROVED' });
+    vault = sealed.vaultRecord;
+
+    // Guard check: if aftermath is somehow invoked with an unresolved General (neither replied nor failed), referee_round must not run.
+    const partialGame = {
+      ...game,
+      rounds: [
+        {
+          n: 1,
+          userMove: 'Move 1',
+          generalMoves: [
+            {
+              ...CANNED_OUTPUTS.general_move,
+              generalId: 'vc',
+              source: 'cloud' as const,
+              latencyMs: 100,
+              model: 'gemini-3.5-flash-lite',
+              fallback: false,
+            },
+          ],
+          crowd: [],
+          referee: null,
+        },
+      ],
+      phase: { kind: 'aftermath' as const, round: 1, referee: 'running' as const, crowd: 'running' as const },
+    };
+    await runAftermathEffect(partialGame, vault);
+    expect(refereeCalls).toHaveLength(0);
+
+    // Run round 1 with Copycat failing: VC and Market reply, Copycat exhausts retries.
+    const afterMove = await runPlayerMoveAndGeneralsEffect(game, vault, startupTemplate.openingMove);
+    game = afterMove.game;
+    vault = afterMove.vaultRecord;
+    expect(game.phase.kind).toBe('aftermath');
+    expect(game.rounds[0]?.generalMoves.map((m) => m.generalId).sort()).toEqual(['market', 'vc']);
+
+    const afterFirst = await runAftermathEffect(game, vault);
+    game = afterFirst.game;
+    expect(refereeCalls).toHaveLength(1);
+    expect(refereeCalls[0].slice().sort()).toEqual(['market', 'vc']);
+    expect(game.rounds[0]?.referee?.scores.map((s) => s.generalId).sort()).toEqual(['market', 'vc']);
+    expect(game.rounds[0]?.referee?.summary).toContain('Scored 2 Generals');
+
+    // Now Copycat succeeds on Retry -> referee_round must re-run with all 3 Generals and replace the verdict.
+    failCopycat = false;
+    const afterRetry = await retrySingleGeneralEffect(game, vault, 'copycat');
+    game = afterRetry.game;
+    expect(game.rounds[0]?.generalMoves).toHaveLength(3);
+    expect(refereeCalls).toHaveLength(2);
+    expect(refereeCalls[1].slice().sort()).toEqual(['copycat', 'market', 'vc']);
+    expect(game.rounds[0]?.referee?.summary).toContain('Scored 3 Generals');
+    expect(game.rounds[0]?.referee?.scores.map((s) => s.generalId).sort()).toEqual([
+      'copycat',
+      'market',
+      'vc',
+    ]);
+    expect(game.phase).toEqual({
+      kind: 'aftermath',
+      round: 1,
+      referee: 'done',
+      crowd: 'done',
+    });
+  });
 });

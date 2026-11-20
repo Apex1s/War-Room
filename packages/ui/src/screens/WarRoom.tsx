@@ -86,6 +86,7 @@ export function WarRoomScreen({
   }, [game, vaultRecord, busy, onGameUpdated]);
 
   useEffect(() => {
+    if (busy) return;
     if (
       game.phase.kind === 'aftermath' &&
       (game.phase.referee === 'running' || game.phase.crowd === 'running') &&
@@ -97,6 +98,7 @@ export function WarRoomScreen({
       crowdAbortRef.current = controller;
 
       void runAftermathEffect(game, vaultRecord, {
+        signal: controller.signal,
         crowdSignal: controller.signal,
         onStateChange: (nextGame, nextVault) => {
           onGameUpdated(nextGame, nextVault);
@@ -107,7 +109,7 @@ export function WarRoomScreen({
         }
       });
     }
-  }, [game, vaultRecord, onGameUpdated]);
+  }, [game, vaultRecord, busy, onGameUpdated]);
 
   const handleSubmitMove = async () => {
     if (!moveText.trim() || busy || game.phase.kind !== 'user_turn') return;
@@ -137,6 +139,11 @@ export function WarRoomScreen({
     ) {
       return;
     }
+    if (crowdAbortRef.current) {
+      crowdAbortRef.current.abort();
+      crowdAbortRef.current = null;
+    }
+    aftermathRunningRoundRef.current = null;
     setBusy(true);
     try {
       const res = await retrySingleGeneralEffect(

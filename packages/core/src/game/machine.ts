@@ -280,21 +280,26 @@ export function reduceGame(
         failedGenerals: hasFailed ? nextFailed : undefined,
       }));
 
-      const nextPhase: GameRecord['phase'] =
-        nextPending.length === 0
-          ? {
-              kind: 'aftermath',
-              round,
-              referee: 'running',
-              crowd: 'running',
-              ...(hasFailed ? { failedGenerals: nextFailed } : {}),
-            }
-          : {
-              kind: 'generals',
-              round,
-              pending: nextPending,
-              ...(hasFailed ? { failedGenerals: nextFailed } : {}),
-            };
+      const unresolvedGenerals = state.generals
+        .map((g) => g.id)
+        .filter((id) => !repliedIds.has(id) && !(id in nextFailed));
+      const allResolved = nextPending.length === 0 && unresolvedGenerals.length === 0;
+      const crowdAlreadyDone = (existingRound?.crowd.length ?? 0) > 0;
+
+      const nextPhase: GameRecord['phase'] = allResolved
+        ? {
+            kind: 'aftermath',
+            round,
+            referee: 'running',
+            crowd: crowdAlreadyDone ? 'done' : 'running',
+            ...(hasFailed ? { failedGenerals: nextFailed } : {}),
+          }
+        : {
+            kind: 'generals',
+            round,
+            pending: nextPending.length > 0 ? nextPending : unresolvedGenerals,
+            ...(hasFailed ? { failedGenerals: nextFailed } : {}),
+          };
 
       return {
         ...state,
@@ -319,25 +324,30 @@ export function reduceGame(
       }));
 
       const targetRound = rounds.find((r) => r.n === round);
-      const hasReplies = (targetRound?.generalMoves.length ?? 0) > 0;
+      const repliedIds = new Set((targetRound?.generalMoves ?? []).map((m) => m.generalId));
+      const hasReplies = repliedIds.size > 0;
+      const unresolvedGenerals = state.generals
+        .map((g) => g.id)
+        .filter((id) => !repliedIds.has(id) && !(id in nextFailed));
+      const allResolved = nextPending.length === 0 && unresolvedGenerals.length === 0;
+      const crowdAlreadyDone = (targetRound?.crowd.length ?? 0) > 0;
 
-      // A General that exhausts retries never blocks the round once pending is empty:
+      // A General that exhausts retries never blocks the round once every General is resolved:
       // transition to aftermath so referee and crowd run on the replies that exist.
-      const nextPhase: GameRecord['phase'] =
-        nextPending.length === 0
-          ? {
-              kind: 'aftermath',
-              round,
-              referee: hasReplies ? 'running' : 'skipped',
-              crowd: hasReplies ? 'running' : 'done',
-              failedGenerals: nextFailed,
-            }
-          : {
-              kind: 'generals',
-              round,
-              pending: nextPending,
-              failedGenerals: nextFailed,
-            };
+      const nextPhase: GameRecord['phase'] = allResolved
+        ? {
+            kind: 'aftermath',
+            round,
+            referee: hasReplies ? 'running' : 'skipped',
+            crowd: crowdAlreadyDone ? 'done' : hasReplies ? 'running' : 'done',
+            failedGenerals: nextFailed,
+          }
+        : {
+            kind: 'generals',
+            round,
+            pending: nextPending.length > 0 ? nextPending : unresolvedGenerals,
+            failedGenerals: nextFailed,
+          };
 
       return {
         ...state,

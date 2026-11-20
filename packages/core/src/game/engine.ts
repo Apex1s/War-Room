@@ -248,12 +248,14 @@ export async function runPendingGeneralsInParallel(
 
 /**
  * Retries a single failed General in place without re-running the other Generals.
+ * If the retried General succeeds and all Generals are now resolved, re-runs `referee_round`
+ * for that round and replaces its verdict.
  */
 export async function retrySingleGeneralEffect(
   initialGame: GameRecord,
   vaultRecord: VaultRecord,
   generalId: string,
-  cb?: EngineCallbacks,
+  cb?: EngineCallbacks & { signal?: AbortSignal; crowdSignal?: AbortSignal },
 ): Promise<{ game: GameRecord; vaultRecord: VaultRecord }> {
   const game = await dispatchAndPersist(
     initialGame,
@@ -261,17 +263,28 @@ export async function retrySingleGeneralEffect(
     { type: 'RETRY_GENERAL', generalId },
     cb,
   );
-  return runPendingGeneralsInParallel(game, vaultRecord, cb);
+  const afterRetry = await runPendingGeneralsInParallel(game, vaultRecord, cb);
+  const afterPhase = afterRetry.game.phase;
+  if (afterPhase.kind === 'aftermath' && !cb?.skipAftermath) {
+    const roundRec = afterRetry.game.rounds.find((r) => r.n === afterPhase.round);
+    const retriedReplied =
+      roundRec?.generalMoves.some((m) => m.generalId === generalId) ?? false;
+    if (retriedReplied && afterPhase.referee === 'running') {
+      return runAftermathEffect(afterRetry.game, afterRetry.vaultRecord, cb);
+    }
+  }
+  return afterRetry;
 }
 
 /**
  * Runs the round aftermath (`referee_round` and `crowd`).
+ * Only starts once every General has replied or exhausted retries.
  * If the referee fails twice, dispatches `REFEREE_SKIPPED` so a referee failure never ends a game.
  */
 export async function runAftermathEffect(
   initialGame: GameRecord,
   vaultRecord: VaultRecord,
-  cb?: EngineCallbacks & { crowdSignal?: AbortSignal },
+  cb?: EngineCallbacks & { signal?: AbortSignal; crowdSignal?: AbortSignal },
 ): Promise<{ game: GameRecord; vaultRecord: VaultRecord }> {
   if (initialGame.phase.kind !== 'aftermath') {
     return { game: initialGame, vaultRecord };
@@ -283,8 +296,21 @@ export async function runAftermathEffect(
     return { game: initialGame, vaultRecord };
   }
 
+  const repliedIds = new Set(roundRecord.generalMoves.map((m) => m.generalId));
+  const failedMap = {
+    ...(roundRecord.failedGenerals ?? {}),
+    ...(initialGame.phase.failedGenerals ?? {}),
+  };
+  const allGeneralsResolved = initialGame.generals.every(
+    (g) => repliedIds.has(g.id) || g.id in failedMap,
+  );
+  if (!allGeneralsResolved) {
+    return { game: initialGame, vaultRecord };
+  }
+
   let game = initialGame;
   const applyEvent = async (event: GameEvent): Promise<void> => {
+    if (cb?.signal?.aborted) return;
     game = reduceGame(game, event);
     await persistAndNotify(game, vaultRecord, cb);
   };
@@ -306,11 +332,16 @@ export async function runAftermathEffect(
     ? (async () => {
         const refInput = buildRefereeRoundInput(game, roundRecord, vaultRecord.map);
         for (let attempt = 1; attempt <= 2; attempt++) {
+          if (cb?.signal?.aborted) return;
           try {
-            const res = await run('referee_round', refInput, { gameId: game.id });
+            const res = await run('referee_round', refInput, {
+              gameId: game.id,
+              signal: cb?.signal,
+            });
             await applyEvent({ type: 'REFEREE_RULED', result: res, round });
             return;
           } catch {
+            if (cb?.signal?.aborted) return;
             if (attempt === 2) {
               await applyEvent({ type: 'REFEREE_SKIPPED' });
             }
@@ -331,7 +362,7 @@ export async function runAftermathEffect(
         try {
           const res = await run('crowd', crowdInput, {
             gameId: game.id,
-            signal: cb?.crowdSignal,
+            signal: cb?.crowdSignal ?? cb?.signal,
           });
           await applyEvent({ type: 'CROWD_REACTED', result: res, round });
         } catch {
