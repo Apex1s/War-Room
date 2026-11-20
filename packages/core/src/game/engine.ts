@@ -1,6 +1,13 @@
 import { isDeviceReadyForOnlyOnDevice } from '../ai/device';
 import { setVaultEntries } from '../ai/egress-guard';
-import { AiError, run, type AiErrorCode, type AiResult } from '../ai/router';
+import {
+  AiError,
+  extractErrorDetail,
+  run,
+  type AiErrorCode,
+  type AiErrorDetail,
+  type AiResult,
+} from '../ai/router';
 import { parseUrlOverrides } from '../ai/routing-table';
 import type { RefereeLiveOutput } from '../ai/schemas';
 import { seal } from '../firewall/firewall';
@@ -41,6 +48,10 @@ async function persistAndNotify(
 function toAiErrorCode(err: unknown): AiErrorCode {
   if (err instanceof AiError) return err.code;
   return 'cloud_unavailable';
+}
+
+function toAiErrorDetail(err: unknown): AiErrorDetail {
+  return extractErrorDetail(err);
 }
 
 export async function dispatchAndPersist(
@@ -232,6 +243,7 @@ export async function runPendingGeneralsInParallel(
           type: 'GENERAL_FAILED',
           generalId: general.id,
           code: toAiErrorCode(err),
+          detail: toAiErrorDetail(err),
         });
       }
     }),
@@ -661,7 +673,7 @@ export async function runFinalReportEffect(
     game = await dispatchAndPersist(
       game,
       vaultRecord,
-      { type: 'FAILED', code: toAiErrorCode(err) },
+      { type: 'FAILED', code: toAiErrorCode(err), detail: toAiErrorDetail(err) },
       cb,
     );
   }

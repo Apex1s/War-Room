@@ -14,6 +14,8 @@ import { createMockProvider, type MockProviderController } from './provider-mock
 import {
   AiError,
   clearModelCache,
+  extractErrorDetail,
+  formatAiErrorDetail,
   parseRetryDelayMs,
   run,
   setEgressGuard,
@@ -693,5 +695,44 @@ describe('AI Router & Routing Table', () => {
     expect(truncated).toBe(
       'Bundle a free workflow auditing tier into our flagship enterprise suite to starve the challenger of mid-market conversions across...',
     );
+  });
+
+  it('preserves underlying error origin, name, message, and HTTP status on AiError without prompt text', async () => {
+    const appCheckErr = new Error('AppCheck: 403 error. (appCheck/initial-throttle).');
+    appCheckErr.name = 'FirebaseError';
+    const d1 = extractErrorDetail(appCheckErr);
+    expect(d1).toEqual({
+      origin: 'app_check',
+      name: 'FirebaseError',
+      message: 'AppCheck: 403 error. (appCheck/initial-throttle).',
+      httpStatus: 403,
+    });
+    expect(formatAiErrorDetail(d1)).toContain('source: app_check | HTTP 403 | FirebaseError:');
+
+    const webkitNetErr = new TypeError('Load failed');
+    const d2 = extractErrorDetail(webkitNetErr);
+    expect(d2).toEqual({
+      origin: 'network',
+      name: 'TypeError',
+      message: 'Load failed',
+    });
+
+    mock.setHandler(() => {
+      throw webkitNetErr;
+    });
+    let caught: unknown;
+    try {
+      await run('crowd', SAMPLE_CROWD_INPUT);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(AiError);
+    const aiErr = caught as AiError;
+    expect(aiErr.code).toBe('cloud_unavailable');
+    expect(aiErr.detail).toEqual({
+      origin: 'network',
+      name: 'TypeError',
+      message: 'Load failed',
+    });
   });
 });

@@ -2,6 +2,7 @@ import {
   cleanPunctuation,
   computeGeneralScores,
   dispatchAndPersist,
+  formatAiErrorDetail,
   formatPlayerVsGeneralScore,
   rehydrate,
   runFinalReportEffect,
@@ -123,6 +124,14 @@ export function ReportScreen({
         <div className="font-mono text-label uppercase tracking-[0.12em] text-orange">
           FINAL REPORT GENERATION FAILED ({game.phase.code})
         </div>
+        {game.phase.detail && (
+          <div
+            className="font-mono text-label text-muted break-words"
+            data-testid="report-failed-detail"
+          >
+            Details: {cleanPunctuation(formatAiErrorDetail(game.phase.detail))}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-13">
           <button
             type="button"

@@ -425,6 +425,14 @@ export function WarRoomScreen({
                       ? (game.phase.failedGenerals?.[gen.id] ??
                         displayedRound.failedGenerals?.[gen.id])
                       : displayedRound.failedGenerals?.[gen.id];
+                  const failedDetail = reply
+                    ? undefined
+                    : (game.phase.kind === 'generals' ||
+                          game.phase.kind === 'aftermath') &&
+                        game.phase.round === displayedRound.n
+                      ? (game.phase.failedGeneralDetails?.[gen.id] ??
+                        displayedRound.failedGeneralDetails?.[gen.id])
+                      : displayedRound.failedGeneralDetails?.[gen.id];
                   const scoreDelta = displayedRound.referee?.scores.find(
                     (s) => s.generalId === gen.id,
                   )?.delta;
@@ -439,6 +447,7 @@ export function WarRoomScreen({
                       cumulativeScore={scoreMap.get(gen.id) ?? 0}
                       isPending={isPending}
                       failedCode={failedCode}
+                      failedDetail={failedDetail}
                       vaultMap={vaultRecord.map}
                       showRehydrated={showRehydrated}
                       busy={busy}

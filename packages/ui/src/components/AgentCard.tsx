@@ -1,10 +1,12 @@
 import {
   cleanPunctuation,
   describeScoreStanding,
+  formatAiErrorDetail,
   formatPlayerVsGeneralScore,
   formatSignedScore,
   rehydrate,
   type AiErrorCode,
+  type AiErrorDetail,
   type GeneralMoveOutput,
   type GeneralSpec,
   type PlaceholderEntry,
@@ -49,6 +51,7 @@ export interface AgentCardProps {
   cumulativeScore?: number;
   isPending: boolean;
   failedCode?: AiErrorCode;
+  failedDetail?: AiErrorDetail;
   vaultMap: PlaceholderEntry[];
   showRehydrated: boolean;
   busy: boolean;
@@ -63,6 +66,7 @@ export function AgentCard({
   cumulativeScore = 0,
   isPending,
   failedCode,
+  failedDetail,
   vaultMap,
   showRehydrated,
   busy,
@@ -144,6 +148,14 @@ export function AgentCard({
               <div className="font-mono text-label text-muted mt-3">
                 Cloud call exhausted retries ({failedCode}). The round continues with the other Generals.
               </div>
+              {failedDetail && (
+                <div
+                  className="font-mono text-label text-muted mt-3 break-words"
+                  data-testid={`general-holds-detail-r${roundNumber}-${general.id}`}
+                >
+                  Details: {cleanPunctuation(formatAiErrorDetail(failedDetail))}
+                </div>
+              )}
             </div>
             <button
               type="button"

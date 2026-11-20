@@ -1,5 +1,5 @@
 import type { CrowdPersona, GeneralSpec } from '../../prompts/types';
-import type { AiErrorCode, AiResult, Source } from '../ai/router';
+import type { AiErrorCode, AiErrorDetail, AiResult, Source } from '../ai/router';
 import type {
   CrowdOutput,
   CrowdReaction,
@@ -37,6 +37,7 @@ export type Phase =
       round: number;
       pending: string[];
       failedGenerals?: Record<string, AiErrorCode>;
+      failedGeneralDetails?: Record<string, AiErrorDetail>;
     }
   | {
       kind: 'aftermath';
@@ -44,10 +45,11 @@ export type Phase =
       referee: 'running' | 'done' | 'skipped';
       crowd: 'running' | 'done';
       failedGenerals?: Record<string, AiErrorCode>;
+      failedGeneralDetails?: Record<string, AiErrorDetail>;
     }
   | { kind: 'reporting' }
   | { kind: 'done' }
-  | { kind: 'failed'; at: Phase; code: AiErrorCode };
+  | { kind: 'failed'; at: Phase; code: AiErrorCode; detail?: AiErrorDetail };
 
 export interface AiMeta {
   source: Source;
@@ -62,6 +64,7 @@ export interface RoundRecord {
   newEntries?: PlaceholderEntry[];
   generalMoves: (GeneralMoveOutput & AiMeta & { generalId: string })[];
   failedGenerals?: Record<string, AiErrorCode>;
+  failedGeneralDetails?: Record<string, AiErrorDetail>;
   crowd: (CrowdReaction & AiMeta)[];
   referee: (RefereeRoundOutput & AiMeta) | null;
 }
@@ -111,7 +114,7 @@ export type GameEvent =
   | { type: 'MOVE_SUBMITTED'; text: string }
   | { type: 'MOVE_SEALED'; abstracted: string; newEntries: PlaceholderEntry[] }
   | { type: 'GENERAL_MOVED'; generalId: string; result: AiResult<GeneralMoveOutput> }
-  | { type: 'GENERAL_FAILED'; generalId: string; code: AiErrorCode }
+  | { type: 'GENERAL_FAILED'; generalId: string; code: AiErrorCode; detail?: AiErrorDetail }
   | { type: 'RETRY_GENERAL'; generalId: string }
   | { type: 'CROWD_REACTED'; result: AiResult<CrowdOutput>; round?: number }
   | { type: 'CROWD_FINISHED'; round?: number }
@@ -119,5 +122,5 @@ export type GameEvent =
   | { type: 'REFEREE_SKIPPED' }
   | { type: 'NEXT' }
   | { type: 'REPORT_READY'; result: AiResult<FinalReportOutput> }
-  | { type: 'FAILED'; code: AiErrorCode }
+  | { type: 'FAILED'; code: AiErrorCode; detail?: AiErrorDetail }
   | { type: 'RETRY' };

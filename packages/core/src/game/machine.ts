@@ -247,7 +247,7 @@ export function reduceGame(
 
     case 'GENERAL_MOVED': {
       if (state.phase.kind !== 'generals') return state;
-      const { round, pending, failedGenerals } = state.phase;
+      const { round, pending, failedGenerals, failedGeneralDetails } = state.phase;
       const existingRound = state.rounds.find((r) => r.n === round);
       const moveEntry = {
         ...event.result.output,
@@ -269,15 +269,22 @@ export function reduceGame(
         ...(existingRound?.failedGenerals ?? {}),
         ...(failedGenerals ?? {}),
       };
+      const nextFailedDetails: NonNullable<RoundRecord['failedGeneralDetails']> = {
+        ...(existingRound?.failedGeneralDetails ?? {}),
+        ...(failedGeneralDetails ?? {}),
+      };
       for (const id of repliedIds) {
         delete nextFailed[id];
+        delete nextFailedDetails[id];
       }
       const hasFailed = Object.keys(nextFailed).length > 0;
+      const hasFailedDetails = Object.keys(nextFailedDetails).length > 0;
 
       const rounds = upsertRound(state.rounds, round, (r) => ({
         ...r,
         generalMoves: nextGeneralMoves,
         failedGenerals: hasFailed ? nextFailed : undefined,
+        failedGeneralDetails: hasFailedDetails ? nextFailedDetails : undefined,
       }));
 
       const unresolvedGenerals = state.generals
@@ -293,12 +300,14 @@ export function reduceGame(
             referee: 'running',
             crowd: crowdAlreadyDone ? 'done' : 'running',
             ...(hasFailed ? { failedGenerals: nextFailed } : {}),
+            ...(hasFailedDetails ? { failedGeneralDetails: nextFailedDetails } : {}),
           }
         : {
             kind: 'generals',
             round,
             pending: nextPending.length > 0 ? nextPending : unresolvedGenerals,
             ...(hasFailed ? { failedGenerals: nextFailed } : {}),
+            ...(hasFailedDetails ? { failedGeneralDetails: nextFailedDetails } : {}),
           };
 
       return {
@@ -311,16 +320,22 @@ export function reduceGame(
 
     case 'GENERAL_FAILED': {
       if (state.phase.kind !== 'generals') return state;
-      const { round, pending, failedGenerals } = state.phase;
+      const { round, pending, failedGenerals, failedGeneralDetails } = state.phase;
       const nextPending = pending.filter((id) => id !== event.generalId);
       const nextFailed = {
         ...(failedGenerals ?? {}),
         [event.generalId]: event.code,
       };
+      const nextFailedDetails = {
+        ...(failedGeneralDetails ?? {}),
+        ...(event.detail ? { [event.generalId]: event.detail } : {}),
+      };
+      const hasFailedDetails = Object.keys(nextFailedDetails).length > 0;
 
       const rounds = upsertRound(state.rounds, round, (r) => ({
         ...r,
         failedGenerals: nextFailed,
+        failedGeneralDetails: hasFailedDetails ? nextFailedDetails : undefined,
       }));
 
       const targetRound = rounds.find((r) => r.n === round);
@@ -341,12 +356,14 @@ export function reduceGame(
             referee: hasReplies ? 'running' : 'skipped',
             crowd: crowdAlreadyDone ? 'done' : hasReplies ? 'running' : 'done',
             failedGenerals: nextFailed,
+            ...(hasFailedDetails ? { failedGeneralDetails: nextFailedDetails } : {}),
           }
         : {
             kind: 'generals',
             round,
             pending: nextPending.length > 0 ? nextPending : unresolvedGenerals,
             failedGenerals: nextFailed,
+            ...(hasFailedDetails ? { failedGeneralDetails: nextFailedDetails } : {}),
           };
 
       return {
@@ -361,18 +378,22 @@ export function reduceGame(
       if (state.phase.kind !== 'generals' && state.phase.kind !== 'aftermath') {
         return state;
       }
-      const { round, failedGenerals } = state.phase;
+      const { round, failedGenerals, failedGeneralDetails } = state.phase;
       const pending = state.phase.kind === 'generals' ? state.phase.pending : [];
       const nextFailed = { ...(failedGenerals ?? {}) };
       delete nextFailed[event.generalId];
+      const nextFailedDetails = { ...(failedGeneralDetails ?? {}) };
+      delete nextFailedDetails[event.generalId];
       const nextPending = pending.includes(event.generalId)
         ? pending
         : [...pending, event.generalId];
       const hasFailed = Object.keys(nextFailed).length > 0;
+      const hasFailedDetails = Object.keys(nextFailedDetails).length > 0;
 
       const rounds = upsertRound(state.rounds, round, (r) => ({
         ...r,
         failedGenerals: hasFailed ? nextFailed : undefined,
+        failedGeneralDetails: hasFailedDetails ? nextFailedDetails : undefined,
       }));
 
       return {
@@ -383,6 +404,7 @@ export function reduceGame(
           round,
           pending: nextPending,
           ...(hasFailed ? { failedGenerals: nextFailed } : {}),
+          ...(hasFailedDetails ? { failedGeneralDetails: nextFailedDetails } : {}),
         },
         updatedAt: now,
       };
@@ -527,6 +549,7 @@ export function reduceGame(
           kind: 'failed',
           at: state.phase,
           code: event.code,
+          ...(event.detail ? { detail: event.detail } : {}),
         },
         updatedAt: now,
       };

@@ -48,15 +48,114 @@ export type AiErrorCode =
   | 'rate_limited'
   | 'aborted';
 
+export type AiErrorOrigin = 'app_check' | 'network' | 'model' | 'unknown';
+
+export interface AiErrorDetail {
+  origin: AiErrorOrigin;
+  name: string;
+  message: string;
+  httpStatus?: number;
+}
+
 export class AiError extends Error {
   constructor(
     public code: AiErrorCode,
     public task: Task,
     message?: string,
+    public detail?: AiErrorDetail,
   ) {
     super(message ?? code);
     this.name = 'AiError';
   }
+}
+
+export function extractErrorDetail(err: unknown): AiErrorDetail {
+  if (err instanceof AiError && err.detail) {
+    return err.detail;
+  }
+
+  const name = err instanceof Error && err.name ? err.name : typeof err === 'object' && err !== null ? 'Error' : typeof err;
+  const rawMessage = err instanceof Error ? err.message : String(err);
+  const message = rawMessage.replace(/\s+/g, ' ').trim().slice(0, 240);
+
+  const errObj = (err && typeof err === 'object' ? err : {}) as {
+    code?: unknown;
+    status?: unknown;
+    customData?: { httpStatus?: unknown; status?: unknown };
+  };
+  const errCode = typeof errObj.code === 'string' ? errObj.code : '';
+  const directStatus =
+    typeof errObj.status === 'number'
+      ? errObj.status
+      : typeof errObj.customData?.httpStatus === 'number'
+        ? errObj.customData.httpStatus
+        : typeof errObj.customData?.status === 'number'
+          ? errObj.customData.status
+          : undefined;
+
+  let httpStatus = directStatus;
+  if (httpStatus === undefined) {
+    const statusMatch = /\b([45]\d{2})\b/.exec(message);
+    if (statusMatch) {
+      httpStatus = Number.parseInt(statusMatch[1]!, 10);
+    }
+  }
+
+  const combined = `${name} ${errCode} ${message}`.toLowerCase();
+  let origin: AiErrorOrigin = 'unknown';
+  if (
+    combined.includes('appcheck') ||
+    combined.includes('app-check') ||
+    combined.includes('recaptcha') ||
+    combined.includes('attestation') ||
+    combined.includes('warroom_appcheck')
+  ) {
+    origin = 'app_check';
+  } else if (
+    combined.includes('failed to fetch') ||
+    combined.includes('load failed') ||
+    combined.includes('networkerror') ||
+    combined.includes('network ') ||
+    combined.includes('offline') ||
+    combined.includes('timeout') ||
+    combined.includes('timed out') ||
+    name === 'AbortError'
+  ) {
+    origin = 'network';
+  } else if (
+    errCode.toLowerCase().startsWith('ai/') ||
+    combined.includes('ai/') ||
+    combined.includes('firebasevertexai') ||
+    combined.includes('generativelanguage') ||
+    combined.includes('parse-failed') ||
+    combined.includes('resource_exhausted') ||
+    combined.includes('quota') ||
+    combined.includes('safety') ||
+    combined.includes('model') ||
+    httpStatus !== undefined
+  ) {
+    origin = 'model';
+  }
+
+  return {
+    origin,
+    name,
+    message,
+    ...(httpStatus !== undefined ? { httpStatus } : {}),
+  };
+}
+
+export function formatAiErrorDetail(detail: AiErrorDetail | undefined): string {
+  if (!detail) return '';
+  const parts = [`source: ${detail.origin}`];
+  if (detail.httpStatus !== undefined) {
+    parts.push(`HTTP ${detail.httpStatus}`);
+  }
+  const errText = detail.message
+    ? `${detail.name}: ${detail.message}`
+    : detail.name;
+  parts.push(errText);
+  return parts.join(' | ');
 }
 
 export type EgressGuardFn = (text: string, gameId?: string) => void;
@@ -214,15 +313,17 @@ function mapProviderError(
 ): AiError {
   if (err instanceof AiError) return err;
 
+  const detail = extractErrorDetail(err);
+
   if (signal?.aborted) {
-    return new AiError('aborted', task, 'Request was aborted');
+    return new AiError('aborted', task, 'Request was aborted', detail);
   }
 
   const message = err instanceof Error ? err.message : String(err);
   const name = err instanceof Error ? err.name : '';
 
   if (name === 'AbortError' || message.includes('Timeout has expired')) {
-    return new AiError('cloud_unavailable', task, message || 'Request timed out');
+    return new AiError('cloud_unavailable', task, message || 'Request timed out', detail);
   }
 
   if (
@@ -230,13 +331,14 @@ function mapProviderError(
     message.toLowerCase().includes('rate limit') ||
     message.toLowerCase().includes('resource_exhausted')
   ) {
-    return new AiError('rate_limited', task, message);
+    return new AiError('rate_limited', task, message, detail);
   }
 
   return new AiError(
     mode === 'only_on_device' ? 'device_unavailable' : 'cloud_unavailable',
     task,
     message,
+    detail,
   );
 }
 
