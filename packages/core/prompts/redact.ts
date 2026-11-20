@@ -23,6 +23,7 @@ List every specific name that could identify the author or their plans:
 Rules:
 - Copy each name exactly as it is written in the text, character for character.
 - One entry per distinct name.
+- Only proper nouns, written with a capital letter. Never list ordinary words such as local, bakeries, cafes, shops, customers or bags.
 - Do not list generic words (startup, market, customers, investors).
 - Do not list numbers, dates or amounts of money.
 - If there are no names, return {"entities":[]}.

@@ -67,6 +67,10 @@ export const TASKS: { [K in Task]: TaskSpec<K> } = {
           }
         }
         if (!matchedText) continue;
+        // Names are proper nouns: as written in the text they carry a capital letter or a
+        // digit. Gemini Nano otherwise masks ordinary words such as "local" or "bakeries",
+        // which wrecks the brief the cloud sees. The user can still add any term by hand.
+        if (!/[A-Z0-9]/.test(matchedText)) continue;
 
         const key = matchedText.toLowerCase();
         if (seen.has(key)) continue;
