@@ -54,10 +54,8 @@ export function MoveComposer({
   const draftPreview = applyMapWithSpans(moveText, vaultRecord.map);
   const uniqueKnownMasked = new Set(draftPreview.spans.map((s) => s.token)).size;
 
-  const latestRoundWithChips = [...game.rounds]
-    .reverse()
-    .find((r) => (r.newEntries?.length ?? 0) > 0);
-  const newChips: PlaceholderEntry[] = latestRoundWithChips?.newEntries ?? [];
+  const currentRoundRecord = game.rounds.find((r) => r.n === roundNumber);
+  const newChips: PlaceholderEntry[] = currentRoundRecord?.newEntries ?? [];
 
   useEffect(() => {
     if (!deviceReady || game.phase.kind !== 'user_turn') {
@@ -119,8 +117,8 @@ export function MoveComposer({
         </span>
       </div>
 
-      {/* New entities masked chips with Undo */}
-      {newChips.length > 0 && latestRoundWithChips && (
+      {/* New entities masked chips with Undo (current round only) */}
+      {newChips.length > 0 && currentRoundRecord && (
         <div
           className="flex flex-wrap items-center gap-8 p-13 rounded-[3px] bg-bg border border-line"
           data-testid="move-new-chips-bar"
@@ -128,7 +126,7 @@ export function MoveComposer({
           <span className="font-mono text-label uppercase text-mint">
             {newChips.length} NEW{' '}
             {newChips.length === 1 ? 'ITEM' : 'ITEMS'} MASKED (ROUND{' '}
-            {latestRoundWithChips.n}):
+            {currentRoundRecord.n}):
           </span>
           {newChips.map((chip) => (
             <span
@@ -143,7 +141,7 @@ export function MoveComposer({
                 <button
                   type="button"
                   onClick={() =>
-                    onUndoMoveChip(latestRoundWithChips.n, chip.token)
+                    onUndoMoveChip(currentRoundRecord.n, chip.token)
                   }
                   className="text-label text-text underline cursor-pointer"
                   data-testid={`btn-undo-chip-${chip.token}`}
