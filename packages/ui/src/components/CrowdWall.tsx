@@ -98,7 +98,7 @@ export function CrowdWall({
               {avgSentiment > 0 ? `+${avgSentiment}` : avgSentiment}
             </span>
           )}
-          {crowdStatus === 'running' && (
+          {crowdStatus === 'running' && reactions.length === 0 && (
             <span
               className="inline-flex items-center gap-5 font-mono text-label uppercase tracking-[0.12em] text-muted"
               data-testid={`crowd-running-r${roundNumber}`}

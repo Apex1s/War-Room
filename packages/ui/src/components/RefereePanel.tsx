@@ -42,7 +42,7 @@ export function RefereePanel({
           <span className="terminal-label">
             REFEREE: ROUND {roundNumber} VERDICT
           </span>
-          {refereeStatus === 'running' && (
+          {refereeStatus === 'running' && !referee && (
             <span
               className="inline-flex items-center gap-5 font-mono text-label uppercase tracking-[0.12em] text-muted"
               data-testid={`referee-running-r${roundNumber}`}

@@ -411,9 +411,15 @@ export function reduceGame(
         };
       });
 
+      const nextPhase =
+        state.phase.kind === 'aftermath' && state.phase.round === targetRound
+          ? { ...state.phase, crowd: 'done' as const }
+          : state.phase;
+
       return {
         ...state,
         rounds,
+        phase: nextPhase,
         updatedAt: now,
       };
     }
