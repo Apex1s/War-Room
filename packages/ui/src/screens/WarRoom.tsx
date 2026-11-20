@@ -2,7 +2,7 @@ import {
   cleanPunctuation,
   computeGeneralScores,
   dispatchAndPersist,
-  formatGeneralsStatus,
+  formatRoundGeneralsStatus,
   rehydrate,
   resumePendingPhaseEffect,
   retrySingleGeneralEffect,
@@ -358,23 +358,7 @@ export function WarRoomScreen({
                       className="px-8 py-3 rounded-[3px] border border-line bg-bg font-mono text-label text-muted whitespace-nowrap"
                       data-testid={`round-${displayedRound.n}-generals-status`}
                     >
-                      {formatGeneralsStatus(
-                        game.generals.length,
-                        displayedRound.generalMoves.length,
-                        Object.keys(
-                          (game.phase.kind === 'generals' ||
-                            game.phase.kind === 'aftermath') &&
-                            game.phase.round === displayedRound.n
-                            ? (game.phase.failedGenerals ??
-                                displayedRound.failedGenerals ??
-                                {})
-                            : (displayedRound.failedGenerals ?? {}),
-                        ).length,
-                        game.phase.kind === 'generals' &&
-                          game.phase.round === displayedRound.n
-                          ? game.phase.pending.length
-                          : 0,
-                      )}
+                      {formatRoundGeneralsStatus(game, displayedRound)}
                     </span>
                   </div>
 
@@ -426,10 +410,11 @@ export function WarRoomScreen({
                     game.phase.kind === 'generals' &&
                     game.phase.round === displayedRound.n &&
                     game.phase.pending.includes(gen.id);
-                  const failedCode =
-                    (game.phase.kind === 'generals' ||
-                      game.phase.kind === 'aftermath') &&
-                    game.phase.round === displayedRound.n
+                  const failedCode = reply
+                    ? undefined
+                    : (game.phase.kind === 'generals' ||
+                          game.phase.kind === 'aftermath') &&
+                        game.phase.round === displayedRound.n
                       ? (game.phase.failedGenerals?.[gen.id] ??
                         displayedRound.failedGenerals?.[gen.id])
                       : displayedRound.failedGenerals?.[gen.id];

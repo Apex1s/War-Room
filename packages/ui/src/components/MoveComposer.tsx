@@ -1,7 +1,7 @@
 import {
   applyMapWithSpans,
   cleanPunctuation,
-  formatGeneralsStatus,
+  formatRoundGeneralsStatus,
   isDeviceReadyForOnlyOnDevice,
   parseUrlOverrides,
   runRefereeLiveEffect,
@@ -264,15 +264,9 @@ export function MoveComposer({
               const phase = game.phase;
               if (phase.kind !== 'generals') return null;
               const roundRec = game.rounds.find((r) => r.n === phase.round);
-              const replied = roundRec?.generalMoves.length ?? 0;
-              const failed = Object.keys(
-                phase.failedGenerals ?? roundRec?.failedGenerals ?? {},
-              ).length;
-              return `Generals responding in parallel (${formatGeneralsStatus(
-                game.generals.length,
-                replied,
-                failed,
-                phase.pending.length,
+              return `Generals responding in parallel (${formatRoundGeneralsStatus(
+                game,
+                roundRec,
               )})`;
             })()}
         </div>

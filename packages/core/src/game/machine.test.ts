@@ -32,6 +32,7 @@ import {
   createInitialGameRecord,
   formatGeneralsStatus,
   formatPhaseStatus,
+  formatRoundGeneralsStatus,
   reduceGame,
 } from './machine';
 import {
@@ -1359,5 +1360,50 @@ describe('engine.ts parallel Generals and retry effects', () => {
       expect(rep.game.report).not.toBeNull();
     }
     expect(sleepLog.filter((ms) => ms === 5000).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('recomputes the Generals status line from round state after a held General succeeds on retry', () => {
+    let state = createInitialGameRecord('retry-status-recompute', 'startup', 4000);
+    state = reduceGame(state, {
+      type: 'BRIEF_SUBMITTED',
+      templateId: 'startup',
+      objective: 'Reach 1,000 teams',
+      brief: 'Kestrel Labs builds PulseAudit',
+    });
+    state = reduceGame(state, {
+      type: 'BRIEF_SEALED',
+      result: { abstracted: '[COMPANY_1] builds [OTHER_1]', map: [], spans: [], method: 'basic' },
+      abstractedObjective: 'Reach [NUMBER_1] teams',
+      abstractedBrief: '[COMPANY_1] builds [OTHER_1]',
+    });
+    state = reduceGame(state, { type: 'REDACTION_APPROVED' });
+    state = reduceGame(state, { type: 'MOVE_SUBMITTED', text: 'Launch self-serve tier' });
+    state = reduceGame(state, {
+      type: 'MOVE_SEALED',
+      abstracted: 'Launch self-serve tier',
+      newEntries: [],
+    });
+
+    const genResult = makeAiResult('general_move', CANNED_OUTPUTS.general_move, 'cloud');
+    state = reduceGame(state, { type: 'GENERAL_MOVED', generalId: 'vc', result: genResult });
+    state = reduceGame(state, { type: 'GENERAL_MOVED', generalId: 'copycat', result: genResult });
+    state = reduceGame(state, {
+      type: 'GENERAL_FAILED',
+      generalId: 'market',
+      code: 'cloud_unavailable',
+    });
+
+    expect(formatRoundGeneralsStatus(state, state.rounds[0])).toBe('2 of 3 replied, 1 failed');
+
+    state = reduceGame(state, { type: 'RETRY_GENERAL', generalId: 'market' });
+    expect(formatRoundGeneralsStatus(state, state.rounds[0])).toBe('2 of 3 replied, 1 pending');
+
+    state = reduceGame(state, { type: 'GENERAL_MOVED', generalId: 'market', result: genResult });
+    expect(state.rounds[0].failedGenerals).toBeUndefined();
+    expect(state.phase.kind).toBe('aftermath');
+    if (state.phase.kind === 'aftermath') {
+      expect(state.phase.failedGenerals).toBeUndefined();
+    }
+    expect(formatRoundGeneralsStatus(state, state.rounds[0])).toBe('3 of 3 replied');
   });
 });

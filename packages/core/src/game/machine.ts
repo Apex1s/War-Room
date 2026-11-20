@@ -60,6 +60,41 @@ export function formatGeneralsStatus(
   return `${repliedCount} of ${totalGenerals} replied`;
 }
 
+/**
+ * Recomputes the Generals status line directly from a round record and current phase,
+ * ensuring any General that already has a reply in `round.generalMoves` is never counted as failed.
+ */
+export function formatRoundGeneralsStatus(
+  game: GameRecord,
+  round: RoundRecord | undefined,
+): string {
+  const totalGenerals = game.generals.length;
+  const repliedIds = new Set((round?.generalMoves ?? []).map((m) => m.generalId));
+  const isActiveRound =
+    round !== undefined &&
+    (game.phase.kind === 'generals' || game.phase.kind === 'aftermath') &&
+    game.phase.round === round.n;
+
+  const rawFailed = isActiveRound
+    ? {
+        ...(round?.failedGenerals ?? {}),
+        ...((game.phase.kind === 'generals' || game.phase.kind === 'aftermath'
+          ? game.phase.failedGenerals
+          : undefined) ?? {}),
+      }
+    : (round?.failedGenerals ?? {});
+
+  const failedCount = Object.keys(rawFailed).filter((id) => !repliedIds.has(id)).length;
+  const pendingCount =
+    round !== undefined &&
+    game.phase.kind === 'generals' &&
+    game.phase.round === round.n
+      ? game.phase.pending.filter((id) => !repliedIds.has(id)).length
+      : 0;
+
+  return formatGeneralsStatus(totalGenerals, repliedIds.size, failedCount, pendingCount);
+}
+
 export function createInitialGameRecord(
   id: string,
   templateId: TemplateId = 'startup',
@@ -213,11 +248,7 @@ export function reduceGame(
     case 'GENERAL_MOVED': {
       if (state.phase.kind !== 'generals') return state;
       const { round, pending, failedGenerals } = state.phase;
-      const nextPending = pending.filter((id) => id !== event.generalId);
-      const nextFailed = { ...(failedGenerals ?? {}) };
-      delete nextFailed[event.generalId];
-      const hasFailed = Object.keys(nextFailed).length > 0;
-
+      const existingRound = state.rounds.find((r) => r.n === round);
       const moveEntry = {
         ...event.result.output,
         generalId: event.generalId,
@@ -226,15 +257,28 @@ export function reduceGame(
         model: event.result.model,
         fallback: event.result.fallback,
       };
+      const existingMoves = existingRound?.generalMoves ?? [];
+      const nextGeneralMoves = [
+        ...existingMoves.filter((m) => m.generalId !== event.generalId),
+        moveEntry,
+      ];
+      const repliedIds = new Set(nextGeneralMoves.map((m) => m.generalId));
 
-      const rounds = upsertRound(state.rounds, round, (r) => {
-        const filtered = r.generalMoves.filter((m) => m.generalId !== event.generalId);
-        return {
-          ...r,
-          generalMoves: [...filtered, moveEntry],
-          failedGenerals: hasFailed ? nextFailed : undefined,
-        };
-      });
+      const nextPending = pending.filter((id) => id !== event.generalId && !repliedIds.has(id));
+      const nextFailed: NonNullable<RoundRecord['failedGenerals']> = {
+        ...(existingRound?.failedGenerals ?? {}),
+        ...(failedGenerals ?? {}),
+      };
+      for (const id of repliedIds) {
+        delete nextFailed[id];
+      }
+      const hasFailed = Object.keys(nextFailed).length > 0;
+
+      const rounds = upsertRound(state.rounds, round, (r) => ({
+        ...r,
+        generalMoves: nextGeneralMoves,
+        failedGenerals: hasFailed ? nextFailed : undefined,
+      }));
 
       const nextPhase: GameRecord['phase'] =
         nextPending.length === 0
